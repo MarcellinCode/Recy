@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
 import { Leaf, User, Truck, ArrowRight, Loader2, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 
-export default function SignupPage() {
+function SignupForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const supabase = createClient();
@@ -37,7 +36,7 @@ export default function SignupPage() {
         setError(null);
 
         try {
-            const { data, error: authError } = await supabase.auth.signUp({
+            const { error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
                 options: {
@@ -49,9 +48,6 @@ export default function SignupPage() {
             });
 
             if (authError) throw authError;
-
-            // Profile creation is now handled by a database trigger (handle_new_user)
-            // for reliability and security.
 
             router.push("/connexion?message=Vérifiez votre email pour confirmer l'inscription");
         } catch (err: any) {
@@ -189,5 +185,17 @@ export default function SignupPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+                <Loader2 className="w-10 h-10 text-primary animate-spin" />
+            </div>
+        }>
+            <SignupForm />
+        </Suspense>
     );
 }
