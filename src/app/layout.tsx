@@ -14,7 +14,8 @@ export const metadata: Metadata = {
   description: "Plateforme citoyenne pour la collecte et la valorisation des déchets recyclables.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.ico",
+    icon: "/logo.png",
+    apple: "/logo.png",
   },
 };
 
