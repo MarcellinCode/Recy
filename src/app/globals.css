@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    /* Blanc dominant */
+    --foreground: 222.2 84% 4.9%;
+
+    /* Vert émeraude (Eco-Friendly) */
+    --primary: 153 60% 41%;
+    /* #2A9D8F ou similaire */
+    --primary-foreground: 210 40% 98%;
+
+    /* Gris ardoise clair */
+    --secondary: 210 14% 96%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    /* Jaune (Touches d'accent) */
+    --accent: 43 96% 58%;
+    /* #E9C46A ou similaire */
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 153 60% 41%;
+    /* Focus ring = Primary Green */
+
+    --radius: 0.75rem;
+    /* Coins très arrondis "App Feel" */
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    /* Gris très foncé plutôt que noir pur */
+    --foreground: 210 40% 98%;
+
+    /* Vert émeraude légèrement plus clair pour le mode sombre */
+    --primary: 153 50% 48%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    /* Jaune */
+    --accent: 43 96% 58%;
+    --accent-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 153 50% 48%;
+    /* Focus ring = Primary Green */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}

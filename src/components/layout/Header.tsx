@@ -1,0 +1,178 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { Bell, Menu, X, Leaf, LogOut, User as UserIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase";
+import { User } from "@supabase/supabase-js";
+
+export function Header() {
+    const pathname = usePathname();
+    const router = useRouter();
+    const supabase = createClient();
+
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [user, setUser] = useState<User | null>(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const getSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            setUser(session?.user ?? null);
+            setLoading(false);
+        };
+
+        getSession();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null);
+            setLoading(false);
+        });
+
+        return () => subscription.unsubscribe();
+    }, [supabase]);
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        router.push("/connexion");
+        router.refresh();
+    };
+
+    const desktopLinks = user ? [
+        { href: "/dashboard", label: "Dashboard" },
+        { href: "/mes-dechets", label: "Mes déchets" },
+        { href: "/marketplace", label: "Marché" },
+        { href: "/appels-offres", label: "B2B" },
+        { href: "/carte", label: "Carte" },
+        { href: "/bourse", label: "Bourse" },
+        { href: "/chat", label: "Messages" },
+        { href: "/wallet", label: "Portefeuille" },
+    ] : [
+        { href: "/#features", label: "Fonctionnalités" },
+        { href: "/#impact", label: "Notre Impact" },
+    ];
+
+    return (
+        <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/80">
+            <div className="flex items-center justify-between h-16 px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+
+                {/* Logo */}
+                <Link href="/" className="flex items-center gap-2 group">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                        <Leaf className="w-5 h-5" />
+                    </div>
+                    <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">
+                        Recy
+                    </span>
+                </Link>
+
+                {/* Navigation Desktop */}
+                <nav className="hidden md:flex items-center gap-8">
+                    {desktopLinks.map((link) => {
+                        const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
+                        return (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                className={cn(
+                                    "text-sm font-bold uppercase tracking-widest transition-colors hover:text-primary",
+                                    isActive ? "text-primary" : "text-gray-500 dark:text-gray-400"
+                                )}
+                            >
+                                {link.label}
+                            </Link>
+                        );
+                    })}
+                </nav>
+
+                {/* Actions */}
+                <div className="flex items-center gap-2 sm:gap-4">
+                    {!loading && user && (
+                        <Link href="/notifications" className="p-2 text-gray-500 transition-colors rounded-full hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-zinc-800">
+                            <Bell className="w-5 h-5" />
+                        </Link>
+                    )}
+
+                    {!loading && (
+                        user ? (
+                            <div className="hidden md:flex items-center gap-3">
+                                <Link
+                                    href="/profil"
+                                    className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-all dark:bg-zinc-800 dark:text-gray-200"
+                                >
+                                    <UserIcon className="w-4 h-4" />
+                                    {user.user_metadata?.full_name?.split(' ')[0] || "Profil"}
+                                </Link>
+                                <button
+                                    onClick={handleLogout}
+                                    className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors dark:hover:bg-red-950/30"
+                                >
+                                    <LogOut className="w-5 h-5" />
+                                </button>
+                            </div>
+                        ) : (
+                            <Link
+                                href="/connexion"
+                                className="px-6 py-2.5 text-xs font-black uppercase tracking-widest text-white transition-all rounded-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 active:scale-95"
+                            >
+                                Connexion
+                            </Link>
+                        )
+                    )}
+
+                    {/* Menu Mobile */}
+                    <button
+                        className="p-2 text-gray-500 md:hidden hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    >
+                        {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                    </button>
+                </div>
+            </div>
+
+            {/* Menu Mobile déroulant */}
+            {isMobileMenuOpen && (
+                <div className="border-t border-gray-100 md:hidden dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 space-y-4">
+                    {!user ? (
+                        <>
+                            <Link href="/connexion" className="block w-full px-4 py-3 text-center text-xs font-black uppercase tracking-widest text-white rounded-2xl bg-primary">
+                                Se connecter
+                            </Link>
+                            <Link href="/inscription" className="block w-full px-4 py-3 text-center text-xs font-black uppercase tracking-widest text-gray-700 bg-gray-100 rounded-2xl">
+                                Créer un compte
+                            </Link>
+                        </>
+                    ) : (
+                        <>
+                            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-zinc-900 rounded-2xl mb-4">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                                    {user.user_metadata?.full_name?.[0] || "U"}
+                                </div>
+                                <div>
+                                    <p className="font-bold text-sm">{user.user_metadata?.full_name || "Utilisateur"}</p>
+                                    <p className="text-[10px] text-gray-500">{user.email}</p>
+                                </div>
+                            </div>
+                            <nav className="space-y-2">
+                                {desktopLinks.map(link => (
+                                    <Link key={link.href} href={link.href} onClick={() => setIsMobileMenuOpen(false)} className="block p-3 font-bold text-sm text-gray-600 dark:text-gray-400 hover:text-primary">
+                                        {link.label}
+                                    </Link>
+                                ))}
+                            </nav>
+                            <button
+                                onClick={handleLogout}
+                                className="w-full flex items-center justify-center gap-2 p-3 text-red-500 font-bold text-sm bg-red-50 dark:bg-red-950/20 rounded-2xl"
+                            >
+                                <LogOut className="w-4 h-4" />
+                                Déconnexion
+                            </button>
+                        </>
+                    )}
+                </div>
+            )}
+        </header>
+    );
+}
