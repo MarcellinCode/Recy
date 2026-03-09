@@ -20,7 +20,7 @@ export function BottomNavigation() {
 
     return (
         <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-white border-t border-gray-200 dark:bg-zinc-950 dark:border-zinc-800 md:hidden pb-safe">
-            <div className="grid h-full max-w-lg grid-cols-7 mx-auto font-medium">
+            <div className="flex h-full max-w-lg mx-auto overflow-x-auto snap-x snap-mandatory hide-scrollbar">
                 {links.map((link) => {
                     const Icon = link.icon;
                     const isActive = pathname === link.href || (pathname.startsWith(link.href) && link.href !== "/");
@@ -30,7 +30,7 @@ export function BottomNavigation() {
                             key={link.href}
                             href={link.href}
                             className={cn(
-                                "inline-flex flex-col items-center justify-center px-1 lg:px-5 group",
+                                "flex flex-col items-center justify-center min-w-[72px] shrink-0 snap-center group px-1",
                                 isActive ? "text-primary" : "text-gray-500 hover:text-green-600 dark:text-gray-400 dark:hover:text-green-400"
                             )}
                         >
