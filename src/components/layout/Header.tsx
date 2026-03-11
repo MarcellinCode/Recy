@@ -103,7 +103,6 @@ export function Header() {
                                 <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-zinc-950 shadow-sm shadow-red-500/20"></span>
                             )}
                         </Link>
-                        </Link>
                     )}
 
                     {!loading && (
@@ -175,7 +174,6 @@ export function Header() {
                                                 {link.badge > 99 ? '99+' : link.badge}
                                             </span>
                                         ) : null}
-                                    </Link>
                                     </Link>
                                 ))}
                             </nav>
