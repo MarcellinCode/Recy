@@ -7,11 +7,13 @@ import { Bell, Menu, X, Leaf, LogOut, User as UserIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
+import { useUnreadBadges } from "@/hooks/useUnreadBadges";
 
 export function Header() {
     const pathname = usePathname();
     const router = useRouter();
     const supabase = createClient();
+    const { unreadMessages, unreadNotifications } = useUnreadBadges();
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [user, setUser] = useState<User | null>(null);
@@ -47,7 +49,7 @@ export function Header() {
         { href: "/appels-offres", label: "B2B" },
         { href: "/carte", label: "Carte" },
         { href: "/bourse", label: "Bourse" },
-        { href: "/chat", label: "Messages" },
+        { href: "/chat", label: "Messages", badge: unreadMessages },
         { href: "/wallet", label: "Portefeuille" },
     ] : [
         { href: "/#features", label: "Fonctionnalités" },
@@ -77,11 +79,16 @@ export function Header() {
                                 key={link.href}
                                 href={link.href}
                                 className={cn(
-                                    "text-sm font-bold uppercase tracking-widest transition-colors hover:text-primary",
+                                    "text-sm font-bold uppercase tracking-widest transition-colors hover:text-primary relative flex items-center gap-1.5",
                                     isActive ? "text-primary" : "text-gray-500 dark:text-gray-400"
                                 )}
                             >
                                 {link.label}
+                                {link.badge ? (
+                                    <span className="flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-black text-white bg-red-500 rounded-full px-1 shadow-sm shadow-red-500/20">
+                                        {link.badge > 99 ? '99+' : link.badge}
+                                    </span>
+                                ) : null}
                             </Link>
                         );
                     })}
@@ -90,8 +97,12 @@ export function Header() {
                 {/* Actions */}
                 <div className="flex items-center gap-2 sm:gap-4">
                     {!loading && user && (
-                        <Link href="/notifications" className="p-2 text-gray-500 transition-colors rounded-full hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-zinc-800">
-                            <Bell className="w-5 h-5" />
+                        <Link href="/notifications" className="p-2 text-gray-500 transition-colors rounded-full relative group hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-zinc-800">
+                            <Bell className="w-5 h-5 group-hover:text-primary transition-colors" />
+                            {unreadNotifications > 0 && (
+                                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-zinc-950 shadow-sm shadow-red-500/20"></span>
+                            )}
+                        </Link>
                         </Link>
                     )}
 
@@ -157,8 +168,14 @@ export function Header() {
                             </div>
                             <nav className="space-y-2">
                                 {desktopLinks.map(link => (
-                                    <Link key={link.href} href={link.href} onClick={() => setIsMobileMenuOpen(false)} className="block p-3 font-bold text-sm text-gray-600 dark:text-gray-400 hover:text-primary">
+                                    <Link key={link.href} href={link.href} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-3 font-bold text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-zinc-900 rounded-xl transition-colors">
                                         {link.label}
+                                        {link.badge ? (
+                                            <span className="flex items-center justify-center min-w-[20px] h-[20px] text-[10px] font-black text-white bg-red-500 rounded-full px-1.5 shadow-sm shadow-red-500/20">
+                                                {link.badge > 99 ? '99+' : link.badge}
+                                            </span>
+                                        ) : null}
+                                    </Link>
                                     </Link>
                                 ))}
                             </nav>

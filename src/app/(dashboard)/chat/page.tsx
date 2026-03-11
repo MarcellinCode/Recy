@@ -115,6 +115,19 @@ function ChatContainer() {
             setMessages(data || []);
             setMessagesLoading(false);
             scrollToBottom();
+            // Mark unread messages directed to current user as read
+            if (currentUser && data) {
+                const unreadIds = data
+                    .filter(msg => msg.receiver_id === currentUser.id && msg.is_read === false)
+                    .map(msg => msg.id);
+
+                if (unreadIds.length > 0) {
+                    await supabase
+                        .from('messages')
+                        .update({ is_read: true })
+                        .in('id', unreadIds);
+                }
+            }
         };
 
         fetchMessages();
@@ -127,7 +140,26 @@ function ChatContainer() {
                 table: 'messages',
                 filter: `waste_id=eq.${selectedConv.id}`
             }, (payload) => {
-                setMessages((prev) => [...prev, payload.new]);
+                setMessages((prev) => {
+                    // Prevent duplicates from optimistic updates
+                    const isDuplicate = prev.some(
+                        msg => msg.id === payload.new.id ||
+                        (msg.id.toString().startsWith('optimistic-') &&
+                         msg.content === payload.new.content &&
+                         msg.sender_id === payload.new.sender_id)
+                    );
+
+                    if (isDuplicate) {
+                        // Replace the optimistic message with the real one from the DB
+                        return prev.map(msg =>
+                            (msg.id.toString().startsWith('optimistic-') && msg.content === payload.new.content)
+                                ? payload.new
+                                : msg
+                        );
+                    }
+
+                    return [...prev, payload.new];
+                });
                 scrollToBottom();
             })
             .subscribe();
@@ -160,9 +192,24 @@ function ChatContainer() {
         if (!receiverId) return;
 
         const msgContent = newMessage.trim();
+        if (!msgContent) return; // Don't send empty messages
+
         setNewMessage("");
 
-        await supabase
+        // Optimistic update: Add message to UI immediately
+        const optimisticMessage = {
+            id: `optimistic-${Date.now()}`,
+            waste_id: selectedConv.id,
+            sender_id: currentUser.id,
+            receiver_id: receiverId,
+            content: msgContent,
+            created_at: new Date().toISOString(),
+        };
+
+        setMessages((prev) => [...prev, optimisticMessage]);
+        scrollToBottom();
+
+        const { error } = await supabase
             .from('messages')
             .insert({
                 waste_id: selectedConv.id,
@@ -170,6 +217,11 @@ function ChatContainer() {
                 receiver_id: receiverId,
                 content: msgContent
             });
+        if (error) {
+            console.error("Error sending message:", error);
+            // Optionally, remove the optimistic message on failure
+            // setMessages((prev) => prev.filter(m => m.id !== optimisticMessage.id));
+        }
     };
 
     const getOtherParty = (conv: any) => {

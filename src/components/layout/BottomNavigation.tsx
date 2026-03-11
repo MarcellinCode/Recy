@@ -4,16 +4,18 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { MessageSquare, Trash2, Map, Wallet, UserCircle, MapPin, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUnreadBadges } from "@/hooks/useUnreadBadges";
 
 export function BottomNavigation() {
     const pathname = usePathname();
+    const { unreadMessages } = useUnreadBadges();
 
     const links = [
         { href: "/mes-dechets", label: "Déchets", icon: Trash2 },
         { href: "/marketplace", label: "Marché", icon: Map },
         { href: "/appels-offres", label: "B2B", icon: Building2 },
         { href: "/carte", label: "Carte", icon: MapPin },
-        { href: "/chat", label: "Messages", icon: MessageSquare },
+        { href: "/chat", label: "Messages", icon: MessageSquare, badge: unreadMessages },
         { href: "/wallet", label: "Wallet", icon: Wallet },
         { href: "/profil", label: "Profil", icon: UserCircle },
     ];
@@ -36,11 +38,16 @@ export function BottomNavigation() {
                         >
                             <div
                                 className={cn(
-                                    "p-1.5 rounded-full transition-all duration-200",
+                                    "p-1.5 rounded-full transition-all duration-200 relative",
                                     isActive ? "bg-primary/10" : "group-hover:bg-gray-100 dark:group-hover:bg-zinc-800"
                                 )}
                             >
                                 <Icon className={cn("w-6 h-6", isActive && "fill-primary/20")} strokeWidth={isActive ? 2.5 : 2} />
+                                {link.badge ? (
+                                    <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-[16px] text-[9px] font-black text-white bg-red-500 rounded-full px-1 shadow-sm shadow-red-500/20 border-2 border-white dark:border-zinc-950">
+                                        {link.badge > 99 ? '99+' : link.badge}
+                                    </span>
+                                ) : null}
                             </div>
                             <span className="text-[10px] mt-0.5 font-medium">{link.label}</span>
                         </Link>
