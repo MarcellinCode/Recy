@@ -49,9 +49,11 @@ export function useUnreadBadges() {
 
             await fetchCounts();
 
-            // Setup Realtime channels
+            // Setup Realtime channels with unique names to avoid React strict mode multi-mount collisions
+            const uniqueId = Math.random().toString(36).substring(7);
+            
             messagesCurrentChannel = supabase
-                .channel(`messages_badge_${user.id}`)
+                .channel(`messages_badge_${user.id}_${uniqueId}`)
                 .on(
                     'postgres_changes',
                     {
@@ -72,7 +74,7 @@ export function useUnreadBadges() {
             });
 
             notificationsCurrentChannel = supabase
-                .channel(`notifications_badge_${user.id}`)
+                .channel(`notifications_badge_${user.id}_${uniqueId}`)
                 .on(
                     'postgres_changes',
                     {
