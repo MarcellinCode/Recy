@@ -137,9 +137,11 @@ function ChatContainer() {
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
-                table: 'messages',
-                filter: `waste_id=eq.${selectedConv.id}`
+                table: 'messages'
             }, (payload) => {
+                console.log("CHAT REALTIME MESSAGE:", payload);
+                if (payload.new.waste_id !== selectedConv.id) return;
+
                 setMessages((prev) => {
                     // Prevent duplicates from optimistic updates
                     const isDuplicate = prev.some(
@@ -161,8 +163,11 @@ function ChatContainer() {
                     return [...prev, payload.new];
                 });
                 scrollToBottom();
-            })
-            .subscribe();
+            });
+
+        channel.subscribe((status: string) => {
+            console.log(`CHAT REALTIME STATUS (${selectedConv.id}): ${status}`);
+        });
 
         return () => {
             supabase.removeChannel(channel);

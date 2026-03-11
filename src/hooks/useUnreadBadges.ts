@@ -36,6 +36,13 @@ export function useUnreadBadges() {
                         .eq('is_read', false)
                 ]);
 
+                console.log("BADGE DEBUG:", {
+                    messagesCount: messagesRes.count,
+                    messagesError: messagesRes.error,
+                    notifCount: notificationsRes.count,
+                    notifError: notificationsRes.error
+                });
+
                 setUnreadMessages(messagesRes.count || 0);
                 setUnreadNotifications(notificationsRes.count || 0);
             };
@@ -48,34 +55,42 @@ export function useUnreadBadges() {
                 .on(
                     'postgres_changes',
                     {
-                        event: '*',
+                        event: 'INSERT',
                         schema: 'public',
-                        table: 'messages',
-                        filter: `receiver_id=eq.${user.id}`
+                        table: 'messages'
                     },
                     (payload) => {
-                        // Optimistically re-fetch completely to avoid complex state logic with updates
-                        fetchCounts();
+                        console.log("REALTIME MESSAGE RECEIVED:", payload);
+                        if (payload.new.receiver_id === user.id) {
+                            fetchCounts();
+                        }
                     }
-                )
-                .subscribe();
+                );
+
+            messagesCurrentChannel.subscribe((status: string) => {
+                console.log(`MESSAGES REALTIME STATUS: ${status}`);
+            });
 
             notificationsCurrentChannel = supabase
                 .channel(`notifications_badge_${user.id}`)
                 .on(
                     'postgres_changes',
                     {
-                        event: '*',
+                        event: 'INSERT',
                         schema: 'public',
-                        table: 'notifications',
-                        filter: `profile_id=eq.${user.id}`
+                        table: 'notifications'
                     },
                     (payload) => {
-                        // Optimistically re-fetch completely
-                        fetchCounts();
+                        console.log("REALTIME NOTIFICATION RECEIVED:", payload);
+                        if (payload.new.profile_id === user.id) {
+                            fetchCounts();
+                        }
                     }
-                )
-                .subscribe();
+                );
+
+            notificationsCurrentChannel.subscribe((status: string) => {
+                console.log(`NOTIFICATIONS REALTIME STATUS: ${status}`);
+            });
         };
 
         setupSubscriptions();
