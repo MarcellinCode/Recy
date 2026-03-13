@@ -232,18 +232,29 @@ export default async function Home() {
             <h2 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-8 uppercase tracking-tighter italic">Prêt à <span className="text-primary">Recycler</span> ?</h2>
             <p className="text-lg text-gray-500 font-bold uppercase tracking-widest mb-12 max-w-2xl mx-auto">Rejoignez des milliers de citoyens et d'entreprises qui changent leur manière de gérer les déchets.</p>
             <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              <Link
-                href="/inscription"
-                className="px-12 py-6 bg-primary text-white font-black rounded-3xl hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/30 uppercase tracking-[0.2em] text-sm"
-              >
-                Créer mon compte
-              </Link>
-              <Link
-                href="/connexion"
-                className="px-12 py-6 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-2 border-gray-100 dark:border-zinc-700 font-black rounded-3xl hover:bg-gray-50 transition-all uppercase tracking-[0.2em] text-sm"
-              >
-                Se connecter
-              </Link>
+              {user ? (
+                <Link
+                  href={profile?.role === 'collecteur' ? "/marketplace" : "/mes-dechets"}
+                  className="px-12 py-6 bg-primary text-white font-black rounded-3xl hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/30 uppercase tracking-[0.2em] text-sm"
+                >
+                  Accéder à mon espace
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/inscription"
+                    className="px-12 py-6 bg-primary text-white font-black rounded-3xl hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/30 uppercase tracking-[0.2em] text-sm"
+                  >
+                    Créer mon compte
+                  </Link>
+                  <Link
+                    href="/connexion"
+                    className="px-12 py-6 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-2 border-gray-100 dark:border-zinc-700 font-black rounded-3xl hover:bg-gray-50 transition-all uppercase tracking-[0.2em] text-sm"
+                  >
+                    Se connecter
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>
