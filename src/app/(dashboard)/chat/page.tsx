@@ -26,6 +26,14 @@ function ChatContainer() {
             if (!user) return;
             setCurrentUser(user);
 
+            // Mark ALL messages as read immediately when opening the chat page
+            supabase
+                .from('messages')
+                .update({ is_read: true })
+                .eq('receiver_id', user.id)
+                .eq('is_read', false)
+                .then(() => console.log("All messages marked as read"));
+
             // Fetch wastes where user is involved
             const { data: userMessages } = await supabase
                 .from('messages')
@@ -141,6 +149,15 @@ function ChatContainer() {
             }, (payload) => {
                 console.log("CHAT REALTIME MESSAGE:", payload);
                 if (payload.new.waste_id !== selectedConv.id) return;
+
+                // Mark as read immediately if the user is currently viewing this conversation
+                if (currentUser && payload.new.receiver_id === currentUser.id && payload.new.is_read === false) {
+                    supabase
+                        .from('messages')
+                        .update({ is_read: true })
+                        .eq('id', payload.new.id)
+                        .then(() => console.log("Incoming message marked as read instantly"));
+                }
 
                 setMessages((prev) => {
                     // Prevent duplicates from optimistic updates

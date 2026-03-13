@@ -57,15 +57,13 @@ export function useUnreadBadges() {
                 .on(
                     'postgres_changes',
                     {
-                        event: 'INSERT',
+                        event: '*',
                         schema: 'public',
                         table: 'messages'
                     },
                     (payload) => {
-                        console.log("REALTIME MESSAGE RECEIVED:", payload);
-                        if (payload.new.receiver_id === user.id) {
-                            fetchCounts();
-                        }
+                        console.log("REALTIME MESSAGE EVENT:", payload);
+                        fetchCounts();
                     }
                 );
 
@@ -78,15 +76,13 @@ export function useUnreadBadges() {
                 .on(
                     'postgres_changes',
                     {
-                        event: 'INSERT',
+                        event: '*',
                         schema: 'public',
                         table: 'notifications'
                     },
                     (payload) => {
-                        console.log("REALTIME NOTIFICATION RECEIVED:", payload);
-                        if (payload.new.profile_id === user.id) {
-                            fetchCounts();
-                        }
+                        console.log("REALTIME NOTIFICATION EVENT:", payload);
+                        fetchCounts();
                     }
                 );
 

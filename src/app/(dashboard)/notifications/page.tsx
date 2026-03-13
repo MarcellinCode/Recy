@@ -15,12 +15,22 @@ export default function NotificationsPage() {
         const fetchNotifications = async () => {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
+                // Mark ALL notifications as read immediately when opening the notifications page
+                supabase
+                    .from('notifications')
+                    .update({ is_read: true })
+                    .eq('profile_id', user.id)
+                    .eq('is_read', false)
+                    .then(() => console.log("All notifications marked as read"));
+
                 const { data } = await supabase
                     .from('notifications')
                     .select('*')
                     .eq('profile_id', user.id)
                     .order('created_at', { ascending: false });
-                setNotifications(data || []);
+                
+                // Optimistically map over them locally so they are visually empty / read
+                setNotifications(data?.map(n => ({ ...n, is_read: true })) || []);
             }
             setLoading(false);
         };
