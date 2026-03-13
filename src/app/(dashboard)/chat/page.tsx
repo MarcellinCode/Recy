@@ -478,19 +478,28 @@ function ChatContainer() {
                                     </div>
                                 )}
 
-                                <form onSubmit={handleSendMessage} className="flex items-center gap-2 sm:gap-4 w-full relative z-10">
-                                    <div className="flex-1 relative">
+                                <form 
+                                    onSubmit={handleSendMessage} 
+                                    className="grid grid-cols-[1fr,48px] sm:grid-cols-[1fr,64px] gap-2 sm:gap-4 w-full relative z-20 items-end"
+                                >
+                                    <div className="relative">
                                         <input 
                                             type="text" 
                                             value={newMessage} 
                                             onChange={handleTyping} 
                                             placeholder="Votre message..." 
-                                            className="w-full px-4 sm:px-8 py-3.5 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-sm font-medium text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all" 
+                                            className="w-full px-4 sm:px-8 py-3.5 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-sm font-medium text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all shadow-inner" 
                                         />
                                     </div>
                                     <button 
                                         type="submit" 
-                                        className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all outline-none"
+                                        disabled={!newMessage.trim()}
+                                        className={cn(
+                                            "w-12 h-12 sm:w-16 sm:h-14 rounded-2xl flex items-center justify-center transition-all shadow-xl outline-none",
+                                            newMessage.trim() 
+                                                ? "bg-primary text-white shadow-primary/30 hover:scale-105 active:scale-95" 
+                                                : "bg-gray-100 text-gray-400 dark:bg-zinc-800 dark:text-gray-600 cursor-not-allowed"
+                                        )}
                                         aria-label="Envoyer"
                                     >
                                         <Send className="w-5 h-5 sm:w-6 h-6" />

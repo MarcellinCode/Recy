@@ -10,15 +10,16 @@ export function useUnreadBadges() {
     const [unreadMessages, setUnreadMessages] = useState(0);
     const [unreadNotifications, setUnreadNotifications] = useState(0);
 
-    // Reset unread messages badge locally when on the chat page
-    const effectiveUnreadMessages = pathname?.startsWith("/chat") ? 0 : unreadMessages;
+    // Force-clear unread messages badge locally when on any chat-related path
+    const isChatPath = pathname?.includes("/chat");
+    const effectiveUnreadMessages = isChatPath ? 0 : unreadMessages;
 
     useEffect(() => {
-        if (pathname?.startsWith("/chat")) {
+        if (isChatPath) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setUnreadMessages(0);
         }
-    }, [pathname]);
+    }, [isChatPath, pathname]);
 
     useEffect(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
