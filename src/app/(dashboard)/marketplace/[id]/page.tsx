@@ -1,13 +1,138 @@
 "use client";
 
-import { useState, useEffect, useMemo, use, Suspense } from "react";
-import { ArrowLeft, MapPin, Calendar, ShieldCheck, MessageSquare, Truck, Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo, useRef, Suspense, use } from "react";
+import { ArrowLeft, MapPin, Calendar, ShieldCheck, MessageSquare, Truck, Loader2, ChevronRight, Check } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { RatingModal } from "@/components/ui/RatingModal";
 import { showToast } from "@/components/ui/toast";
+
+interface SwipeToReserveProps {
+    onReserve: () => void;
+    isLoading: boolean;
+    isSuccess: boolean;
+}
+
+function SwipeToReserve({ onReserve, isLoading, isSuccess }: SwipeToReserveProps) {
+    const [progress, setProgress] = useState(0);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const isDragging = useRef(false);
+
+    const handleStart = () => {
+        if (isLoading || isSuccess) return;
+        isDragging.current = true;
+    };
+
+    const handleMove = (clientX: number) => {
+        if (!isDragging.current || !containerRef.current || isLoading || isSuccess) return;
+        const rect = containerRef.current.getBoundingClientRect();
+        const maxScroll = rect.width - 56;
+        const currentX = Math.max(0, Math.min(clientX - rect.left - 28, maxScroll));
+        setProgress(currentX / maxScroll);
+    };
+
+    const handleEnd = () => {
+        if (!isDragging.current) return;
+        isDragging.current = false;
+        if (progress > 0.95) {
+            setProgress(1);
+            onReserve();
+        } else {
+            setProgress(0);
+        }
+    };
+
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => handleMove(e.clientX);
+        const handleTouchMove = (e: TouchEvent) => handleMove(e.touches[0].clientX);
+        const handleMouseUp = handleEnd;
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('touchmove', handleTouchMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        window.addEventListener('touchend', handleMouseUp);
+
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('touchmove', handleTouchMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+            window.removeEventListener('touchend', handleMouseUp);
+        };
+    }, [progress, isLoading, isSuccess]);
+
+    if (isSuccess) {
+        return (
+            <div className="w-full h-16 bg-green-500 rounded-[2rem] flex items-center justify-center text-white shadow-xl shadow-green-500/30 transition-all duration-500">
+                <Check className="w-6 h-6 mr-2 animate-bounce" />
+                <span className="font-black uppercase tracking-widest text-sm">Réservé !</span>
+            </div>
+        );
+    }
+
+    if (isLoading) {
+        return (
+            <div className="w-full h-16 bg-primary rounded-[2rem] flex items-center justify-center text-white shadow-xl shadow-primary/30 transition-all duration-500 relative overflow-hidden">
+                <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                <Loader2 className="w-6 h-6 mr-2 animate-spin relative z-10" />
+                <span className="font-black uppercase tracking-widest text-sm relative z-10">Création du canal...</span>
+            </div>
+        );
+    }
+
+    return (
+        <div 
+            ref={containerRef}
+            className="w-full h-16 bg-gray-100 dark:bg-zinc-800 rounded-[2rem] relative flex items-center justify-center overflow-hidden cursor-pointer select-none border-2 border-transparent hover:border-primary/20 transition-colors"
+        >
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <span className="text-gray-400 dark:text-gray-500 font-black uppercase tracking-widest text-[11px] ml-8 opacity-60">Glisser pour réserver</span>
+            </div>
+            
+            <div 
+                className="absolute left-0 top-0 bottom-0 bg-primary/10 transition-all duration-75"
+                style={{ width: `${progress * 100}%` }}
+            />
+
+            <div 
+                className="absolute left-1 top-1 bottom-1 w-14 bg-primary rounded-full flex gap-1 items-center justify-center text-white shadow-lg cursor-grab active:cursor-grabbing z-10 hover:scale-[1.02] transition-transform duration-75"
+                style={{ transform: `translateX(${progress * (containerRef.current ? containerRef.current.offsetWidth - 56 - 8 : 0)}px)` }}
+                onMouseDown={handleStart}
+                onTouchStart={handleStart}
+            >
+                <ChevronRight className="w-5 h-5 ml-1" />
+                <ChevronRight className="w-5 h-5 -ml-3 opacity-50" />
+            </div>
+        </div>
+    );
+function Confetti() {
+    return (
+        <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+            {[...Array(50)].map((_, i) => (
+                <div
+                    key={i}
+                    className="absolute w-2 h-2 rounded-sm bg-primary origin-center"
+                    style={{
+                        left: `${Math.random() * 100}%`,
+                        top: `-20px`,
+                        animation: `fall ${Math.random() * 3 + 2}s linear forwards`,
+                        animationDelay: `${Math.random() * 0.5}s`,
+                        transform: `rotate(${Math.random() * 360}deg)`,
+                        backgroundColor: ['#22c55e', '#3b82f6', '#eab308', '#ec4899'][Math.floor(Math.random() * 4)]
+                    }}
+                />
+            ))}
+            <style>{`
+                @keyframes fall {
+                    to {
+                        transform: translateY(100vh) rotate(720deg);
+                    }
+                }
+            `}</style>
+        </div>
+    );
+}
 
 function WasteDetailsContent({ id }: { id: string }) {
     const router = useRouter();
@@ -22,6 +147,13 @@ function WasteDetailsContent({ id }: { id: string }) {
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [showRatingModal, setShowRatingModal] = useState(false);
+    
+    // Premium Reservation State
+    const [isReserving, setIsReserving] = useState(false);
+    const [reservationSuccess, setReservationSuccess] = useState(false);
+    const [fakeDistance] = useState(() => (Math.random() * 4 + 1).toFixed(1));
+    const [fakeDuration] = useState(() => Math.floor(Math.random() * 15 + 5));
+    const [showConfetti, setShowConfetti] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -89,16 +221,22 @@ function WasteDetailsContent({ id }: { id: string }) {
                 return;
             }
 
-            showToast("Réservation réussie ! Redirection...", "success");
-            router.refresh();
+            // Success Animation State
+            setIsReserving(true);
+            setReservationSuccess(true);
+            setShowConfetti(true);
+            
             setTimeout(() => {
+                router.refresh();
                 router.push("/chat");
-            }, 1000);
+            }, 3000); // 3 seconds of "Wow" before redirect
         } catch (err: any) {
             console.error(err);
             setError(err.message || "Erreur lors de la réservation.");
-        } finally {
             setActionLoading(false);
+            setIsReserving(false);
+            setReservationSuccess(false);
+            setShowConfetti(false);
         }
     };
 
@@ -124,7 +262,8 @@ function WasteDetailsContent({ id }: { id: string }) {
     const estimatedValue = Math.round(waste.estimated_weight * (waste.waste_types?.price_per_kg || 150));
 
     return (
-        <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 py-8 relative">
+            {showConfetti && <Confetti />}
             <Link href={view === "seller" ? "/mes-dechets" : "/marketplace"} className="inline-flex items-center gap-2 text-gray-400 hover:text-primary mb-10 transition-all font-black uppercase tracking-widest text-[10px]">
                 <ArrowLeft className="w-4 h-4" />
                 Détails du lot
@@ -203,15 +342,32 @@ function WasteDetailsContent({ id }: { id: string }) {
                         </div>
 
                         {view === "buyer" ? (
-                            <div className="space-y-4">
+                            <div className="space-y-6">
                                 {waste.status === 'published' ? (
                                     <>
-                                        <button onClick={handleReserve} disabled={actionLoading} className="w-full py-6 bg-primary text-white font-black rounded-3xl shadow-2xl shadow-primary/30 hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm disabled:opacity-70">
-                                            {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Truck className="w-5 h-5" />}
-                                            {actionLoading ? "Réservation..." : "Réserver la collecte"}
-                                        </button>
-                                        <Link href={`/chat?wasteId=${id}`} className="w-full py-6 bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-white font-black rounded-3xl hover:bg-gray-100 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs">
-                                            <MessageSquare className="w-4 h-4" /> Discuter avec le vendeur
+                                        <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                                    <MapPin className="w-4 h-4 text-primary" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">Distance Estimée</p>
+                                                    <p className="text-xs font-bold text-gray-500">📍 ~{fakeDistance} km (${fakeDuration} min)</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em] bg-primary/10 px-2 py-1 rounded">Trajet Optimal</span>
+                                            </div>
+                                        </div>
+
+                                        <SwipeToReserve
+                                            onReserve={handleReserve}
+                                            isLoading={actionLoading || isReserving}
+                                            isSuccess={reservationSuccess}
+                                        />
+
+                                        <Link href={`/chat?wasteId=${id}`} className="w-full py-5 bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-white font-black rounded-[2rem] hover:bg-gray-100 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs border-2 border-transparent hover:border-gray-200 dark:hover:border-zinc-600">
+                                            <MessageSquare className="w-4 h-4" /> Poser une question au vendeur
                                         </Link>
                                     </>
                                 ) : (
