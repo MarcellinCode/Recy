@@ -11,7 +11,7 @@ export function useUnreadBadges() {
     const [unreadNotifications, setUnreadNotifications] = useState(0);
 
     // Reset unread messages badge locally when on the chat page
-    const effectiveUnreadMessages = pathname === "/chat" ? 0 : unreadMessages;
+    const effectiveUnreadMessages = pathname?.startsWith("/chat") ? 0 : unreadMessages;
 
     useEffect(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

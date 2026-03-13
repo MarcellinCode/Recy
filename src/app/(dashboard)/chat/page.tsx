@@ -478,9 +478,20 @@ function ChatContainer() {
                                     </div>
                                 )}
 
-                                <form onSubmit={handleSendMessage} className="flex gap-2 sm:gap-4">
-                                    <input type="text" value={newMessage} onChange={handleTyping} placeholder="Votre message..." className="flex-1 px-4 sm:px-8 py-3 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-xs font-bold text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all" />
-                                    <button type="submit" className="w-12 sm:w-16 h-12 sm:h-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all shrink-0"><Send className="w-5 h-5 sm:w-6 h-6" /></button>
+                                <form onSubmit={handleSendMessage} className="flex items-center gap-2 sm:gap-4 w-full">
+                                    <input 
+                                        type="text" 
+                                        value={newMessage} 
+                                        onChange={handleTyping} 
+                                        placeholder="Votre message..." 
+                                        className="flex-1 min-w-0 px-4 sm:px-8 py-3 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-xs font-bold text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all" 
+                                    />
+                                    <button 
+                                        type="submit" 
+                                        className="flex-shrink-0 w-12 sm:w-16 h-12 sm:h-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all"
+                                    >
+                                        <Send className="w-5 h-5 sm:w-6 h-6" />
+                                    </button>
                                 </form>
                             </div>
                         </>
