@@ -106,6 +106,8 @@ function SwipeToReserve({ onReserve, isLoading, isSuccess }: SwipeToReserveProps
             </div>
         </div>
     );
+}
+
 function Confetti() {
     return (
         <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
@@ -426,8 +428,8 @@ function WasteDetailsContent({ id }: { id: string }) {
     );
 }
 
-export default async function WasteDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
+export default function WasteDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+    const resolvedParams = use(params);
     return (
         <Suspense fallback={
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -435,7 +437,7 @@ export default async function WasteDetailsPage({ params }: { params: Promise<{ i
                 <p className="text-gray-400 font-black uppercase tracking-widest text-[10px]">Chargement des détails...</p>
             </div>
         }>
-            <WasteDetailsContent id={id} />
+            <WasteDetailsContent id={resolvedParams.id} />
         </Suspense>
     );
 }
