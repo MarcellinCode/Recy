@@ -381,10 +381,57 @@ function WasteDetailsContent({ id }: { id: string }) {
                                                 <button onClick={() => setShowRatingModal(true)} className="mt-4 px-6 py-2 bg-amber-600 text-white text-[9px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-amber-600/20">Donner mon avis</button>
                                             )}
                                         </div>
-                                        {(currentUser?.id === waste.collector_id) && (
-                                            <Link href={`/chat?wasteId=${id}`} className="w-full py-6 bg-primary text-white font-black rounded-3xl shadow-xl shadow-primary/20 hover:bg-primary/90 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs">
-                                                <MessageSquare className="w-4 h-4" /> Discussion en cours
-                                            </Link>
+                                        {currentUser?.id === waste.collector_id && (
+                                            <div className="space-y-4">
+                                                <div className="p-6 bg-amber-50 dark:bg-amber-900/10 rounded-3xl border-2 border-amber-100 dark:border-amber-900/30">
+                                                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-4">Saisir le Code PIN du vendeur</p>
+                                                    <div className="flex gap-2 mb-6">
+                                                        {[...Array(6)].map((_, i) => (
+                                                            <input
+                                                                key={i}
+                                                                type="text"
+                                                                id={`pin-${i}`}
+                                                                maxLength={1}
+                                                                className="w-full aspect-square bg-white dark:bg-zinc-800 border-2 border-amber-200 dark:border-zinc-700 rounded-xl text-center font-black text-lg text-amber-600 focus:border-primary outline-none transition-all uppercase"
+                                                                onChange={async (e) => {
+                                                                    const val = e.target.value.toUpperCase();
+                                                                    e.target.value = val;
+                                                                    if (val && i < 5) {
+                                                                        const next = document.getElementById(`pin-${i + 1}`) as HTMLInputElement;
+                                                                        next?.focus();
+                                                                    }
+                                                                    
+                                                                    // Check if all 6 are filled
+                                                                    const pin = Array.from({length: 6}, (_, idx) => (document.getElementById(`pin-${idx}`) as HTMLInputElement)?.value).join('');
+                                                                    if (pin.length === 6) {
+                                                                        const targetPin = waste.id.slice(0, 6).toUpperCase();
+                                                                        if (pin === targetPin) {
+                                                                            const weight = prompt("Confirmez le poids final en KG :", waste.estimated_weight.toString());
+                                                                            if (weight && !isNaN(Number(weight))) {
+                                                                                setActionLoading(true);
+                                                                                const { confirmCollection } = await import("@/app/actions/collection");
+                                                                                const result = await confirmCollection(waste.id, Number(weight));
+                                                                                if (result.success) {
+                                                                                    showToast("Collecte validée et paiement effectué !", "success");
+                                                                                    router.push("/wallet");
+                                                                                } else {
+                                                                                    showToast(result.error || "Erreur lors de la validation", "error");
+                                                                                    setActionLoading(false);
+                                                                                }
+                                                                            }
+                                                                        } else {
+                                                                            showToast("Code PIN erroné", "error");
+                                                                        }
+                                                                    }
+                                                                }}
+                                                            />
+                                                        ))}
+                                                    </div>
+                                                    <Link href={`/chat?wasteId=${id}`} className="w-full py-5 bg-gray-50 dark:bg-zinc-800 text-gray-500 font-black rounded-[2rem] hover:bg-gray-100 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px]">
+                                                        <MessageSquare className="w-4 h-4" /> Discuter avec le vendeur
+                                                    </Link>
+                                                </div>
+                                            </div>
                                         )}
                                     </div>
                                 )}

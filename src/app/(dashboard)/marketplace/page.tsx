@@ -1,18 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { ShoppingBag, Filter, MapPin, ArrowRight, Loader2, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+
+import { MarketplaceSkeleton } from "@/components/ui/Skeleton";
 
 export default function MarketplacePage() {
     const supabase = createClient();
 
     const [wastes, setWastes] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
+    const [filterByDistance, setFilterByDistance] = useState(false);
 
     useEffect(() => {
+        // Get user location for geofencing
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => setUserLoc({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                (err) => console.warn("Geolocation denied", err)
+            );
+        }
+
         const fetchMarketplace = async () => {
             setLoading(true);
             try {
@@ -33,6 +45,28 @@ export default function MarketplacePage() {
 
         fetchMarketplace();
     }, [supabase]);
+
+    const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const R = 6371; // km
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    };
+
+    const displayWastes = useMemo(() => {
+        let list = [...wastes];
+        if (filterByDistance && userLoc) {
+            list = list.map(w => ({
+                ...w,
+                distance: w.latitude && w.longitude ? calculateDistance(userLoc.lat, userLoc.lng, w.latitude, w.longitude) : Infinity
+            })).sort((a, b) => a.distance - b.distance);
+        }
+        return list;
+    }, [wastes, filterByDistance, userLoc]);
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -55,9 +89,15 @@ export default function MarketplacePage() {
                 </div>
 
                 <div className="flex flex-wrap gap-3">
-                    <button className="flex items-center gap-2 px-6 py-3.5 bg-white dark:bg-zinc-900 border-2 border-gray-100 dark:border-zinc-800 text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest rounded-2xl hover:border-primary transition-all shadow-sm">
-                        <MapPin className="w-4 h-4 text-primary" />
-                        Toutes les villes
+                    <button 
+                        onClick={() => setFilterByDistance(!filterByDistance)}
+                        className={cn(
+                            "flex items-center gap-2 px-6 py-3.5 border-2 font-black text-[10px] uppercase tracking-widest rounded-2xl transition-all shadow-sm",
+                            filterByDistance ? "bg-primary text-white border-primary" : "bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 text-gray-700 dark:text-gray-300 hover:border-primary"
+                        )}
+                    >
+                        <MapPin className={cn("w-4 h-4", filterByDistance ? "text-white" : "text-primary")} />
+                        {filterByDistance ? "Proximité Activée" : "Par Proximité"}
                     </button>
                     <button className="flex items-center gap-2 px-6 py-3.5 bg-white dark:bg-zinc-900 border-2 border-gray-100 dark:border-zinc-800 text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest rounded-2xl hover:border-primary transition-all shadow-sm">
                         <Filter className="w-4 h-4 text-primary" />
@@ -67,13 +107,10 @@ export default function MarketplacePage() {
             </div>
 
             {loading ? (
-                <div className="flex flex-col items-center justify-center py-32 gap-6 bg-gray-50/50 dark:bg-zinc-900/50 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-zinc-800">
-                    <Loader2 className="w-16 h-16 text-primary animate-spin opacity-20" />
-                    <p className="text-gray-400 font-black uppercase tracking-[0.3em] text-[10px] animate-pulse">Scan du marché en cours...</p>
-                </div>
-            ) : wastes.length > 0 ? (
+                <MarketplaceSkeleton />
+            ) : displayWastes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                    {wastes.map((waste) => (
+                    {displayWastes.map((waste) => (
                         <Link
                             key={waste.id}
                             href={`/marketplace/${waste.id}`}
@@ -91,6 +128,12 @@ export default function MarketplacePage() {
                                     <span className="px-4 py-2 bg-white/95 backdrop-blur-md rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg border border-gray-50">
                                         {waste.waste_types?.name}
                                     </span>
+                                    {waste.distance && waste.distance !== Infinity && (
+                                        <span className="px-4 py-2 bg-primary text-white backdrop-blur-md rounded-2xl text-[9px] font-black uppercase tracking-widest shadow-lg flex items-center gap-2 w-fit">
+                                            <MapPin className="w-3 h-3" />
+                                            {waste.distance.toFixed(1)} km
+                                        </span>
+                                    )}
                                 </div>
                                 <div className="absolute top-6 right-6">
                                     <div className="w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform">

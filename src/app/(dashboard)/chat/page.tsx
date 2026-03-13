@@ -168,12 +168,28 @@ function ChatContainer() {
                     typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
                 }
             })
+            .on('broadcast', { event: 'message' }, (payload) => {
+                if (payload.payload.sender_id === currentUser?.id) return;
+                
+                console.log("CHAT BROADCAST MESSAGE:", payload);
+                setMessages((prev) => {
+                    const isDuplicate = prev.some(
+                        msg => (msg.id === payload.payload.id) || 
+                        (msg.content === payload.payload.content && 
+                         msg.sender_id === payload.payload.sender_id && 
+                         Math.abs(new Date(msg.created_at).getTime() - new Date(payload.payload.created_at).getTime()) < 2000)
+                    );
+                    if (isDuplicate) return prev;
+                    return [...prev, payload.payload];
+                });
+                scrollToBottom();
+            })
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
                 table: 'messages'
             }, (payload) => {
-                console.log("CHAT REALTIME MESSAGE:", payload);
+                console.log("CHAT POSTGRES MESSAGE:", payload);
                 if (payload.new.waste_id !== selectedConv.id) return;
 
                 // Mark as read immediately if the user is currently viewing this conversation
@@ -186,21 +202,19 @@ function ChatContainer() {
                 }
 
                 setMessages((prev) => {
-                    // Prevent duplicates from optimistic updates
-                    const isDuplicate = prev.some(
-                        msg => msg.id === payload.new.id ||
-                        (msg.id.toString().startsWith('optimistic-') &&
-                         msg.content === payload.new.content &&
+                    // Check if message already exists (via Optimistic update or Broadcast)
+                    const existingIndex = prev.findIndex(msg => 
+                        msg.id === payload.new.id || 
+                        (msg.id.toString().startsWith('optimistic-') && 
+                         msg.content === payload.new.content && 
                          msg.sender_id === payload.new.sender_id)
                     );
 
-                    if (isDuplicate) {
-                        // Replace the optimistic message with the real one from the DB
-                        return prev.map(msg =>
-                            (msg.id.toString().startsWith('optimistic-') && msg.content === payload.new.content)
-                                ? payload.new
-                                : msg
-                        );
+                    if (existingIndex !== -1) {
+                        // Replace existing (optimistic/broadcast) with official DB record
+                        const newMessages = [...prev];
+                        newMessages[existingIndex] = payload.new;
+                        return newMessages;
                     }
 
                     return [...prev, payload.new];
@@ -270,6 +284,20 @@ function ChatContainer() {
 
         setMessages((prev) => [...prev, optimisticMessage]);
         scrollToBottom();
+
+        // Broadcast for pure real-time speed
+        // Broadcast the message immediately
+        if (activeChannel) {
+            activeChannel.send({
+                type: 'broadcast',
+                event: 'message',
+                payload: optimisticMessage
+            });
+        }
+
+        // Haptic feedback
+        const { hapticFeedback } = await import("@/lib/haptics");
+        hapticFeedback.light();
 
         const { error } = await supabase
             .from('messages')

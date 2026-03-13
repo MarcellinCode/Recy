@@ -193,23 +193,50 @@ export default function SellerWasteDetailsPage({ params }: { params: Promise<{ i
                     </div>
 
                     {waste.status === 'reserved' && (
-                        <div className="bg-amber-50 rounded-[3rem] p-10 border-2 border-amber-100 flex flex-col gap-8">
+                        <div className="bg-amber-50 dark:bg-amber-950/20 rounded-[3rem] p-10 border-2 border-amber-100 dark:border-amber-900/20 flex flex-col gap-8">
                             <div className="flex flex-col md:flex-row items-center gap-8">
                                 <div className="w-20 h-20 rounded-[2rem] bg-amber-200/50 flex items-center justify-center text-amber-600 shrink-0">
-                                    <Truck className="w-10 h-10" />
+                                    <Truck className="w-10 h-10 shadow-lg" />
                                 </div>
                                 <div className="text-center md:text-left">
-                                    <h3 className="text-xl font-black text-amber-900 uppercase italic mb-1">Collecte en cours</h3>
-                                    <p className="text-amber-700 font-medium">
+                                    <h3 className="text-xl font-black text-amber-900 dark:text-amber-400 uppercase italic mb-1">
+                                        {currentUser?.id === waste.collector_id ? "Saisie de la pesée" : "Confirmation de Collecte"}
+                                    </h3>
+                                    <p className="text-amber-700/70 dark:text-amber-500/70 font-medium">
                                         {currentUser?.id === waste.collector_id
-                                            ? "Vous avez réservé ce lot. Une fois sur place, saisissez le poids réel pour finaliser."
-                                            : `Le collecteur ${waste.collector?.full_name} a réservé ce lot. Il devrait vous contacter pour fixer rdv.`}
+                                            ? "Vous avez réservé ce lot. Saisissez le poids réel ou scannez le QR code du vendeur."
+                                            : `Le collecteur ${waste.collector?.full_name} est en route. Présentez-lui ce code lors du rendez-vous.`}
                                     </p>
                                 </div>
                             </div>
 
+                            {currentUser?.id === waste.seller_id && (
+                                <div className="flex flex-col items-center gap-8 py-4">
+                                    <div className="bg-white dark:bg-zinc-900 p-8 rounded-[3rem] shadow-2xl border-4 border-white dark:border-zinc-800 relative group">
+                                        <img 
+                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=RECY-${waste.id.slice(0, 8)}`} 
+                                            alt="Collection QR Code"
+                                            className="w-48 h-48 md:w-64 md:h-64 rounded-2xl"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center bg-white/90 dark:bg-zinc-900/90 opacity-0 group-hover:opacity-100 transition-opacity rounded-[2.5rem]">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-primary">Scannez pour valider</p>
+                                        </div>
+                                    </div>
+                                    <div className="text-center space-y-3">
+                                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Ou donnez ce Code PIN</p>
+                                        <div className="flex gap-2">
+                                            {waste.id.slice(0, 6).toUpperCase().split('').map((char: string, i: number) => (
+                                                <div key={i} className="w-10 h-14 bg-white dark:bg-zinc-800 rounded-xl border-2 border-amber-200 dark:border-zinc-700 flex items-center justify-center text-xl font-black text-amber-600">
+                                                    {char}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {currentUser?.id === waste.collector_id && (
-                                <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-amber-200 space-y-6">
+                                <div className="bg-white dark:bg-zinc-900 p-8 rounded-[2.5rem] shadow-xl border border-amber-200 dark:border-zinc-800 space-y-6">
                                     <div>
                                         <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Poids Réel Constaté (kg)</label>
                                         <div className="relative">
@@ -218,7 +245,7 @@ export default function SellerWasteDetailsPage({ params }: { params: Promise<{ i
                                                 step="0.1"
                                                 value={finalWeight}
                                                 onChange={(e) => setFinalWeight(e.target.value)}
-                                                className="w-full text-4xl font-black p-6 bg-gray-50 rounded-3xl border-none outline-none focus:ring-4 focus:ring-primary/10 transition-all dark:bg-zinc-800 dark:text-white"
+                                                className="w-full text-4xl font-black p-6 bg-gray-50 dark:bg-zinc-800 rounded-3xl border-none outline-none focus:ring-4 focus:ring-primary/10 transition-all text-gray-900 dark:text-white"
                                                 placeholder={waste.estimated_weight.toString()}
                                             />
                                             <span className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-300 font-black text-xl">KG</span>
@@ -227,10 +254,10 @@ export default function SellerWasteDetailsPage({ params }: { params: Promise<{ i
                                     <button
                                         onClick={handleConfirmCollection}
                                         disabled={actionLoading}
-                                        className="w-full py-6 bg-primary text-white font-black rounded-3xl shadow-xl shadow-primary/20 hover:bg-primary/90 active:scale-[0.98] transition-all uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3"
+                                        className="w-full py-6 bg-primary text-white font-black rounded-3xl shadow-xl shadow-primary/20 hover:scale-[1.01] active:scale-[0.98] transition-all uppercase tracking-[0.2em] text-xs flex items-center justify-center gap-3"
                                     >
                                         {actionLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-                                        Confirmer la pesée & Payer le vendeur
+                                        Finaliser & Payer le vendeur
                                     </button>
                                 </div>
                             )}
