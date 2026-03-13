@@ -69,12 +69,20 @@ function WasteDetailsContent({ id }: { id: string }) {
 
             if (reserveError) throw reserveError;
 
-            await supabase.from('notifications').insert({
-                profile_id: waste.seller_id,
-                title: "Lot Réservé !",
-                content: `Votre lot de ${waste.waste_types.name} a été réservé par un collecteur.`,
-                type: 'offer'
-            });
+            await supabase.from('notifications').insert([
+                {
+                    profile_id: waste.seller_id,
+                    title: "Lot Réservé !",
+                    content: `Votre lot de ${waste.waste_types.name} a été réservé par un collecteur.`,
+                    type: 'offer'
+                },
+                {
+                    profile_id: currentUser.id,
+                    title: "Réservation confirmée",
+                    content: `Vous avez réservé avec succès le lot de ${waste.waste_types.name}. Rendez-vous dans les messages pour la suite !`,
+                    type: 'collection'
+                }
+            ]);
 
             if (!data) {
                 showToast("Erreur : La réservation n'a pas pu être effectuée.", "error");
