@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { MessageSquare, Send, User, Search, ArrowLeft, Loader2, Package } from "lucide-react";
+import { MessageSquare, Send, User, Search, ArrowLeft, Loader2, Package, Check, CheckCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
@@ -18,6 +18,13 @@ function ChatContainer() {
     const [newMessage, setNewMessage] = useState("");
     const [loading, setLoading] = useState(true);
     const [messagesLoading, setMessagesLoading] = useState(false);
+    
+    // Advanced Chat Features State
+    const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
+    const [isTyping, setIsTyping] = useState(false);
+    const [activeChannel, setActiveChannel] = useState<any>(null);
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -141,7 +148,26 @@ function ChatContainer() {
         fetchMessages();
 
         const channel = supabase
-            .channel(`waste_${selectedConv.id}`)
+            .channel(`waste_${selectedConv.id}`, {
+                config: {
+                    presence: { key: currentUser?.id },
+                },
+            })
+            .on('presence', { event: 'sync' }, () => {
+                const newState = channel.presenceState();
+                const users = new Set<string>();
+                for (const id in newState) {
+                    users.add(id);
+                }
+                setOnlineUsers(users);
+            })
+            .on('broadcast', { event: 'typing' }, (payload) => {
+                if (payload.payload.user_id !== currentUser?.id) {
+                    setIsTyping(true);
+                    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                    typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
+                }
+            })
             .on('postgres_changes', {
                 event: 'INSERT',
                 schema: 'public',
@@ -180,14 +206,28 @@ function ChatContainer() {
                     return [...prev, payload.new];
                 });
                 scrollToBottom();
+            })
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'messages'
+            }, (payload) => {
+                // Update message state (e.g for read receipts)
+                setMessages((prev) => prev.map(msg => msg.id === payload.new.id ? payload.new : msg));
             });
 
-        channel.subscribe((status: string) => {
+        channel.subscribe(async (status: string) => {
             console.log(`CHAT REALTIME STATUS (${selectedConv.id}): ${status}`);
+            if (status === 'SUBSCRIBED' && currentUser) {
+                await channel.track({ online_at: new Date().toISOString() });
+            }
         });
+        
+        setActiveChannel(channel);
 
         return () => {
             supabase.removeChannel(channel);
+            setActiveChannel(null);
         };
     }, [selectedConv, supabase]);
 
@@ -244,6 +284,29 @@ function ChatContainer() {
             // Optionally, remove the optimistic message on failure
             // setMessages((prev) => prev.filter(m => m.id !== optimisticMessage.id));
         }
+    };
+
+    const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setNewMessage(e.target.value);
+        if (activeChannel) {
+            activeChannel.send({
+                type: 'broadcast',
+                event: 'typing',
+                payload: { user_id: currentUser?.id }
+            }).catch(() => {});
+        }
+    };
+
+    const SELLER_REPLIES = ["Le lot est prêt !", "Pouvez-vous confirmer le poids ?", "Merci beaucoup !"];
+    const COLLECTOR_REPLIES = ["Je suis en route 🚚", "J'arrive dans 10 minutes", "Lot bien récupéré !"];
+
+    const getQuickReplies = () => {
+        if (!currentUser || !selectedConv) return [];
+        return currentUser.id === selectedConv.seller_id ? SELLER_REPLIES : COLLECTOR_REPLIES;
+    };
+
+    const handleQuickReply = (reply: string) => {
+        setNewMessage(reply);
     };
 
     const getOtherParty = (conv: any) => {
@@ -306,7 +369,19 @@ function ChatContainer() {
                                     <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center"><User className="w-6 h-6 text-primary" /></div>
                                     <div>
                                         <h2 className="font-black text-gray-900 dark:text-white uppercase tracking-tighter text-lg italic">{getOtherParty(selectedConv)?.full_name}</h2>
-                                        <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span><span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Canal Direct</span></div>
+                                        <div className="flex items-center gap-2">
+                                            {onlineUsers.has(getOtherParty(selectedConv)?.id) ? (
+                                                <>
+                                                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                                    <span className="text-[10px] text-green-500 font-black uppercase tracking-widest">En ligne</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-zinc-700" />
+                                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Hors ligne</span>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="hidden sm:flex items-center gap-3 px-5 py-2.5 bg-gray-50 dark:bg-zinc-800 rounded-2xl border border-gray-100 dark:border-zinc-700">
@@ -322,15 +397,54 @@ function ChatContainer() {
                                     return (
                                         <div key={msg.id} className={cn("flex flex-col max-w-[85%] group", isMe ? "ml-auto items-end" : "mr-auto items-start")}>
                                             <div className={cn("p-5 rounded-[2rem] text-sm font-medium leading-relaxed shadow-sm", isMe ? "bg-primary text-white rounded-br-none" : "bg-white dark:bg-zinc-800 text-gray-800 dark:text-gray-200 rounded-bl-none border border-gray-100 dark:border-zinc-700")}>{msg.content}</div>
-                                            <span className="text-[9px] text-gray-400 mt-2 font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            <div className="flex items-center gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest">
+                                                    {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                                {isMe && (
+                                                    msg.id.toString().startsWith('optimistic-') ? (
+                                                        <Check className="w-3 h-3 text-gray-300" />
+                                                    ) : msg.is_read ? (
+                                                        <CheckCheck className="w-3 h-3 text-blue-500" />
+                                                    ) : (
+                                                        <CheckCheck className="w-3 h-3 text-gray-400" />
+                                                    )
+                                                )}
+                                            </div>
                                         </div>
                                     );
                                 })}
                                 <div ref={messagesEndRef} />
                             </div>
-                            <div className="p-8 bg-white dark:bg-zinc-900 border-t-2 border-gray-50 dark:border-zinc-800">
+                            <div className="p-8 bg-white dark:bg-zinc-900 border-t-2 border-gray-50 dark:border-zinc-800 flex flex-col gap-4">
+                                {isTyping && (
+                                    <div className="text-[10px] text-primary font-black uppercase tracking-widest animate-pulse flex items-center gap-2 px-2">
+                                        <span className="flex gap-1">
+                                            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                                            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                                            <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                        </span>
+                                        {getOtherParty(selectedConv)?.full_name} est en train d'écrire...
+                                    </div>
+                                )}
+                                
+                                {getQuickReplies().length > 0 && (
+                                    <div className="flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                                        {getQuickReplies().map((reply, i) => (
+                                            <button
+                                                key={i}
+                                                type="button"
+                                                onClick={() => handleQuickReply(reply)}
+                                                className="whitespace-nowrap px-4 py-2 bg-gray-50 dark:bg-zinc-800 text-gray-600 dark:text-gray-300 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-colors border border-gray-100 dark:border-zinc-700 cursor-pointer"
+                                            >
+                                                {reply}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+
                                 <form onSubmit={handleSendMessage} className="flex gap-4">
-                                    <input type="text" value={newMessage} onChange={(e) => setNewMessage(e.target.value)} placeholder="Votre message pour ce lot..." className="flex-1 px-8 py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-xs font-bold text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all" />
+                                    <input type="text" value={newMessage} onChange={handleTyping} placeholder="Votre message pour ce lot..." className="flex-1 px-8 py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-xs font-bold text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all" />
                                     <button type="submit" className="w-16 h-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all"><Send className="w-6 h-6" /></button>
                                 </form>
                             </div>
