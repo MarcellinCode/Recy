@@ -357,11 +357,11 @@ function ChatContainer() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 h-[calc(100vh-8rem)]">
-            <div className="bg-white dark:bg-zinc-900 rounded-[3rem] border-2 border-gray-100 dark:border-zinc-800 shadow-2xl overflow-hidden h-full flex">
+        <div className="max-w-7xl mx-auto px-0 sm:px-4 lg:px-8 py-0 sm:py-8 h-[calc(100dvh-4rem)] md:h-[calc(100vh-8rem)] flex flex-col">
+            <div className="bg-white dark:bg-zinc-900 sm:rounded-[3rem] border-b sm:border-2 border-gray-100 dark:border-zinc-800 shadow-2xl overflow-hidden flex-1 flex">
                 <div className={cn("w-full md:w-96 border-r-2 border-gray-50 dark:border-zinc-800 flex flex-col", selectedConv && "hidden md:flex")}>
-                    <div className="p-8 border-b-2 border-gray-50 dark:border-zinc-800">
-                        <h1 className="text-3xl font-black text-gray-900 dark:text-white mb-6 uppercase italic tracking-tighter">Messages</h1>
+                    <div className="p-6 sm:p-8 border-b-2 border-gray-50 dark:border-zinc-800">
+                        <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mb-4 sm:mb-6 uppercase italic tracking-tighter">Messages</h1>
                         <div className="relative">
                             <Search className="absolute left-4 top-3.5 w-5 h-5 text-gray-300" />
                             <input type="text" placeholder="Rechercher un lot..." className="w-full pl-12 pr-6 py-3.5 bg-gray-50 dark:bg-zinc-800 border-none rounded-2xl text-xs font-bold outline-none ring-2 ring-transparent focus:ring-primary/20 transition-all" />
@@ -417,7 +417,7 @@ function ChatContainer() {
                                     <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">Lot #{selectedConv.id.split('-')[0]}</span>
                                 </div>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-gray-50/30 dark:bg-zinc-950">
+                            <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-4 sm:y-8 bg-gray-50/30 dark:bg-zinc-950">
                                 {messagesLoading ? (
                                     <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 text-primary animate-spin opacity-30" /></div>
                                 ) : messages.map((msg) => {
@@ -444,7 +444,7 @@ function ChatContainer() {
                                 })}
                                 <div ref={messagesEndRef} />
                             </div>
-                            <div className="p-8 bg-white dark:bg-zinc-900 border-t-2 border-gray-50 dark:border-zinc-800 flex flex-col gap-4">
+                            <div className="p-4 sm:p-8 bg-white dark:bg-zinc-900 border-t-2 border-gray-50 dark:border-zinc-800 flex flex-col gap-3 sm:gap-4 pb-20 md:pb-8">
                                 {isTyping && (
                                     <div className="text-[10px] text-primary font-black uppercase tracking-widest animate-pulse flex items-center gap-2 px-2">
                                         <span className="flex gap-1">
@@ -471,9 +471,9 @@ function ChatContainer() {
                                     </div>
                                 )}
 
-                                <form onSubmit={handleSendMessage} className="flex gap-4">
-                                    <input type="text" value={newMessage} onChange={handleTyping} placeholder="Votre message pour ce lot..." className="flex-1 px-8 py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-xs font-bold text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all" />
-                                    <button type="submit" className="w-16 h-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all"><Send className="w-6 h-6" /></button>
+                                <form onSubmit={handleSendMessage} className="flex gap-2 sm:gap-4">
+                                    <input type="text" value={newMessage} onChange={handleTyping} placeholder="Votre message..." className="flex-1 px-4 sm:px-8 py-3 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-xs font-bold text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all" />
+                                    <button type="submit" className="w-12 sm:w-16 h-12 sm:h-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all shrink-0"><Send className="w-5 h-5 sm:w-6 h-6" /></button>
                                 </form>
                             </div>
                         </>
