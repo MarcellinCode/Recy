@@ -14,6 +14,13 @@ export function useUnreadBadges() {
     const effectiveUnreadMessages = pathname?.startsWith("/chat") ? 0 : unreadMessages;
 
     useEffect(() => {
+        if (pathname?.startsWith("/chat")) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setUnreadMessages(0);
+        }
+    }, [pathname]);
+
+    useEffect(() => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let messagesCurrentChannel: any;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

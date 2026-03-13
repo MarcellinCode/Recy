@@ -451,7 +451,7 @@ function ChatContainer() {
                                 })}
                                 <div ref={messagesEndRef} />
                             </div>
-                            <div className="p-4 sm:p-8 bg-white dark:bg-zinc-900 border-t-2 border-gray-50 dark:border-zinc-800 flex flex-col gap-3 sm:gap-4 pb-20 md:pb-8">
+                            <div className="p-4 sm:p-8 bg-white dark:bg-zinc-900 border-t-2 border-gray-50 dark:border-zinc-800 flex flex-col gap-3 sm:gap-4 pb-24 md:pb-8 relative overflow-visible">
                                 {isTyping && (
                                     <div className="text-[10px] text-primary font-black uppercase tracking-widest animate-pulse flex items-center gap-2 px-2">
                                         <span className="flex gap-1">
@@ -478,17 +478,20 @@ function ChatContainer() {
                                     </div>
                                 )}
 
-                                <form onSubmit={handleSendMessage} className="flex items-center gap-2 sm:gap-4 w-full">
-                                    <input 
-                                        type="text" 
-                                        value={newMessage} 
-                                        onChange={handleTyping} 
-                                        placeholder="Votre message..." 
-                                        className="flex-1 min-w-0 px-4 sm:px-8 py-3 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-xs font-bold text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all" 
-                                    />
+                                <form onSubmit={handleSendMessage} className="flex items-center gap-2 sm:gap-4 w-full relative z-10">
+                                    <div className="flex-1 relative">
+                                        <input 
+                                            type="text" 
+                                            value={newMessage} 
+                                            onChange={handleTyping} 
+                                            placeholder="Votre message..." 
+                                            className="w-full px-4 sm:px-8 py-3.5 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-sm font-medium text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all" 
+                                        />
+                                    </div>
                                     <button 
                                         type="submit" 
-                                        className="flex-shrink-0 w-12 sm:w-16 h-12 sm:h-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all"
+                                        className="flex-shrink-0 w-12 h-12 sm:w-16 sm:h-14 rounded-2xl bg-primary text-white flex items-center justify-center shadow-xl shadow-primary/30 hover:scale-105 active:scale-95 transition-all outline-none"
+                                        aria-label="Envoyer"
                                     >
                                         <Send className="w-5 h-5 sm:w-6 h-6" />
                                     </button>
