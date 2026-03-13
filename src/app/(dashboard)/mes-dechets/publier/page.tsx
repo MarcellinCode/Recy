@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { ArrowLeft, Camera, Upload, MapPin, Info, Loader2, CheckCircle2, X, Navigation } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
@@ -16,7 +17,6 @@ export default function PublishWastePage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState(false);
-
     const [formData, setFormData] = useState({
         type_id: "",
         estimated_weight: "",
@@ -118,10 +118,12 @@ export default function PublishWastePage() {
             }
 
             const image_urls: string[] = [];
-
             // 2. Upload images to Cloudinary
             for (const img of images) {
-                const { url } = await uploadImage(img.preview);
+                const { url, success, error: uploadError } = await uploadImage(img.preview);
+                if (!success || !url) {
+                    throw new Error(uploadError || "Échec de l'envoi de l'image.");
+                }
                 image_urls.push(url);
             }
 
@@ -146,15 +148,10 @@ export default function PublishWastePage() {
                 router.push("/mes-dechets");
             }, 2000);
 
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const errorMsg = err instanceof Error ? err.message : "Une erreur est survenue lors de la publication.";
             console.error("Publication error full details:", err);
-            if (err.code) {
-                console.error("Supabase Error Code:", err.code);
-                console.error("Supabase Error Message:", err.message);
-                console.error("Supabase Error Details:", err.details);
-                console.error("Supabase Error Hint:", err.hint);
-            }
-            setError(err.message || "Une erreur est survenue lors de la publication.");
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -199,7 +196,7 @@ export default function PublishWastePage() {
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                             {images.map((img, index) => (
                                 <div key={index} className="relative aspect-square rounded-[2rem] overflow-hidden group shadow-lg border border-gray-100 dark:border-zinc-800">
-                                    <img src={img.preview} alt={`Preview ${index}`} className="w-full h-full object-cover" />
+                                    <Image src={img.preview} alt={`Preview ${index}`} fill className="object-cover" />
                                     <button
                                         type="button"
                                         onClick={() => removeImage(index)}
