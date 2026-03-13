@@ -57,7 +57,7 @@ export function useUnreadBadges() {
                     notifError: notificationsRes.error
                 });
 
-                setUnreadMessages(messagesRes.count || 0);
+                setUnreadMessages(isChatPath ? 0 : (messagesRes.count || 0));
                 setUnreadNotifications(notificationsRes.count || 0);
             };
 

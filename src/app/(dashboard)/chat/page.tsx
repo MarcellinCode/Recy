@@ -487,7 +487,7 @@ function ChatContainer() {
                                             type="text" 
                                             value={newMessage} 
                                             onChange={handleTyping} 
-                                            placeholder="Votre message..." 
+                                            placeholder="Écrivez votre message..." 
                                             className="w-full px-4 sm:px-8 py-3.5 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-sm font-medium text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all shadow-inner" 
                                         />
                                     </div>

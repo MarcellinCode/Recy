@@ -83,6 +83,14 @@
 }
 
 @layer utilities {
+  .h-dvh {
+    height: 100dvh;
+  }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
