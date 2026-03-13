@@ -32,7 +32,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased pb-16 md:pb-0`}>
+      <body className={`${inter.variable} font-sans antialiased`}>
         <ToastProvider />
         <Header />
 

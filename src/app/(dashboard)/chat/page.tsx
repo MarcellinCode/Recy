@@ -480,15 +480,15 @@ function ChatContainer() {
 
                                 <form 
                                     onSubmit={handleSendMessage} 
-                                    className="grid grid-cols-[1fr,48px] sm:grid-cols-[1fr,64px] gap-2 sm:gap-4 w-full relative z-20 items-end"
+                                    className="grid grid-cols-[1fr,64px] sm:grid-cols-[1fr,80px] gap-2 sm:gap-4 w-full relative z-30 items-end max-w-[95vw] mx-auto"
                                 >
                                     <div className="relative">
                                         <input 
                                             type="text" 
                                             value={newMessage} 
                                             onChange={handleTyping} 
-                                            placeholder="Écrivez votre message..." 
-                                            className="w-full px-4 sm:px-8 py-3.5 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-sm font-medium text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all shadow-inner" 
+                                            placeholder="VERSION VERIFIEE..." 
+                                            className="w-full px-4 sm:px-8 py-3.5 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-sm font-medium text-gray-900 dark:text-white ring-2 ring-red-500/20 focus:ring-red-500 transition-all shadow-inner" 
                                         />
                                     </div>
                                     <button 
@@ -497,8 +497,8 @@ function ChatContainer() {
                                         className={cn(
                                             "w-12 h-12 sm:w-16 sm:h-14 rounded-2xl flex items-center justify-center transition-all shadow-xl outline-none",
                                             newMessage.trim() 
-                                                ? "bg-primary text-white shadow-primary/30 hover:scale-105 active:scale-95" 
-                                                : "bg-gray-100 text-gray-400 dark:bg-zinc-800 dark:text-gray-600 cursor-not-allowed"
+                                                ? "bg-red-600 text-white shadow-red-500/30 hover:scale-105 active:scale-95" 
+                                                : "bg-gray-200 text-gray-400 dark:bg-zinc-800 dark:text-gray-600 cursor-not-allowed"
                                         )}
                                         aria-label="Envoyer"
                                     >
