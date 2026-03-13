@@ -426,8 +426,8 @@ function WasteDetailsContent({ id }: { id: string }) {
     );
 }
 
-export default function WasteDetailsPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
+export default async function WasteDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
     return (
         <Suspense fallback={
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
