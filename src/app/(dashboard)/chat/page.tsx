@@ -11,9 +11,13 @@ function ChatContainer() {
     const searchParams = useSearchParams();
     const targetWasteId = searchParams.get("wasteId");
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [currentUser, setCurrentUser] = useState<any>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [conversations, setConversations] = useState<any[]>([]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [selectedConv, setSelectedConv] = useState<any>(null);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [loading, setLoading] = useState(true);
@@ -22,6 +26,7 @@ function ChatContainer() {
     // Advanced Chat Features State
     const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
     const [isTyping, setIsTyping] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [activeChannel, setActiveChannel] = useState<any>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -33,13 +38,14 @@ function ChatContainer() {
             if (!user) return;
             setCurrentUser(user);
 
-            // Mark ALL messages as read immediately when opening the chat page
-            supabase
+            const { error: markReadError } = await supabase
                 .from('messages')
                 .update({ is_read: true })
                 .eq('receiver_id', user.id)
-                .eq('is_read', false)
-                .then(() => console.log("All messages marked as read"));
+                .eq('is_read', false);
+            
+            if (markReadError) console.error("Error marking all as read:", markReadError);
+            else console.log("All messages marked as read");
 
             // Fetch wastes where user is involved
             const { data: userMessages } = await supabase
@@ -337,6 +343,7 @@ function ChatContainer() {
         setNewMessage(reply);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getOtherParty = (conv: any) => {
         if (!currentUser || !conv) return null;
         const isSeller = currentUser.id === conv.seller_id;
@@ -357,7 +364,7 @@ function ChatContainer() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-0 sm:px-4 lg:px-8 py-0 sm:py-8 h-[calc(100dvh-4rem)] md:h-[calc(100vh-8rem)] flex flex-col">
+        <div className="max-w-7xl mx-auto px-0 sm:px-4 lg:px-8 py-0 sm:py-8 h-[calc(100dvh-8rem)] flex flex-col pb-safe">
             <div className="bg-white dark:bg-zinc-900 sm:rounded-[3rem] border-b sm:border-2 border-gray-100 dark:border-zinc-800 shadow-2xl overflow-hidden flex-1 flex">
                 <div className={cn("w-full md:w-96 border-r-2 border-gray-50 dark:border-zinc-800 flex flex-col", selectedConv && "hidden md:flex")}>
                     <div className="p-6 sm:p-8 border-b-2 border-gray-50 dark:border-zinc-800">
@@ -452,7 +459,7 @@ function ChatContainer() {
                                             <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                                             <span className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                                         </span>
-                                        {getOtherParty(selectedConv)?.full_name} est en train d'écrire...
+                                        {getOtherParty(selectedConv)?.full_name} est en train d&apos;écrire...
                                     </div>
                                 )}
                                 

@@ -1,16 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 
 export function useUnreadBadges() {
+    const pathname = usePathname();
     const supabase = createClient();
     const [unreadMessages, setUnreadMessages] = useState(0);
     const [unreadNotifications, setUnreadNotifications] = useState(0);
 
+    // Reset unread messages badge locally when on the chat page
+    const effectiveUnreadMessages = pathname === "/chat" ? 0 : unreadMessages;
+
     useEffect(() => {
-        let authStateListener: { subscription: { unsubscribe: () => void } };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let messagesCurrentChannel: any;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let notificationsCurrentChannel: any;
 
         const setupSubscriptions = async () => {
@@ -93,11 +99,10 @@ export function useUnreadBadges() {
 
         setupSubscriptions();
 
-        const { data } = supabase.auth.onAuthStateChange(() => {
+        const { data: authStateListener } = supabase.auth.onAuthStateChange(() => {
             // Re-setup on login/logout
             setupSubscriptions();
         });
-        authStateListener = data;
 
         return () => {
             authStateListener?.subscription.unsubscribe();
@@ -106,5 +111,5 @@ export function useUnreadBadges() {
         };
     }, [supabase]);
 
-    return { unreadMessages, unreadNotifications };
+    return { unreadMessages: effectiveUnreadMessages, unreadNotifications };
 }
