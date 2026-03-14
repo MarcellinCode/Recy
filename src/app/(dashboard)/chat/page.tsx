@@ -231,42 +231,43 @@ function ChatContainer() {
 
     const appendMessage = useCallback((msg: Message) => {
         setMessages(prev => {
-            // 1. Precise ID check (normalize to string)
             const msgIdStr = msg.id.toString();
-            const existingByIdIndex = prev.findIndex(m => m.id.toString() === msgIdStr);
             
-            if (existingByIdIndex !== -1) {
-                const newMessages = [...prev];
-                newMessages[existingByIdIndex] = { ...newMessages[existingByIdIndex], ...msg };
-                return newMessages;
-            }
+            // 1. Precise ID check (normalize 100% to string)
+            const existsById = prev.some(m => m.id.toString() === msgIdStr);
+            if (existsById) return prev;
 
-            // 2. Fuzzy match for optimistic/duplicate messages
-            // We use a 2-minute window to account for server/client clock drift
+            // 2. Fuzzy match for optimistic/real merging (Sender side only)
+            // We only look for optimistic messages that match the content/sender/timing
             const msgContentNormalized = msg.content.trim();
             const msgTime = new Date(msg.created_at).getTime();
 
-            const duplicateIndex = prev.findIndex(m => 
+            const optimisticIndex = prev.findIndex(m => 
+                m.id.toString().startsWith('optimistic-') &&
                 m.sender_id === msg.sender_id &&
                 m.content.trim() === msgContentNormalized &&
                 Math.abs(new Date(m.created_at).getTime() - msgTime) < 120000 
             );
 
-            if (duplicateIndex !== -1) {
-                const existingIdStr = prev[duplicateIndex].id.toString();
-                const isExistingOptimistic = existingIdStr.startsWith('optimistic-');
-                const isNewOptimistic = msgIdStr.startsWith('optimistic-');
-
-                if (isExistingOptimistic && !isNewOptimistic) {
-                    // Replace optimistic with real
+            if (optimisticIndex !== -1) {
+                // If the incoming message is "real" (database), replace the optimistic one
+                if (!msgIdStr.startsWith('optimistic-')) {
                     const newMessages = [...prev];
-                    newMessages[duplicateIndex] = msg;
+                    newMessages[optimisticIndex] = msg;
                     return newMessages;
                 }
-                // If it's the exact same message (same sender, same content, same window)
-                // and we already have a real one, or both are optimistic, keep existing
+                // If both are optimistic, keep existing
                 return prev;
             }
+
+            // 3. Prevent receiver duplicates IF the message already exists via another event
+            // (Strictly defensive for edge cases)
+            const isBroadlyDuplicate = prev.some(m => 
+                m.sender_id === msg.sender_id && 
+                m.content.trim() === msgContentNormalized &&
+                Math.abs(new Date(m.created_at).getTime() - msgTime) < 2000 // Very tight window for real duplicates
+            );
+            if (isBroadlyDuplicate && !msgIdStr.startsWith('optimistic-')) return prev;
 
             return [...prev, msg];
         });
@@ -311,9 +312,8 @@ function ChatContainer() {
             is_read: false
         };
 
-        setMessages(prev => [...prev, optimisticMsg]);
-        setTimeout(scrollToBottom, 50);
-
+        appendMessage(optimisticMsg);
+        
         const { hapticFeedback } = await import("@/lib/haptics");
         hapticFeedback.light();
 
