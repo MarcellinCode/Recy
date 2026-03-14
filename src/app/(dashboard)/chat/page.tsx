@@ -228,10 +228,32 @@ function ChatContainer() {
 
     // --- Actions ---
 
+    const scrollToBottom = useCallback(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        setShowScrollBottom(false);
+    }, []);
+
     const appendMessage = useCallback((msg: Message) => {
         setMessages(prev => {
-            const isDuplicate = prev.some(m => m.id === msg.id);
-            if (isDuplicate) return prev;
+            // 1. Check if ID already exists (typical dedupe)
+            const idExists = prev.some(m => m.id === msg.id);
+            if (idExists) return prev;
+
+            // 2. Check if it's a "real" version of an "optimistic" message
+            // We match by content and sender_id for messages sent in the last 10 seconds
+            const optimisticIndex = prev.findIndex(m => 
+                m.id.toString().startsWith('optimistic-') && 
+                m.content === msg.content && 
+                m.sender_id === msg.sender_id &&
+                Math.abs(new Date(m.created_at).getTime() - new Date(msg.created_at).getTime()) < 10000
+            );
+
+            if (optimisticIndex !== -1) {
+                const newMessages = [...prev];
+                newMessages[optimisticIndex] = msg;
+                return newMessages;
+            }
+
             return [...prev, msg];
         });
         
@@ -242,12 +264,7 @@ function ChatContainer() {
             if (isAtBottom) setTimeout(scrollToBottom, 50);
             else setShowScrollBottom(true);
         }
-    }, []);
-
-    const scrollToBottom = useCallback(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        setShowScrollBottom(false);
-    }, []);
+    }, [scrollToBottom]);
 
     const handleScroll = () => {
         if (!scrollRef.current) return;
