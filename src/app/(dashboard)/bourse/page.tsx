@@ -30,7 +30,7 @@ export default function BoursePage() {
             <div className="mb-12">
                 <h1 className="text-4xl font-black text-gray-900 dark:text-white flex items-center gap-4 mb-2 tracking-tighter uppercase italic">
                     <TrendingUp className="w-10 h-10 text-primary" />
-                    Bourse <span className="text-primary">Recy</span>
+                    Bourse <span className="text-primary">WaveClean</span>
                 </h1>
                 <p className="text-gray-500 dark:text-gray-400 font-bold text-[10px] uppercase tracking-widest pl-14">
                     Cours officiel des matières recyclables au Bénin / Côte d'Ivoire

@@ -15,7 +15,7 @@ export default function CartePage() {
                 <div>
                     <h1 className="text-4xl font-black text-gray-900 dark:text-white flex items-center gap-4 mb-2 tracking-tighter uppercase italic">
                         <MapPin className="w-10 h-10 text-primary" />
-                        Carte <span className="text-primary">Recy</span>
+                        Carte <span className="text-primary">WaveClean</span>
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 font-bold text-[10px] uppercase tracking-widest pl-14">
                         Localisez les ressources disponibles en temps réel

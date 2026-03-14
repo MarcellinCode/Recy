@@ -275,7 +275,7 @@ export default function BulkMarketplacePage() {
                     Notre équipe d'experts facilite les transactions massives pour garantir la traçabilité et la qualité industrielle.
                 </p>
                 <button className="px-10 py-4 border-2 border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">
-                    Contacter un consultant Recy
+                    Contacter un consultant WaveClean
                 </button>
             </div>
         </div>

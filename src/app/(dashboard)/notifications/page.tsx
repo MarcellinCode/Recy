@@ -85,7 +85,7 @@ export default function NotificationsPage() {
                         Alertes
                     </h1>
                     <p className="text-gray-500 font-bold text-[10px] uppercase tracking-widest pl-14">
-                        Tenez-vous informé de votre activité Recy
+                        Tenez-vous informé de votre activité WaveClean
                     </p>
                 </div>
                 {notifications.some(n => !n.is_read) && (

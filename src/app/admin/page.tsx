@@ -22,7 +22,7 @@ export default function AdminPage() {
                     <LayoutDashboard className="w-6 h-6" />
                 </div>
                 <div>
-                    <h1 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Admin Recy</h1>
+                    <h1 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight">Admin WaveClean</h1>
                     <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Tableau de bord de gestion</p>
                 </div>
             </div>

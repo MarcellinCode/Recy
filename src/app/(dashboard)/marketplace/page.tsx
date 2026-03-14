@@ -81,7 +81,7 @@ export default function MarketplacePage() {
                     </div>
                     <h1 className="text-5xl font-black text-gray-900 dark:text-white flex items-center gap-4 tracking-tighter uppercase italic">
                         <ShoppingBag className="w-10 h-10 text-primary" />
-                        Marché <span className="text-primary">Recy</span>
+                        Marché <span className="text-primary">WaveClean</span>
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 text-sm mt-3 font-medium max-w-md">
                         Explorez les opportunités de collecte. Réservez des lots et transformez les déchets en valeur.
