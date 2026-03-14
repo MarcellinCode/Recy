@@ -480,25 +480,25 @@ function ChatContainer() {
 
                                 <form 
                                     onSubmit={handleSendMessage} 
-                                    className="flex items-center justify-end gap-2 sm:gap-4 w-full relative z-30 max-w-full"
+                                    className="flex items-center justify-end gap-2 sm:gap-4 w-full relative z-30"
                                 >
-                                    <div className="flex-1 max-w-[70%] sm:max-w-none relative">
+                                    <div className="flex-none w-[65%] sm:flex-1 relative">
                                         <input 
                                             type="text" 
                                             value={newMessage} 
                                             onChange={handleTyping} 
-                                            placeholder="VERSION VERIFIEE..." 
-                                            className="w-full px-4 sm:px-8 py-3.5 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-sm font-medium text-gray-900 dark:text-white ring-2 ring-red-500/20 focus:ring-red-500 transition-all shadow-inner" 
+                                            placeholder="Tapez votre message ici..." 
+                                            className="w-full px-4 sm:px-8 py-3.5 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-sm font-medium text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all shadow-inner" 
                                         />
                                     </div>
                                     <button 
                                         type="submit" 
                                         disabled={!newMessage.trim()}
                                         className={cn(
-                                            "flex-shrink-0 w-12 h-12 sm:w-16 sm:h-14 rounded-2xl flex items-center justify-center transition-all shadow-xl outline-none",
+                                            "flex-none w-12 h-12 sm:w-16 sm:h-14 rounded-2xl flex items-center justify-center transition-all shadow-xl outline-none",
                                             newMessage.trim() 
-                                                ? "bg-red-600 text-white shadow-red-500/30 hover:scale-105 active:scale-95" 
-                                                : "bg-gray-200 text-gray-400 dark:bg-zinc-800 dark:text-gray-600 cursor-not-allowed"
+                                                ? "bg-primary text-white shadow-primary/30 hover:scale-105 active:scale-95" 
+                                                : "bg-gray-100 text-gray-400 dark:bg-zinc-800 dark:text-gray-600 cursor-not-allowed"
                                         )}
                                         aria-label="Envoyer"
                                     >
