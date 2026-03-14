@@ -209,6 +209,16 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email Personnel</label>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            placeholder="email@exemple.com"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Numéro de Téléphone</label>
                                         <input
                                             type="tel"
@@ -241,6 +251,16 @@ function SignupForm() {
                                             onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                                             className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
                                             placeholder="Nom et prénoms"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email Professionnel</label>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            placeholder="email@exemple.com"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -290,6 +310,16 @@ function SignupForm() {
                                             onChange={(e) => setFormData({...formData, orgName: e.target.value})}
                                             className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
                                             placeholder="Nom entreprise / ONG"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email Professionnel</label>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            placeholder="contact@organisation.com"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -352,6 +382,16 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email Officiel (.gouv / .ci)</label>
+                                        <input
+                                            type="email"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({...formData, email: e.target.value})}
+                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            placeholder="contact@commune.gouv.ci"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Service / Direction Référent</label>
                                         <input
                                             type="text"
@@ -385,19 +425,12 @@ function SignupForm() {
                 {step === 3 && (
                     <form onSubmit={handleSignup} className="space-y-4">
                         <div className="space-y-4">
-                            <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email {role === 'mairie' ? 'Officiel' : 'Personnel'}</label>
-                                <input
-                                    type="email"
-                                    value={formData.email}
-                                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                                    className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
-                                    placeholder="email@exemple.com"
-                                    required
-                                />
+                            <div className="p-4 bg-primary/5 rounded-2xl border border-primary/10">
+                                <p className="text-[10px] font-bold text-primary uppercase tracking-widest mb-1">Résumé du compte</p>
+                                <p className="text-sm font-medium text-gray-900 dark:text-white">{formData.email}</p>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Mot de passe</label>
+                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Définir un Mot de passe</label>
                                 <input
                                     type="password"
                                     value={formData.password}
@@ -406,6 +439,7 @@ function SignupForm() {
                                     placeholder="••••••••"
                                     required
                                 />
+                                <p className="text-[9px] text-gray-400 italic">Minimum 6 caractères</p>
                             </div>
                         </div>
 
@@ -417,7 +451,7 @@ function SignupForm() {
                                 className="flex-[2] py-4 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 {loading && <Loader2 className="w-4 h-4 animate-spin text-white" />}
-                                Finaliser mon compte
+                                Finaliser l'inscription
                             </button>
                         </div>
                     </form>
