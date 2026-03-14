@@ -17,7 +17,8 @@ import {
     CircleDollarSign,
     CalendarDays,
     Navigation,
-    TrendingUp
+    TrendingUp,
+    Truck
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase";
@@ -104,6 +105,43 @@ export default function DashboardPage() {
             href: "/wallet", 
             color: "bg-purple-500" 
         },
+        // --- NEW CITY OS MODULES ---
+        ...(profile?.role === 'vendeur' ? [
+            { 
+                title: "Mon Service", 
+                description: "Gestion abonnement & alertes", 
+                icon: ShieldCheck, 
+                href: "/abonnement", 
+                color: "bg-emerald-600" 
+            }
+        ] : []),
+        ...(profile?.role === 'mairie' ? [
+            { 
+                title: "Administration", 
+                description: "Gestion des zones & concessions", 
+                icon: Building2, 
+                href: "/admin/mairie", 
+                color: "bg-zinc-800" 
+            }
+        ] : []),
+        ...(profile?.role === 'organisation_admin' ? [
+            { 
+                title: "Flotte & Subs", 
+                description: "Gestion agents et revenus", 
+                icon: Truck, 
+                href: "/admin/organisation", 
+                color: "bg-indigo-600" 
+            }
+        ] : []),
+        ...(profile?.role === 'agent_collecteur' ? [
+            { 
+                title: "Ma Mission", 
+                description: "Feuille de route optimisée", 
+                icon: Navigation, 
+                href: "/missions", 
+                color: "bg-primary" 
+            }
+        ] : []),
         // Premium sections hidden for regular citizens
         ...(profile?.role === 'entreprise' || profile?.role === 'collecteur' ? [
             { 

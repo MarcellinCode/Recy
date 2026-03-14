@@ -1,0 +1,231 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { 
+    Users, 
+    Truck, 
+    CreditCard, 
+    Calendar, 
+    MapPin, 
+    ChevronRight,
+    TrendingUp,
+    MoreVertical,
+    Activity,
+    UserPlus,
+    Package
+} from "lucide-react";
+import { motion } from "framer-motion";
+import { createClient } from "@/lib/supabase";
+import { cn } from "@/lib/utils";
+
+export default function OrganizationDashboard() {
+    const supabase = createClient();
+    const [loading, setLoading] = useState(true);
+    const [agents, setAgents] = useState<any[]>([]);
+    const [subscriptions, setSubscriptions] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchData = async () => {
+            setLoading(true);
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            // Fetch Agents (Profiles with role 'agent_collecteur')
+            const { data: agentsData } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('role', 'agent_collecteur');
+            
+            // Fetch Subscriptions (associated with the org's plans)
+            const { data: subsData } = await supabase
+                .from('household_subscriptions')
+                .select('*, profiles(*), subscription_plans(*, concessions(*))');
+            
+            setAgents(agentsData || []);
+            setSubscriptions(subsData || []);
+            setLoading(false);
+        };
+        fetchData();
+    }, [supabase]);
+
+    return (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12 mb-20">
+            {/* Header */}
+            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="w-8 h-[2px] bg-primary"></span>
+                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary italic">Gestion d'Organisation</p>
+                    </div>
+                    <h1 className="text-4xl sm:text-6xl font-black uppercase italic tracking-tighter leading-none dark:text-white">
+                        Fleet & <span className="text-primary">Sub</span> Central
+                    </h1>
+                    <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-4">Pilotez votre flotte d'agents et suivez vos revenus récurrents.</p>
+                </div>
+                <div className="flex gap-4">
+                    <button className="flex items-center gap-3 px-8 py-4 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-900 dark:text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:border-primary transition-all shadow-sm">
+                        <UserPlus className="w-5 h-5" />
+                        Ajouter un Agent
+                    </button>
+                    <button className="flex items-center gap-3 px-8 py-4 bg-primary text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 transition-all shadow-xl shadow-primary/20">
+                        <Plus className="w-5 h-5" />
+                        Nouveau Plan
+                    </button>
+                </div>
+            </header>
+
+            {/* Overview Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <MiniStatsCard label="Agents Actifs" value={agents.length.toString()} icon={Truck} color="text-blue-500" />
+                <MiniStatsCard label="Abonnés" value={subscriptions.length.toString()} icon={Users} color="text-amber-500" />
+                <MiniStatsCard label="CA Récurrent" value="840K" icon={CreditCard} color="text-emerald-500" />
+                <MiniStatsCard label="Missions / Jour" value="24" icon={Activity} color="text-primary" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                {/* Fleet Management Area */}
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white flex items-center gap-3">
+                            <Truck className="w-7 h-7 text-primary" />
+                            Suivi de la Flotte
+                        </h2>
+                        <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Voir Planning</button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {agents.length > 0 ? agents.map((agent) => (
+                            <AgentCard key={agent.id} agent={agent} />
+                        )) : (
+                            <div className="col-span-2 py-16 text-center opacity-20 bg-gray-50/50 dark:bg-zinc-900/50 rounded-[2.5rem] border-2 border-dashed border-gray-100 dark:border-zinc-800">
+                                <Users className="w-12 h-12 mx-auto mb-4" />
+                                <p className="font-bold uppercase tracking-widest text-xs">Aucun agent enregistré</p>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Subscription Performance Sidebar */}
+                <div className="space-y-8">
+                    <h2 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white flex items-center gap-3">
+                        <Package className="w-7 h-7 text-primary" />
+                        Abonnements
+                    </h2>
+                    
+                    <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] p-8 shadow-sm space-y-8">
+                         <div>
+                            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4">Plans de la Zone</p>
+                            <div className="space-y-4">
+                                <PlanSummary name="Standard Hebdo" count={124} price="5,000" color="bg-emerald-500" />
+                                <PlanSummary name="Premium Business" count={42} price="15,000" color="bg-blue-500" />
+                            </div>
+                        </div>
+
+                        <div className="pt-8 border-t border-gray-100 dark:border-zinc-800">
+                             <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-6">Dernières Inscriptions</p>
+                             <div className="space-y-5">
+                                 {subscriptions.slice(0, 3).map((sub) => (
+                                     <div key={sub.id} className="flex items-center justify-between group cursor-pointer">
+                                         <div className="flex items-center gap-4">
+                                             <div className="w-10 h-10 rounded-full bg-gray-50 dark:bg-zinc-800 flex items-center justify-center font-black text-xs text-primary">
+                                                 {sub.profiles?.full_name?.charAt(0)}
+                                             </div>
+                                             <div>
+                                                 <p className="text-xs font-black uppercase text-gray-900 dark:text-white">{sub.profiles?.full_name}</p>
+                                                 <p className="text-[9px] text-zinc-500 font-bold uppercase tracking-widest">{sub.subscription_plans?.name}</p>
+                                             </div>
+                                         </div>
+                                         <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-primary transition-colors" />
+                                     </div>
+                                 ))}
+                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function MiniStatsCard({ label, value, icon: Icon, color }: any) {
+    return (
+        <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm space-y-3">
+            <div className={cn("w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center", color)}>
+                <Icon className="w-5 h-5" />
+            </div>
+            <div>
+                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">{label}</p>
+                <p className="text-2xl font-black italic tracking-tighter dark:text-white">{value}</p>
+            </div>
+        </div>
+    );
+}
+
+function AgentCard({ agent }: any) {
+    return (
+        <div className="p-8 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] shadow-sm hover:border-primary/30 transition-all group">
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary font-black text-xl">
+                        {agent.full_name?.charAt(0)}
+                    </div>
+                    <div>
+                        <h4 className="font-black text-gray-900 dark:text-white uppercase text-sm tracking-tight">{agent.full_name}</h4>
+                        <span className="text-[10px] bg-emerald-100 text-emerald-700 font-black uppercase px-2 py-0.5 rounded-lg tracking-widest">En Service</span>
+                    </div>
+                </div>
+                <button className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"><MoreVertical className="w-5 h-5 text-zinc-400" /></button>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mb-6">
+                 <div className="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-2xl">
+                     <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Aujourd'hui</p>
+                     <p className="text-lg font-black dark:text-white italic">12 <span className="text-[10px]">Points</span></p>
+                 </div>
+                 <div className="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-2xl">
+                     <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Carburant</p>
+                     <p className="text-lg font-black dark:text-white italic">45 <span className="text-[10px]">%</span></p>
+                 </div>
+            </div>
+
+            <button className="w-full py-4 text-[10px] font-black uppercase tracking-widest text-primary border-2 border-primary/20 rounded-2xl group-hover:bg-primary group-hover:text-white transition-all">
+                Voir Itinéraire
+            </button>
+        </div>
+    );
+}
+
+function PlanSummary({ name, count, price, color }: any) {
+    return (
+        <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+                <div className={cn("w-2 h-2 rounded-full", color)} />
+                <p className="text-xs font-black uppercase text-gray-700 dark:text-zinc-300">{name}</p>
+            </div>
+            <div className="text-right">
+                <p className="text-xs font-black dark:text-white italic">{count} <span className="text-[9px] text-zinc-400">clients</span></p>
+                <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">{price} CFA</p>
+            </div>
+        </div>
+    );
+}
+
+function Plus(props: any) {
+    return (
+        <svg
+            {...props}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M5 12h14" />
+            <path d="M12 5v14" />
+        </svg>
+    )
+}
