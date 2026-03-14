@@ -66,7 +66,7 @@ function SignupForm() {
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Créer un compte</h2>
                     <p className="mt-2 text-sm text-center text-gray-500 dark:text-gray-400">
-                        Rejoignez l'aventure Recy et commencez à changer le monde.
+                        Rejoignez l'aventure WaveClean et commencez à changer le monde.
                     </p>
                 </div>
 

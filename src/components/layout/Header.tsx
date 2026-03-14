@@ -61,7 +61,7 @@ export function Header() {
                         <Leaf className="w-5 h-5" />
                     </div>
                     <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">
-                        Recy
+                        Wave<span className="text-primary tracking-tighter">Clean</span>
                     </span>
                 </Link>
 

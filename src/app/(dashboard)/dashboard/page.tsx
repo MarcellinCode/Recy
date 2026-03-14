@@ -104,20 +104,23 @@ export default function DashboardPage() {
             href: "/wallet", 
             color: "bg-purple-500" 
         },
-        { 
-            title: "Appels d'Offres", 
-            description: "Espace B2B & Entreprises", 
-            icon: Building2, 
-            href: "/appels-offres", 
-            color: "bg-indigo-500" 
-        },
-        { 
-            title: "Impact RSE", 
-            description: "Votre bilan écologique", 
-            icon: Leaf, 
-            href: "#", 
-            color: "bg-green-600" 
-        }
+        // Premium sections hidden for regular citizens
+        ...(profile?.role === 'entreprise' || profile?.role === 'collecteur' ? [
+            { 
+                title: "Appels d'Offres", 
+                description: "Espace B2B & Entreprises", 
+                icon: Building2, 
+                href: "/appels-offres", 
+                color: "bg-indigo-500" 
+            },
+            { 
+                title: "Impact RSE", 
+                description: "Votre bilan écologique", 
+                icon: Leaf, 
+                href: "#", 
+                color: "bg-green-600" 
+            }
+        ] : [])
     ];
 
     return (
@@ -130,7 +133,7 @@ export default function DashboardPage() {
             >
                 <div className="flex items-center gap-2 mb-2">
                     <span className="w-8 h-[2px] bg-primary"></span>
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary italic">RecyCla Central Hub</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary italic">WaveClean Central Hub</p>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                     <div>
@@ -221,23 +224,25 @@ export default function DashboardPage() {
                 ))}
             </div>
 
-            {/* Bottom Promotional / System Card */}
-            <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="mt-12 p-1 bg-gradient-to-r from-primary/40 to-emerald-500/40 rounded-[3rem]"
-            >
-                <div className="bg-white dark:bg-zinc-900 rounded-[2.9rem] p-8 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8">
-                    <div className="text-center lg:text-left">
-                        <h3 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tighter mb-2 dark:text-white">Devenez un <span className="text-primary italic">Partenaire Certifié</span></h3>
-                        <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-xl">Boostez votre visibilité et accédez à des lots premium en passant au forfait Business.</p>
+            {/* Bottom Promotional / System Card - Only for citizens/collectors looking to upgrade */}
+            {(profile?.role === 'vendeur' || profile?.role === 'collecteur') && (
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    className="mt-12 p-1 bg-gradient-to-r from-primary/40 to-emerald-500/40 rounded-[3rem]"
+                >
+                    <div className="bg-white dark:bg-zinc-900 rounded-[2.9rem] p-8 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8">
+                        <div className="text-center lg:text-left">
+                            <h3 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tighter mb-2 dark:text-white">Devenez un <span className="text-primary italic">Partenaire Certifié</span></h3>
+                            <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-xl">Boostez votre visibilité et accédez à des lots premium en passant au forfait Business.</p>
+                        </div>
+                        <Link href="/abonnements" className="px-10 py-5 bg-primary text-white font-black uppercase tracking-widest text-[10px] rounded-full shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                            En savoir plus
+                        </Link>
                     </div>
-                    <Link href="/abonnements" className="px-10 py-5 bg-primary text-white font-black uppercase tracking-widest text-[10px] rounded-full shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
-                        En savoir plus
-                    </Link>
-                </div>
-            </motion.div>
+                </motion.div>
+            )}
         </div>
     );
 }

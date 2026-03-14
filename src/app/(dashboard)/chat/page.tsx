@@ -29,6 +29,7 @@ type Conversation = {
     waste_types: WasteType;
     seller: Profile;
     collector: Profile | null;
+    unreadCount?: number;
 };
 
 type Message = {
@@ -126,10 +127,15 @@ function ChatContainer() {
 
             const { data: userMessages } = await supabase
                 .from('messages')
-                .select('waste_id')
+                .select('waste_id, is_read, receiver_id')
                 .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
 
-            const messageWasteIds = Array.from(new Set(userMessages?.map(m => m.waste_id) || []));
+            const unreadCounts = (userMessages || []).reduce((acc: any, msg: any) => {
+                if (msg.receiver_id === user.id && !msg.is_read) {
+                    acc[msg.waste_id] = (acc[msg.waste_id] || 0) + 1;
+                }
+                return acc;
+            }, {});
 
             let query = supabase
                 .from('wastes')
@@ -140,6 +146,8 @@ function ChatContainer() {
                     collector:profiles!collector_id(id, full_name)
                 `);
 
+            const messageWasteIds = Array.from(new Set((userMessages || []).map(m => m.waste_id)));
+
             if (messageWasteIds.length > 0) {
                 query = query.or(`seller_id.eq.${user.id},collector_id.eq.${user.id},id.in.(${messageWasteIds.join(',')})`);
             } else {
@@ -147,7 +155,13 @@ function ChatContainer() {
             }
 
             const { data: wastes } = await query.order('created_at', { ascending: false });
-            const uniqueWastes = Array.from(new Map((wastes as any[] || []).map(item => [item.id, item])).values());
+            
+            const uniqueWastes = Array.from(new Map((wastes as any[] || []).map(item => [item.id, item])).values())
+                .map(conv => ({
+                    ...conv,
+                    unreadCount: unreadCounts[conv.id] || 0
+                }));
+
             setConversations(uniqueWastes as Conversation[]);
 
             if (targetWasteId) {
@@ -158,69 +172,6 @@ function ChatContainer() {
         };
         fetchInitialData();
     }, [supabase, targetWasteId]);
-
-    // --- Realtime Subscriptions ---
-
-    useEffect(() => {
-        if (!selectedConv || !currentUser) return;
-
-        const fetchMessages = async () => {
-            setMessagesLoading(true);
-            const { data } = await supabase
-                .from('messages')
-                .select('*')
-                .eq('waste_id', selectedConv.id)
-                .order('created_at', { ascending: true });
-
-            setMessages(data || []);
-            setMessagesLoading(false);
-            setTimeout(scrollToBottom, 100);
-
-            // Mark unread
-            const unreadIds = (data || [])
-                .filter(msg => msg.receiver_id === currentUser.id && !msg.is_read)
-                .map(msg => msg.id);
-
-            if (unreadIds.length > 0) {
-                await supabase.from('messages').update({ is_read: true }).in('id', unreadIds);
-            }
-        };
-
-        fetchMessages();
-
-        const channel = supabase
-            .channel(`waste_${selectedConv.id}`, { config: { presence: { key: currentUser.id } } })
-            .on('presence', { event: 'sync' }, () => {
-                const newState = channel.presenceState();
-                const users = new Set<string>();
-                for (const id in newState) users.add(id);
-                setOnlineUsers(users);
-            })
-            .on('broadcast', { event: 'typing' }, (payload) => {
-                if (payload.payload.user_id !== currentUser.id) {
-                    setIsTyping(true);
-                    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                    typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
-                }
-            })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
-                if (payload.new.waste_id !== selectedConv.id) return;
-                appendMessage(payload.new as Message);
-            })
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
-                setMessages(prev => prev.map(msg => msg.id.toString() === payload.new.id.toString() ? { ...msg, ...payload.new } : msg));
-            });
-
-        channel.subscribe(async (status) => {
-            if (status === 'SUBSCRIBED') await channel.track({ online_at: new Date().toISOString() });
-        });
-        
-        setActiveChannel(channel);
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [selectedConv, currentUser, supabase]);
 
     // --- Actions ---
 
@@ -279,6 +230,96 @@ function ChatContainer() {
             else setShowScrollBottom(true);
         }
     }, [scrollToBottom]);
+
+    // --- Realtime Subscriptions ---
+
+    useEffect(() => {
+        if (!selectedConv || !currentUser) return;
+
+        const fetchMessages = async () => {
+            setMessagesLoading(true);
+            const { data } = await supabase
+                .from('messages')
+                .select('*')
+                .eq('waste_id', selectedConv.id)
+                .order('created_at', { ascending: true });
+
+            setMessages(data || []);
+            setMessagesLoading(false);
+            setTimeout(scrollToBottom, 100);
+        };
+
+        fetchMessages();
+
+        const channel = supabase
+            .channel(`waste_${selectedConv.id}`, { config: { presence: { key: currentUser.id } } })
+            .on('presence', { event: 'sync' }, () => {
+                const newState = channel.presenceState();
+                const users = new Set<string>();
+                for (const id in newState) users.add(id);
+                setOnlineUsers(users);
+            })
+            .on('broadcast', { event: 'typing' }, (payload) => {
+                if (payload.payload.user_id !== currentUser.id) {
+                    setIsTyping(true);
+                    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                    typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
+                }
+            })
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+                if (payload.new.waste_id !== selectedConv.id) return;
+                appendMessage(payload.new as Message);
+            })
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
+                setMessages(prev => prev.map(msg => msg.id.toString() === payload.new.id.toString() ? { ...msg, ...payload.new } : msg));
+            });
+
+        channel.subscribe(async (status) => {
+            if (status === 'SUBSCRIBED') await channel.track({ online_at: new Date().toISOString() });
+        });
+        
+        setActiveChannel(channel);
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [selectedConv, currentUser, supabase, appendMessage, scrollToBottom]);
+
+    // Dedicated effect to MARK AS READ all incoming messages
+    useEffect(() => {
+        if (!selectedConv || !currentUser || !messages.length) return;
+
+        const markAsRead = async () => {
+            const unreadIds = messages
+                .filter(msg => 
+                    msg.receiver_id === currentUser.id && 
+                    !msg.is_read && 
+                    msg.waste_id === selectedConv.id
+                )
+                .map(msg => msg.id);
+
+            if (unreadIds.length > 0) {
+                const { error } = await supabase
+                    .from('messages')
+                    .update({ is_read: true })
+                    .in('id', unreadIds);
+                
+                if (!error) {
+                    // Locally update state for messages
+                    setMessages(prev => prev.map(m => 
+                        unreadIds.includes(m.id) ? { ...m, is_read: true } : m
+                    ));
+
+                    // Locally update conversation unread count
+                    setConversations(prev => prev.map(conv => 
+                        conv.id === selectedConv.id ? { ...conv, unreadCount: 0 } : conv
+                    ));
+                }
+            }
+        };
+
+        markAsRead();
+    }, [messages, selectedConv, currentUser, supabase]);
 
     const handleScroll = () => {
         if (!scrollRef.current) return;
@@ -396,6 +437,11 @@ function ChatContainer() {
                                         <h3 className="font-bold truncate text-xs uppercase tracking-wider">
                                             {conv.seller_id === currentUser?.id ? conv.collector?.full_name : conv.seller?.full_name}
                                         </h3>
+                                        {conv.unreadCount ? (
+                                            <span className="flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-black text-white bg-red-500 rounded-full px-1 shadow-lg border-2 border-white dark:border-zinc-900 group-hover:scale-110 transition-transform">
+                                                {conv.unreadCount}
+                                            </span>
+                                        ) : null}
                                     </div>
                                     <p className={cn(
                                         "text-[10px] font-medium truncate opacity-70",
