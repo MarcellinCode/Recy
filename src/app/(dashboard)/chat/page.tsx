@@ -235,32 +235,44 @@ function ChatContainer() {
 
     const appendMessage = useCallback((msg: Message) => {
         setMessages(prev => {
-            // 1. Check if ID already exists (typical dedupe)
-            const idExists = prev.some(m => m.id === msg.id);
-            if (idExists) return prev;
+            // 1. Precise ID check
+            const existingByIdIndex = prev.findIndex(m => m.id === msg.id);
+            if (existingByIdIndex !== -1) {
+                // Update existing message (e.g. optimistic -> real, or read status update)
+                const newMessages = [...prev];
+                newMessages[existingByIdIndex] = { ...newMessages[existingByIdIndex], ...msg };
+                return newMessages;
+            }
 
-            // 2. Check if it's a "real" version of an "optimistic" message
-            // We match by content and sender_id for messages sent in the last 10 seconds
-            const optimisticIndex = prev.findIndex(m => 
-                m.id.toString().startsWith('optimistic-') && 
-                m.content === msg.content && 
+            // 2. Fuzzy match for optimistic/duplicate messages
+            // We match by content and sender within a 15-second window
+            const duplicateIndex = prev.findIndex(m => 
                 m.sender_id === msg.sender_id &&
-                Math.abs(new Date(m.created_at).getTime() - new Date(msg.created_at).getTime()) < 10000
+                m.content.trim() === msg.content.trim() &&
+                Math.abs(new Date(m.created_at).getTime() - new Date(msg.created_at).getTime()) < 15000
             );
 
-            if (optimisticIndex !== -1) {
-                const newMessages = [...prev];
-                newMessages[optimisticIndex] = msg;
-                return newMessages;
+            if (duplicateIndex !== -1) {
+                // If it's a fuzzy match, we prioritize the "real" message (one without 'optimistic-' in ID)
+                const isExistingOptimistic = prev[duplicateIndex].id.toString().startsWith('optimistic-');
+                const isNewOptimistic = msg.id.toString().startsWith('optimistic-');
+
+                if (isExistingOptimistic && !isNewOptimistic) {
+                    // Replace optimistic with real
+                    const newMessages = [...prev];
+                    newMessages[duplicateIndex] = msg;
+                    return newMessages;
+                }
+                // If the existing one is already real, or the new one is also optimistic, don't add
+                return prev;
             }
 
             return [...prev, msg];
         });
         
-        // If user is at bottom, scroll. Otherwise show indication.
         if (scrollRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-            const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+            const isAtBottom = scrollHeight - scrollTop - clientHeight < 150;
             if (isAtBottom) setTimeout(scrollToBottom, 50);
             else setShowScrollBottom(true);
         }
