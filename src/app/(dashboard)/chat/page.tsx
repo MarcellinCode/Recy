@@ -364,8 +364,8 @@ function ChatContainer() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-0 md:px-4 lg:px-8 py-0 md:py-8 h-[calc(100dvh-8rem)] flex flex-col relative">
-            <div className="bg-white dark:bg-zinc-900 md:rounded-[3rem] md:border-2 border-gray-100 dark:border-zinc-800 md:shadow-2xl overflow-hidden flex-1 flex">
+        <div className="max-w-7xl mx-auto px-0 md:px-4 lg:px-8 py-0 md:py-8 h-[calc(100svh-8rem)] flex flex-col relative min-h-0">
+            <div className="bg-white dark:bg-zinc-900 md:rounded-[3rem] md:border-2 border-gray-100 dark:border-zinc-800 md:shadow-2xl overflow-hidden flex-1 flex min-h-0">
                 <div className={cn("w-full md:w-96 border-r-2 border-gray-50 dark:border-zinc-800 flex flex-col", selectedConv && "hidden md:flex")}>
                     <div className="p-6 sm:p-8 border-b-2 border-gray-50 dark:border-zinc-800">
                         <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mb-4 sm:mb-6 uppercase italic tracking-tighter">Messages</h1>
@@ -395,7 +395,7 @@ function ChatContainer() {
                     </div>
                 </div>
 
-                <div className={cn("flex-1 flex flex-col bg-white dark:bg-zinc-950", !selectedConv && "hidden md:flex items-center justify-center p-12 text-center")}>
+                <div className={cn("flex-1 flex flex-col bg-white dark:bg-zinc-950 min-h-0", !selectedConv && "hidden md:flex items-center justify-center p-12 text-center")}>
                     {selectedConv ? (
                         <>
                             <div className="p-6 border-b-2 border-gray-50 dark:border-zinc-900 flex items-center justify-between bg-white dark:bg-zinc-900">
@@ -424,7 +424,7 @@ function ChatContainer() {
                                     <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">Lot #{selectedConv.id.split('-')[0]}</span>
                                 </div>
                             </div>
-                            <div className="flex-1 overflow-y-auto p-4 sm:p-8 space-y-4 sm:y-8 bg-gray-50/30 dark:bg-zinc-950">
+                            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-8 space-y-4 sm:y-8 bg-gray-50/30 dark:bg-zinc-950">
                                 {messagesLoading ? (
                                     <div className="flex justify-center py-10"><Loader2 className="w-8 h-8 text-primary animate-spin opacity-30" /></div>
                                 ) : messages.map((msg) => {
