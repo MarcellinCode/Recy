@@ -56,11 +56,11 @@ export function Header() {
             <div className="flex items-center justify-between h-16 px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
 
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 group">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-colors">
-                        <Leaf className="w-5 h-5" />
+                <Link href="/" className="flex items-center gap-2.5 group">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
+                        <Leaf className="w-6 h-6" />
                     </div>
-                    <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white uppercase">
+                    <span className="text-2xl font-black tracking-tighter text-gray-900 dark:text-white uppercase italic">
                         Wave<span className="text-primary tracking-tighter">Clean</span>
                     </span>
                 </Link>

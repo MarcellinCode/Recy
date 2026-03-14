@@ -45,7 +45,7 @@ export default async function Home() {
             </h1>
 
             <p className="max-w-xl text-lg md:text-xl text-gray-300 font-medium leading-relaxed">
-              Recy est la plateforme intelligente qui transforme vos déchets en revenus. Triez, publiez, et participez à la révolution écologique de votre ville.
+              WaveClean est la plateforme intelligente qui transforme vos déchets en revenus. Triez, publiez, et participez à la révolution écologique de votre ville.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-6">
@@ -88,7 +88,7 @@ export default async function Home() {
           <div className="relative z-10 text-center mb-16">
             <h2 className="text-xs font-black text-primary uppercase tracking-[0.4em] mb-4">Notre Vision</h2>
             <p className="text-2xl md:text-3xl font-black italic tracking-tighter leading-tight max-w-4xl mx-auto uppercase">
-              "Recy est une <span className="text-primary">marketplace numérique</span> de déchets recyclables qui révolutionne l'économie circulaire."
+              "WaveClean est une <span className="text-primary">marketplace numérique</span> de déchets recyclables qui révolutionne l'économie circulaire."
             </p>
           </div>
 
