@@ -482,13 +482,13 @@ function ChatContainer() {
                                     onSubmit={handleSendMessage} 
                                     className="flex items-center justify-end gap-2 sm:gap-4 w-full relative z-30"
                                 >
-                                    <div className="flex-none w-[65%] sm:flex-1 relative">
+                                    <div className="flex-none w-[60%] sm:flex-1 relative ml-auto">
                                         <input 
                                             type="text" 
                                             value={newMessage} 
                                             onChange={handleTyping} 
-                                            placeholder="Tapez votre message ici..." 
-                                            className="w-full px-4 sm:px-8 py-3.5 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-sm font-medium text-gray-900 dark:text-white ring-2 ring-transparent focus:ring-primary/20 transition-all shadow-inner" 
+                                            placeholder="PUSHED RIGHT..." 
+                                            className="w-full px-4 sm:px-8 py-3.5 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-sm font-medium text-gray-900 dark:text-white ring-2 ring-primary/20 focus:ring-primary transition-all shadow-inner" 
                                         />
                                     </div>
                                     <button 
