@@ -212,7 +212,7 @@ function ChatContainer() {
                 appendMessage(payload.new as Message);
             })
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
-                setMessages(prev => prev.map(msg => msg.id === payload.new.id ? { ...msg, ...payload.new } : msg));
+                setMessages(prev => prev.map(msg => msg.id.toString() === payload.new.id.toString() ? { ...msg, ...payload.new } : msg));
             });
 
         channel.subscribe(async (status) => {
@@ -235,27 +235,31 @@ function ChatContainer() {
 
     const appendMessage = useCallback((msg: Message) => {
         setMessages(prev => {
-            // 1. Precise ID check
-            const existingByIdIndex = prev.findIndex(m => m.id === msg.id);
+            // 1. Precise ID check (normalize to string)
+            const msgIdStr = msg.id.toString();
+            const existingByIdIndex = prev.findIndex(m => m.id.toString() === msgIdStr);
+            
             if (existingByIdIndex !== -1) {
-                // Update existing message (e.g. optimistic -> real, or read status update)
                 const newMessages = [...prev];
                 newMessages[existingByIdIndex] = { ...newMessages[existingByIdIndex], ...msg };
                 return newMessages;
             }
 
             // 2. Fuzzy match for optimistic/duplicate messages
-            // We match by content and sender within a 15-second window
+            // We use a 2-minute window to account for server/client clock drift
+            const msgContentNormalized = msg.content.trim();
+            const msgTime = new Date(msg.created_at).getTime();
+
             const duplicateIndex = prev.findIndex(m => 
                 m.sender_id === msg.sender_id &&
-                m.content.trim() === msg.content.trim() &&
-                Math.abs(new Date(m.created_at).getTime() - new Date(msg.created_at).getTime()) < 15000
+                m.content.trim() === msgContentNormalized &&
+                Math.abs(new Date(m.created_at).getTime() - msgTime) < 120000 
             );
 
             if (duplicateIndex !== -1) {
-                // If it's a fuzzy match, we prioritize the "real" message (one without 'optimistic-' in ID)
-                const isExistingOptimistic = prev[duplicateIndex].id.toString().startsWith('optimistic-');
-                const isNewOptimistic = msg.id.toString().startsWith('optimistic-');
+                const existingIdStr = prev[duplicateIndex].id.toString();
+                const isExistingOptimistic = existingIdStr.startsWith('optimistic-');
+                const isNewOptimistic = msgIdStr.startsWith('optimistic-');
 
                 if (isExistingOptimistic && !isNewOptimistic) {
                     // Replace optimistic with real
@@ -263,7 +267,8 @@ function ChatContainer() {
                     newMessages[duplicateIndex] = msg;
                     return newMessages;
                 }
-                // If the existing one is already real, or the new one is also optimistic, don't add
+                // If it's the exact same message (same sender, same content, same window)
+                // and we already have a real one, or both are optimistic, keep existing
                 return prev;
             }
 
