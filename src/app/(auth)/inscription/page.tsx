@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Leaf, User, Truck, ArrowRight, Loader2, Building2 } from "lucide-react";
+import { Leaf, User, Truck, ArrowRight, Loader2, Building2, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 
@@ -12,7 +12,7 @@ function SignupForm() {
     const searchParams = useSearchParams();
     const supabase = createClient();
 
-    const [role, setRole] = useState<"vendeur" | "collecteur" | "entreprise" | null>(null);
+    const [role, setRole] = useState<"vendeur" | "collecteur" | "entreprise" | "organisation_admin" | "mairie" | null>(null);
 
     useEffect(() => {
         const urlRole = searchParams.get("role");
@@ -77,49 +77,63 @@ function SignupForm() {
                 )}
 
                 {!role ? (
-                    <div className="space-y-4">
-                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">Vous êtes ?</p>
+                    <div className="space-y-3">
+                        <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Vous rejoignez WaveClean en tant que :</p>
 
                         <button
                             onClick={() => setRole("vendeur")}
-                            className="flex items-center w-full p-4 transition-all border-2 rounded-2xl border-gray-100 hover:border-primary hover:bg-primary/5 group text-left dark:border-zinc-800"
+                            className="flex items-center w-full p-4 transition-all border-2 rounded-2xl border-gray-100 hover:border-emerald-500 hover:bg-emerald-500/5 group text-left dark:border-zinc-800"
                         >
-                            <div className="flex items-center justify-center w-12 h-12 mr-4 rounded-xl bg-green-50 text-green-600 dark:bg-green-950/30">
-                                <User className="w-6 h-6" />
+                            <div className="flex items-center justify-center w-10 h-10 mr-4 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30">
+                                <User className="w-5 h-5" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-bold text-gray-900 dark:text-white">Citoyen (Vendeur)</h3>
-                                <p className="text-xs text-gray-500">Je souhaite vendre mes déchets recyclables.</p>
+                                <h3 className="font-bold text-gray-900 dark:text-white text-sm">Citoyen (Foyer)</h3>
+                                <p className="text-[10px] text-gray-500 font-medium">Je vends mes déchets & je gère mes ordures.</p>
                             </div>
-                            <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-primary" />
+                            <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-emerald-500" />
                         </button>
 
                         <button
                             onClick={() => setRole("collecteur")}
                             className="flex items-center w-full p-4 transition-all border-2 rounded-2xl border-gray-100 hover:border-amber-500 hover:bg-amber-500/5 group text-left dark:border-zinc-800"
                         >
-                            <div className="flex items-center justify-center w-12 h-12 mr-4 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/30">
-                                <Truck className="w-6 h-6" />
+                            <div className="flex items-center justify-center w-10 h-10 mr-4 rounded-xl bg-amber-50 text-amber-600 dark:bg-amber-950/30">
+                                <Truck className="w-5 h-5" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-bold text-gray-900 dark:text-white">Collecteur (Acheteur)</h3>
-                                <p className="text-xs text-gray-500">Je souhaite acheter et collecter des déchets.</p>
+                                <h3 className="font-bold text-gray-900 dark:text-white text-sm">Collecteur Indépendant</h3>
+                                <p className="text-[10px] text-gray-500 font-medium">Je souhaite acheter des lots recyclables.</p>
                             </div>
-                            <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-amber-500" />
+                            <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-amber-500" />
                         </button>
 
                         <button
-                            onClick={() => setRole("entreprise")}
-                            className="flex items-center w-full p-4 transition-all border-2 rounded-2xl border-gray-100 hover:border-blue-500 hover:bg-blue-500/5 group text-left dark:border-zinc-800"
+                            onClick={() => setRole("organisation_admin" as any)}
+                            className="flex items-center w-full p-4 transition-all border-2 rounded-2xl border-gray-100 hover:border-indigo-500 hover:bg-indigo-500/5 group text-left dark:border-zinc-800"
                         >
-                            <div className="flex items-center justify-center w-12 h-12 mr-4 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/30">
-                                <Building2 className="w-6 h-6" />
+                            <div className="flex items-center justify-center w-10 h-10 mr-4 rounded-xl bg-indigo-50 text-indigo-600 dark:bg-indigo-950/30">
+                                <Building2 className="w-5 h-5" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-bold text-gray-900 dark:text-white">Partenaire / Entreprise</h3>
-                                <p className="text-xs text-gray-500">Achats en gros et accès aux statistiques.</p>
+                                <h3 className="font-bold text-gray-900 dark:text-white text-sm">Organisation de Collecte</h3>
+                                <p className="text-[10px] text-gray-500 font-medium">Je gère une zone et ma propre flotte d'agents.</p>
                             </div>
-                            <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-blue-500" />
+                            <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-500" />
+                        </button>
+
+                        <button
+                            onClick={() => setRole("mairie" as any)}
+                            className="flex items-center w-full p-4 transition-all border-2 rounded-2xl border-gray-100 hover:border-zinc-900 hover:bg-zinc-900/5 group text-left dark:border-zinc-800"
+                        >
+                            <div className="flex items-center justify-center w-10 h-10 mr-4 rounded-xl bg-zinc-100 text-zinc-900 dark:bg-zinc-800">
+                                <ShieldCheck className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-bold text-gray-900 dark:text-white text-sm">Mairie / Administration</h3>
+                                <p className="text-[10px] text-gray-500 font-medium">Je supervise la salubrité de ma commune.</p>
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-zinc-900" />
                         </button>
                     </div>
                 ) : (
@@ -164,7 +178,7 @@ function SignupForm() {
                             className="w-full py-3 mt-4 font-bold text-white transition-all rounded-xl shadow-lg bg-primary hover:bg-primary/90 shadow-primary/20 active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                         >
                             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
-                            S'inscrire en tant que {role === "vendeur" ? "Citoyen" : role === "collecteur" ? "Collecteur" : "Entreprise"}
+                            S'inscrire en tant que {role === "vendeur" ? "Citoyen" : role === "collecteur" ? "Collecteur" : role === "organisation_admin" ? "Organisation" : role === "mairie" ? "Mairie" : "Entreprise"}
                         </button>
 
                         <button
