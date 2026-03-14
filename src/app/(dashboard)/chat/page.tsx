@@ -364,8 +364,8 @@ function ChatContainer() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-0 sm:px-4 lg:px-8 py-0 sm:py-8 h-[calc(100dvh-8rem)] flex flex-col pb-safe">
-            <div className="bg-white dark:bg-zinc-900 sm:rounded-[3rem] border-b sm:border-2 border-gray-100 dark:border-zinc-800 shadow-2xl overflow-hidden flex-1 flex">
+        <div className="max-w-7xl mx-auto px-0 md:px-4 lg:px-8 py-0 md:py-8 h-[calc(100dvh-4rem)] md:h-[calc(100dvh-8rem)] flex flex-col relative">
+            <div className="bg-white dark:bg-zinc-900 md:rounded-[3rem] md:border-2 border-gray-100 dark:border-zinc-800 md:shadow-2xl overflow-hidden flex-1 flex">
                 <div className={cn("w-full md:w-96 border-r-2 border-gray-50 dark:border-zinc-800 flex flex-col", selectedConv && "hidden md:flex")}>
                     <div className="p-6 sm:p-8 border-b-2 border-gray-50 dark:border-zinc-800">
                         <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white mb-4 sm:mb-6 uppercase italic tracking-tighter">Messages</h1>
@@ -451,7 +451,7 @@ function ChatContainer() {
                                 })}
                                 <div ref={messagesEndRef} />
                             </div>
-                            <div className="p-4 sm:p-8 bg-white dark:bg-zinc-900 border-t-2 border-gray-50 dark:border-zinc-800 flex flex-col gap-3 sm:gap-4 pb-24 md:pb-8 relative overflow-visible">
+                            <div className="p-4 sm:p-8 bg-white dark:bg-zinc-900 border-t-2 border-gray-50 dark:border-zinc-800 flex flex-col gap-3 sm:gap-4 pb-20 md:pb-8 relative z-30 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
                                 {isTyping && (
                                     <div className="text-[10px] text-primary font-black uppercase tracking-widest animate-pulse flex items-center gap-2 px-2">
                                         <span className="flex gap-1">
@@ -480,14 +480,14 @@ function ChatContainer() {
 
                                 <form 
                                     onSubmit={handleSendMessage} 
-                                    className="flex items-center justify-end gap-2 sm:gap-4 w-full relative z-30"
+                                    className="flex items-center gap-2 sm:gap-4 w-full relative z-30"
                                 >
-                                    <div className="flex-none w-[60%] sm:flex-1 relative ml-auto">
+                                    <div className="flex-1 relative">
                                         <input 
                                             type="text" 
                                             value={newMessage} 
                                             onChange={handleTyping} 
-                                            placeholder="PUSHED RIGHT..." 
+                                            placeholder="Écrivez votre message..." 
                                             className="w-full px-4 sm:px-8 py-3.5 sm:py-4 bg-gray-50 dark:bg-zinc-800 border-none rounded-[1.5rem] outline-none text-sm font-medium text-gray-900 dark:text-white ring-2 ring-primary/20 focus:ring-primary transition-all shadow-inner" 
                                         />
                                     </div>
