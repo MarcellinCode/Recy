@@ -46,7 +46,9 @@ function SignupForm() {
         idNumber: "",
         // Organisation
         orgName: "",
+        contactPerson: "",
         rccm: "",
+        agentCount: "",
         // Mairie
         municipalityName: "",
         officialDepartment: "",
@@ -73,6 +75,8 @@ function SignupForm() {
                         vehicle_type: formData.vehicleType,
                         id_number: formData.idNumber,
                         rccm: formData.rccm,
+                        contact_person: formData.contactPerson,
+                        agent_count: formData.agentCount,
                         official_department: formData.officialDepartment
                     },
                 },
@@ -88,7 +92,30 @@ function SignupForm() {
         }
     };
 
-    const nextStep = () => setStep(prev => prev + 1);
+    const nextStep = () => {
+        // Validation basique avant de passer à l'étape suivante
+        if (step === 2) {
+            if (role === 'vendeur' && (!formData.fullName || !formData.phone || !formData.district)) {
+                setError("Veuillez remplir tous les champs.");
+                return;
+            }
+            if (role === 'collecteur' && (!formData.fullName || !formData.phone || !formData.vehicleType || !formData.idNumber)) {
+                setError("Veuillez remplir tous les champs.");
+                return;
+            }
+            if (role === 'organisation_admin' && (!formData.orgName || !formData.contactPerson || !formData.rccm || !formData.phone)) {
+                setError("Veuillez remplir tous les champs.");
+                return;
+            }
+            if (role === 'mairie' && (!formData.municipalityName || !formData.officialDepartment || !formData.phone)) {
+                setError("Veuillez remplir tous les champs.");
+                return;
+            }
+        }
+        setError(null);
+        setStep(prev => prev + 1);
+    };
+    
     const prevStep = () => setStep(prev => prev - 1);
 
     return (
@@ -99,10 +126,10 @@ function SignupForm() {
                         <Leaf className="w-8 h-8" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {step === 1 ? "Créer un compte" : "Informations Profil"}
+                        {step === 1 ? "Créer un compte" : step === 2 ? "Informations Profil" : "Compte de Connexion"}
                     </h2>
                     <p className="mt-2 text-sm text-center text-gray-500 dark:text-gray-400">
-                        {step === 1 ? "Rejoignez l'aventure WaveClean" : "Dites-nous en plus sur vous"}
+                        {step === 1 ? "Rejoignez l'aventure WaveClean" : "Presque terminé !"}
                     </p>
                 </div>
 
@@ -158,16 +185,16 @@ function SignupForm() {
                             <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-500" />
                         </button>
 
-                        <div className="pt-4 mt-4 border-t border-gray-100 dark:border-zinc-800">
-                             <p className="text-[10px] text-center text-gray-400 font-bold uppercase tracking-[0.2em]">Accès Officiel Mairie</p>
-                             <p className="text-[9px] text-center text-gray-500 mt-1 uppercase italic">L'inscription Mairie se fait exclusivement via lien d'invitation sécurisé.</p>
+                        <div className="pt-4 mt-4 border-t border-gray-100 dark:border-zinc-800 text-center">
+                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">Accès Officiel Mairie</p>
+                             <p className="text-[9px] text-gray-500 mt-1 uppercase italic px-4">L'inscription Mairie se fait exclusivement via lien d'invitation sécurisé.</p>
                         </div>
                     </div>
                 )}
 
                 {step === 2 && (
                     <div className="space-y-4">
-                        <div className="space-y-4">
+                        <div className="space-y-4 max-h-[50vh] overflow-y-auto px-1">
                              {/* Specific Fields */}
                              {role === "vendeur" && (
                                 <>
@@ -179,7 +206,6 @@ function SignupForm() {
                                             onChange={(e) => setFormData({...formData, fullName: e.target.value})}
                                             className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
                                             placeholder="Ex: Jean Kouamé"
-                                            required
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -190,7 +216,6 @@ function SignupForm() {
                                             onChange={(e) => setFormData({...formData, phone: e.target.value})}
                                             className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
                                             placeholder="+225 00 00 00 00"
-                                            required
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -201,7 +226,6 @@ function SignupForm() {
                                             onChange={(e) => setFormData({...formData, district: e.target.value})}
                                             className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
                                             placeholder="Ex: Cocody Angré"
-                                            required
                                         />
                                     </div>
                                 </>
@@ -220,6 +244,16 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Numéro de Téléphone</label>
+                                        <input
+                                            type="tel"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            placeholder="+225..."
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Type de Véhicule</label>
                                         <select
                                             value={formData.vehicleType}
@@ -230,6 +264,7 @@ function SignupForm() {
                                             <option value="charette">Charette</option>
                                             <option value="tricycle">Tricycle</option>
                                             <option value="camionnette">Camionnette</option>
+                                            <option value="camion">Camion de Collecte</option>
                                         </select>
                                     </div>
                                     <div className="space-y-1">
@@ -258,6 +293,16 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom du Responsable</label>
+                                        <input
+                                            type="text"
+                                            value={formData.contactPerson}
+                                            onChange={(e) => setFormData({...formData, contactPerson: e.target.value})}
+                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            placeholder="Directeur / Gérant"
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
                                         <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Numéro RCCM / IFU</label>
                                         <input
                                             type="text"
@@ -275,6 +320,16 @@ function SignupForm() {
                                             onChange={(e) => setFormData({...formData, phone: e.target.value})}
                                             className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
                                             placeholder="+225..."
+                                        />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nombre d'Agents Estimé</label>
+                                        <input
+                                            type="number"
+                                            value={formData.agentCount}
+                                            onChange={(e) => setFormData({...formData, agentCount: e.target.value})}
+                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            placeholder="Ex: 10"
                                         />
                                     </div>
                                 </>
@@ -297,7 +352,7 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Service / Direction</label>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Service / Direction Référent</label>
                                         <input
                                             type="text"
                                             value={formData.officialDepartment}
@@ -306,11 +361,21 @@ function SignupForm() {
                                             placeholder="Ex: Direction de la Salubrité"
                                         />
                                     </div>
+                                    <div className="space-y-1">
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Téléphone Administrateur</label>
+                                        <input
+                                            type="tel"
+                                            value={formData.phone}
+                                            onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            placeholder="+225..."
+                                        />
+                                    </div>
                                 </>
                              )}
                         </div>
 
-                        <div className="flex gap-3 pt-6">
+                        <div className="flex gap-3 pt-6 border-t border-gray-50 dark:border-zinc-800">
                             <button onClick={prevStep} className="flex-1 py-4 text-xs font-black uppercase tracking-widest border border-gray-100 rounded-2xl hover:bg-gray-50 dark:border-zinc-800 dark:hover:bg-zinc-800 dark:text-white transition-all">Retour</button>
                             <button onClick={nextStep} className="flex-[2] py-4 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">Continuer</button>
                         </div>
@@ -344,7 +409,7 @@ function SignupForm() {
                             </div>
                         </div>
 
-                        <div className="flex gap-3 pt-6">
+                        <div className="flex gap-3 pt-6 border-t border-gray-50 dark:border-zinc-800">
                             <button type="button" onClick={prevStep} className="flex-1 py-4 text-xs font-black uppercase tracking-widest border border-gray-100 rounded-2xl hover:bg-gray-50 dark:border-zinc-800 transition-all dark:text-white">Retour</button>
                             <button
                                 type="submit"
@@ -358,7 +423,7 @@ function SignupForm() {
                     </form>
                 )}
 
-                <div className="mt-8 text-center">
+                <div className="mt-8 text-center pt-6 border-t border-gray-50 dark:border-zinc-800">
                     <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">
                         Vous avez déjà un compte ?{" "}
                         <Link href="/connexion" className="text-primary hover:underline">
@@ -371,13 +436,9 @@ function SignupForm() {
     );
 }
 
-export default function SignupPage() {
+export default function Signup() {
     return (
-        <Suspense fallback={
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <Loader2 className="w-10 h-10 text-primary animate-spin" />
-            </div>
-        }>
+        <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh]"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>}>
             <SignupForm />
         </Suspense>
     );

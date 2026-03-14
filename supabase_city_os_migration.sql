@@ -10,6 +10,8 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS district TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS vehicle_type TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS id_number TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS rccm TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS contact_person TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS agent_count TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS official_department TEXT;
 
 DO $$ 
@@ -56,6 +58,39 @@ CREATE TABLE IF NOT EXISTS public.concessions (
 ALTER TABLE public.concessions ENABLE ROW LEVEL SECURITY;
 
 -- 4. Table des Plans d'Abonnement (Définis par les Organisations pour leurs zones)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (
+    id, 
+    full_name, 
+    role, 
+    phone, 
+    district, 
+    vehicle_type, 
+    id_number, 
+    rccm, 
+    contact_person,
+    agent_count,
+    official_department
+  )
+  VALUES (
+    new.id, 
+    new.raw_user_meta_data->>'full_name', 
+    new.raw_user_meta_data->>'role',
+    new.raw_user_meta_data->>'phone',
+    new.raw_user_meta_data->>'district',
+    new.raw_user_meta_data->>'vehicle_type',
+    new.raw_user_meta_data->>'id_number',
+    new.raw_user_meta_data->>'rccm',
+    new.raw_user_meta_data->>'contact_person',
+    new.raw_user_meta_data->>'agent_count',
+    new.raw_user_meta_data->>'official_department'
+  );
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 CREATE TABLE IF NOT EXISTS public.subscription_plans (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     concession_id UUID REFERENCES public.concessions(id) ON DELETE CASCADE,
