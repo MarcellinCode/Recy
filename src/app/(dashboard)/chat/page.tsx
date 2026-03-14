@@ -203,10 +203,6 @@ function ChatContainer() {
                     typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
                 }
             })
-            .on('broadcast', { event: 'message' }, (payload) => {
-                if (payload.payload.sender_id === currentUser.id) return;
-                appendMessage(payload.payload);
-            })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
                 if (payload.new.waste_id !== selectedConv.id) return;
                 appendMessage(payload.new as Message);
@@ -317,10 +313,6 @@ function ChatContainer() {
 
         setMessages(prev => [...prev, optimisticMsg]);
         setTimeout(scrollToBottom, 50);
-
-        if (activeChannel) {
-            activeChannel.send({ type: 'broadcast', event: 'message', payload: optimisticMsg });
-        }
 
         const { hapticFeedback } = await import("@/lib/haptics");
         hapticFeedback.light();
