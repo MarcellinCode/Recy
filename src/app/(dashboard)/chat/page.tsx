@@ -480,9 +480,9 @@ function ChatContainer() {
 
                                 <form 
                                     onSubmit={handleSendMessage} 
-                                    className="grid grid-cols-[1fr,64px] sm:grid-cols-[1fr,80px] gap-2 sm:gap-4 w-full relative z-30 items-end max-w-[95vw] mx-auto"
+                                    className="flex items-center justify-end gap-2 sm:gap-4 w-full relative z-30 max-w-full"
                                 >
-                                    <div className="relative">
+                                    <div className="flex-1 max-w-[70%] sm:max-w-none relative">
                                         <input 
                                             type="text" 
                                             value={newMessage} 
@@ -495,7 +495,7 @@ function ChatContainer() {
                                         type="submit" 
                                         disabled={!newMessage.trim()}
                                         className={cn(
-                                            "w-12 h-12 sm:w-16 sm:h-14 rounded-2xl flex items-center justify-center transition-all shadow-xl outline-none",
+                                            "flex-shrink-0 w-12 h-12 sm:w-16 sm:h-14 rounded-2xl flex items-center justify-center transition-all shadow-xl outline-none",
                                             newMessage.trim() 
                                                 ? "bg-red-600 text-white shadow-red-500/30 hover:scale-105 active:scale-95" 
                                                 : "bg-gray-200 text-gray-400 dark:bg-zinc-800 dark:text-gray-600 cursor-not-allowed"
