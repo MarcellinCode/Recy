@@ -1,9 +1,16 @@
 -- 🏙️ WaveClean City OS: Schema Migration
 -- Ce script implémente la couche municipale, les concessions et les abonnements.
 
--- 1. Mise à jour des rôles dans les profils
+-- 1. Mise à jour des rôles et colonnes de métadonnées dans les profils
 -- On part du principe que la colonne 'role' est un TEXT ou un ENUM.
 -- On ajoute les nouveaux rôles : 'mairie', 'organisation_admin', 'agent_collecteur'.
+
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS district TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS vehicle_type TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS id_number TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS rccm TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS official_department TEXT;
 
 DO $$ 
 BEGIN 
