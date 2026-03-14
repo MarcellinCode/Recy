@@ -16,7 +16,7 @@ export async function uploadImage(file: string): Promise<{ url?: string; error?:
 
     try {
         const uploadResponse = await cloudinary.uploader.upload(file, {
-            folder: "recy-wastes",
+            folder: "waveclean-wastes",
         });
         return { success: true, url: uploadResponse.secure_url };
     } catch (error: unknown) {

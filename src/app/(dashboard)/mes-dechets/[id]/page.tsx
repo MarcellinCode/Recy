@@ -214,7 +214,7 @@ export default function SellerWasteDetailsPage({ params }: { params: Promise<{ i
                                 <div className="flex flex-col items-center gap-8 py-4">
                                     <div className="bg-white dark:bg-zinc-900 p-8 rounded-[3rem] shadow-2xl border-4 border-white dark:border-zinc-800 relative group">
                                         <img 
-                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=RECY-${waste.id.slice(0, 8)}`} 
+                                            src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=WAVE-${waste.id.slice(0, 8)}`} 
                                             alt="Collection QR Code"
                                             className="w-48 h-48 md:w-64 md:h-64 rounded-2xl"
                                         />
