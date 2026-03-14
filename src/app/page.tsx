@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Recycle, Leaf, Banknote, LayoutDashboard, Building2, Users, Truck, Sparkles, ShieldCheck, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase-server";
+import { cn } from "@/lib/utils";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -25,37 +26,37 @@ export default async function Home() {
         <div className="absolute inset-0 z-0">
           <img
             src="/images/hero.png"
-            alt="Recycling Future"
+            alt="WaveClean Future"
             className="w-full h-full object-cover scale-105"
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/80 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/90 to-zinc-950/40"></div>
         </div>
 
         <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
-          <div className="max-w-3xl space-y-8">
+          <div className="max-w-4xl space-y-8">
             <div className="inline-flex items-center gap-3 px-4 py-2 border border-primary/20 rounded-full bg-primary/10 backdrop-blur-md text-primary">
               <Sparkles className="w-4 h-4" />
-              <span className="text-xs font-black tracking-[0.2em] uppercase">L'économie circulaire 2.0</span>
+              <span className="text-xs font-black tracking-[0.2em] uppercase">City Waste Management OS</span>
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-black tracking-tighter text-white leading-[0.9] uppercase italic">
-              Donnez une <br />
-              <span className="text-primary italic">Seconde Vie</span> <br />
-              à vos ressources
+            <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-white leading-[0.85] uppercase italic">
+              L'Intelligence <br />
+              <span className="text-primary italic">Urbaine</span> <br />
+              au service du tri
             </h1>
 
-            <p className="max-w-xl text-lg md:text-xl text-gray-300 font-medium leading-relaxed">
-              WaveClean est la plateforme intelligente qui transforme vos déchets en revenus. Triez, publiez, et participez à la révolution écologique de votre ville.
+            <p className="max-w-2xl text-lg md:text-2xl text-gray-300 font-medium leading-relaxed">
+              WaveClean transforme la gestion des déchets en un écosystème rentable pour les citoyens, efficace pour les agents et transparent pour les municipalités.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-6">
               {user ? (
                 <Link
-                  href={profile?.role === 'collecteur' ? "/marketplace" : "/mes-dechets"}
+                  href="/dashboard"
                   className="flex items-center justify-center px-10 py-5 text-sm font-black text-white transition-all shadow-2xl rounded-2xl bg-primary hover:bg-primary/90 hover:scale-105 active:scale-95 shadow-primary/20 uppercase tracking-widest"
                 >
                   <LayoutDashboard className="w-5 h-5 mr-3" />
-                  Tableau de bord
+                  Accéder au Central Hub
                   <ArrowRight className="w-5 h-5 ml-3" />
                 </Link>
               ) : (
@@ -64,14 +65,14 @@ export default async function Home() {
                     href="/inscription?role=citoyen"
                     className="flex items-center justify-center px-10 py-5 text-sm font-black text-white transition-all shadow-2xl rounded-2xl bg-primary hover:bg-primary/90 hover:scale-105 active:scale-95 shadow-primary/20 uppercase tracking-widest"
                   >
-                    Vendre mes déchets
+                    Commencer l'expérience
                     <ArrowRight className="w-5 h-5 ml-3" />
                   </Link>
                   <Link
-                    href="/inscription?role=collecteur"
+                    href="#ecosystem"
                     className="flex items-center justify-center px-10 py-5 text-sm font-black transition-all border-2 rounded-2xl border-white/20 text-white backdrop-blur-md hover:bg-white/10 active:scale-95 uppercase tracking-widest"
                   >
-                    Devenir Collecteur
+                    Découvrir l'écosystème
                   </Link>
                 </>
               )}
@@ -80,48 +81,41 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* --- NOTRE VISION (VOTRE RÉSUMÉ) --- */}
-      <section id="vision" className="w-full max-w-7xl mx-auto px-4 -mt-20 relative z-20">
-        <div className="bg-zinc-900 rounded-[3rem] p-12 md:p-20 text-white relative overflow-hidden shadow-2xl border border-white/5">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 blur-[120px] rounded-full -mr-48 -mt-48"></div>
-
-          <div className="relative z-10 text-center mb-16">
-            <h2 className="text-xs font-black text-primary uppercase tracking-[0.4em] mb-4">Notre Vision</h2>
-            <p className="text-2xl md:text-3xl font-black italic tracking-tighter leading-tight max-w-4xl mx-auto uppercase">
-              "WaveClean est une <span className="text-primary">marketplace numérique</span> de déchets recyclables qui révolutionne l'économie circulaire."
-            </p>
+      {/* --- L'ÉCOSYSTÈME WAVECLEAN (LES 3 PILIERS) --- */}
+      <section id="ecosystem" className="py-32 bg-white dark:bg-zinc-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-24">
+            <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4">L'Écosystème</h2>
+            <h3 className="text-4xl md:text-6xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic leading-none">
+              Un système <br className="sm:hidden" /> <span className="text-primary">Triple-Win</span>
+            </h3>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative z-10">
-            <div className="space-y-4 text-center md:text-left">
-              <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-primary mx-auto md:mx-0">
-                <Users className="w-6 h-6" />
-              </div>
-              <h4 className="font-black text-xs uppercase tracking-widest text-primary">Citoyens</h4>
-              <p className="text-xs text-gray-400 font-bold leading-relaxed uppercase tracking-widest">
-                Gagnez de l'argent et des points éco en valorisant vos déchets domestiques.
-              </p>
-            </div>
-
-            <div className="space-y-4 text-center md:text-left">
-              <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-primary mx-auto md:mx-0">
-                <Truck className="w-6 h-6" />
-              </div>
-              <h4 className="font-black text-xs uppercase tracking-widest text-primary">Collecteurs</h4>
-              <p className="text-xs text-gray-400 font-bold leading-relaxed uppercase tracking-widest">
-                Optimisez vos tournées grâce à notre cartographie intelligente en temps réel.
-              </p>
-            </div>
-
-            <div className="space-y-4 text-center md:text-left">
-              <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center text-primary mx-auto md:mx-0">
-                <Building2 className="w-6 h-6" />
-              </div>
-              <h4 className="font-black text-xs uppercase tracking-widest text-primary">Entreprises</h4>
-              <p className="text-xs text-gray-400 font-bold leading-relaxed uppercase tracking-widest">
-                Sécurisez vos approvisionnements en matières premières recyclées certifiées.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <PillarCard 
+              icon={Users}
+              title="Citoyens"
+              subtitle="Cash & Salubrité"
+              desc="Vendez vos recyclables sur la marketplace ou abonnez-vous pour une collecte régulière sans effort."
+              features={["Marketplace rémunérée", "Abonnements confort", "Bouton Urgence Bac Plein"]}
+              color="bg-emerald-500"
+            />
+            <PillarCard 
+              icon={Truck}
+              title="Organisations"
+              subtitle="Gestion de Flotte"
+              desc="Optimisez vos tournées d'agents et gérez vos concessions municipales avec une précision chirurgicale."
+              features={["Navigation optimisée", "Gestion des abonnés", "Suivi des revenus"]}
+              color="bg-blue-600"
+            />
+            <PillarCard 
+              icon={Building2}
+              title="Municipalités"
+              subtitle="Gouvernance Urbaine"
+              desc="Prenez le contrôle de la propreté urbaine et suivez l'impact écologique de votre cité en temps réel."
+              features={["Découpage des zones", "Validation concessions", "Analytics City Clean"]}
+              color="bg-zinc-900"
+            />
           </div>
         </div>
       </section>
@@ -260,6 +254,31 @@ export default async function Home() {
         </div>
       </section>
 
+    </div>
+  );
+}
+
+function PillarCard({ icon: Icon, title, subtitle, desc, features, color }: any) {
+  return (
+    <div className="group relative p-10 bg-gray-50 dark:bg-zinc-900 rounded-[3rem] border border-gray-100 dark:border-zinc-800 hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
+      <div className={cn("w-16 h-16 rounded-[1.5rem] flex items-center justify-center mb-8 shadow-lg group-hover:scale-110 transition-transform", color)}>
+        <Icon className="w-8 h-8 text-white" />
+      </div>
+
+      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-2">{subtitle}</h4>
+      <h3 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic mb-4">{title}</h3>
+      <p className="text-sm text-gray-500 font-bold uppercase tracking-widest leading-loose mb-8">
+        {desc}
+      </p>
+
+      <ul className="space-y-4">
+        {features.map((feature: string) => (
+          <li key={feature} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-zinc-400">
+            <ShieldCheck className="w-4 h-4 text-primary" />
+            {feature}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
