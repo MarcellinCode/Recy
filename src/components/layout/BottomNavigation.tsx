@@ -11,12 +11,9 @@ export function BottomNavigation() {
     const { unreadMessages } = useUnreadBadges();
 
     const links = [
-        { href: "/mes-dechets", label: "Déchets", icon: Trash2 },
+        { href: "/dashboard", label: "Accueil", icon: Building2 },
         { href: "/marketplace", label: "Marché", icon: Map },
-        { href: "/appels-offres", label: "B2B", icon: Building2 },
-        { href: "/carte", label: "Carte", icon: MapPin },
         { href: "/chat", label: "Messages", icon: MessageSquare, badge: unreadMessages },
-        { href: "/wallet", label: "Wallet", icon: Wallet },
         { href: "/profil", label: "Profil", icon: UserCircle },
     ];
 
