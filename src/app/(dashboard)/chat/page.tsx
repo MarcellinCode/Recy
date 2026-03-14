@@ -364,7 +364,7 @@ function ChatContainer() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-0 md:px-4 lg:px-8 py-0 md:py-8 h-[calc(100dvh-4rem)] md:h-[calc(100dvh-8rem)] flex flex-col relative">
+        <div className="max-w-7xl mx-auto px-0 md:px-4 lg:px-8 py-0 md:py-8 h-[calc(100dvh-8rem)] flex flex-col relative">
             <div className="bg-white dark:bg-zinc-900 md:rounded-[3rem] md:border-2 border-gray-100 dark:border-zinc-800 md:shadow-2xl overflow-hidden flex-1 flex">
                 <div className={cn("w-full md:w-96 border-r-2 border-gray-50 dark:border-zinc-800 flex flex-col", selectedConv && "hidden md:flex")}>
                     <div className="p-6 sm:p-8 border-b-2 border-gray-50 dark:border-zinc-800">
@@ -451,7 +451,7 @@ function ChatContainer() {
                                 })}
                                 <div ref={messagesEndRef} />
                             </div>
-                            <div className="p-4 sm:p-8 bg-white dark:bg-zinc-900 border-t-2 border-gray-50 dark:border-zinc-800 flex flex-col gap-3 sm:gap-4 pb-20 md:pb-8 relative z-30 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
+                            <div className="p-4 sm:p-8 bg-white dark:bg-zinc-900 border-t-2 border-gray-50 dark:border-zinc-800 flex flex-col gap-2 sm:gap-4 pb-4 md:pb-8 relative z-30 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
                                 {isTyping && (
                                     <div className="text-[10px] text-primary font-black uppercase tracking-widest animate-pulse flex items-center gap-2 px-2">
                                         <span className="flex gap-1">
@@ -495,10 +495,10 @@ function ChatContainer() {
                                         type="submit" 
                                         disabled={!newMessage.trim()}
                                         className={cn(
-                                            "flex-none w-12 h-12 sm:w-16 sm:h-14 rounded-2xl flex items-center justify-center transition-all shadow-xl outline-none",
+                                            "flex-none w-12 h-12 sm:w-16 sm:h-14 rounded-2xl flex items-center justify-center transition-all shadow-xl outline-none border-2 border-transparent",
                                             newMessage.trim() 
                                                 ? "bg-primary text-white shadow-primary/30 hover:scale-105 active:scale-95" 
-                                                : "bg-gray-100 text-gray-400 dark:bg-zinc-800 dark:text-gray-600 cursor-not-allowed"
+                                                : "bg-gray-50 text-gray-300 dark:bg-zinc-800 dark:text-gray-600 cursor-not-allowed border-gray-100 dark:border-zinc-700"
                                         )}
                                         aria-label="Envoyer"
                                     >
