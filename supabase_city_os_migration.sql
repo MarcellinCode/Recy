@@ -36,6 +36,12 @@ CREATE TABLE IF NOT EXISTS public.zones (
 
 ALTER TABLE public.zones ENABLE ROW LEVEL SECURITY;
 
+-- 10. Recréation du trigger pour s'assurer qu'il utilise la nouvelle fonction
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
 -- 3. Table des Concessions (Locations de zones par les Organisations)
 CREATE TABLE IF NOT EXISTS public.concessions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -82,22 +88,33 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS zone_id UUID REFERENCES pub
 -- 7. POLITIQUES RLS (Row Level Security)
 
 -- Zones
+DROP POLICY IF EXISTS "Zones are viewable by everyone" ON public.zones;
 CREATE POLICY "Zones are viewable by everyone" ON public.zones FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Only Mairies can create zones" ON public.zones;
 CREATE POLICY "Only Mairies can create zones" ON public.zones FOR INSERT WITH CHECK (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'mairie')
 );
 
 -- Concessions
+DROP POLICY IF EXISTS "Concessions are viewable by everyone" ON public.concessions;
 CREATE POLICY "Concessions are viewable by everyone" ON public.concessions FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Organizations can request concessions" ON public.concessions;
 CREATE POLICY "Organizations can request concessions" ON public.concessions FOR INSERT WITH CHECK (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'organisation_admin')
 );
+
+DROP POLICY IF EXISTS "Only Mairies can update concessions" ON public.concessions;
 CREATE POLICY "Only Mairies can update concessions" ON public.concessions FOR UPDATE USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'mairie')
 );
 
 -- Subscription Plans
+DROP POLICY IF EXISTS "Plans are viewable by everyone" ON public.subscription_plans;
 CREATE POLICY "Plans are viewable by everyone" ON public.subscription_plans FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Organizations can manage their plans" ON public.subscription_plans;
 CREATE POLICY "Organizations can manage their plans" ON public.subscription_plans 
 FOR ALL USING (
     EXISTS (
@@ -107,10 +124,15 @@ FOR ALL USING (
 );
 
 -- Household Subscriptions
+DROP POLICY IF EXISTS "Users can view their own subscription" ON public.household_subscriptions;
 CREATE POLICY "Users can view their own subscription" ON public.household_subscriptions 
 FOR SELECT USING (auth.uid() = profile_id);
+
+DROP POLICY IF EXISTS "Users can subscribe" ON public.household_subscriptions;
 CREATE POLICY "Users can subscribe" ON public.household_subscriptions 
 FOR INSERT WITH CHECK (auth.uid() = profile_id);
+
+DROP POLICY IF EXISTS "Organizations can view subscriptions in their plans" ON public.household_subscriptions;
 CREATE POLICY "Organizations can view subscriptions in their plans" ON public.household_subscriptions 
 FOR SELECT USING (
     EXISTS (
