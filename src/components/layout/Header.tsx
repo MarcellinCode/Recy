@@ -44,13 +44,8 @@ export function Header() {
 
     const desktopLinks = user ? [
         { href: "/dashboard", label: "Dashboard" },
-        { href: "/mes-dechets", label: "Mes déchets" },
         { href: "/marketplace", label: "Marché" },
-        { href: "/appels-offres", label: "B2B" },
-        { href: "/carte", label: "Carte" },
-        { href: "/bourse", label: "Bourse" },
         { href: "/chat", label: "Messages", badge: unreadMessages },
-        { href: "/wallet", label: "Portefeuille" },
     ] : [
         { href: "/#features", label: "Fonctionnalités" },
         { href: "/#impact", label: "Notre Impact" },
