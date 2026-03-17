@@ -323,7 +323,7 @@ function WasteDetailsContent({ id }: { id: string }) {
 
                         <div className="bg-zinc-900 text-white rounded-[3rem] p-10 flex flex-col justify-between relative overflow-hidden group">
                             <div className="relative z-10">
-                                <h2 className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-8">Estimation WaveClean</h2>
+                                <h2 className="text-xs font-black text-primary uppercase tracking-[0.3em] mb-8">Estimation CITICLINE</h2>
                                 <div className="space-y-6">
                                     <div><p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Poids Brut</p><p className="text-4xl font-black text-white">{waste.estimated_weight} <span className="text-sm font-bold opacity-30">kg</span></p></div>
                                     <div><p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">Gain Estimé</p><p className="text-4xl font-black text-primary">{estimatedValue} <span className="text-sm font-bold opacity-30">CFA</span></p></div>
@@ -452,7 +452,7 @@ function WasteDetailsContent({ id }: { id: string }) {
                         <div className="mt-10 pt-10 border-t border-gray-100 dark:border-zinc-800">
                             <div className="flex items-center gap-4">
                                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary"><ShieldCheck className="w-6 h-6" /></div>
-                                <div className="text-[10px] font-bold text-gray-400 uppercase leading-relaxed tracking-wider">Garanti par <span className="text-primary font-black">WaveClean Protection</span>.</div>
+                                <div className="text-[10px] font-bold text-gray-400 uppercase leading-relaxed tracking-wider">Garanti par <span className="text-primary font-black">CITICLINE Protection</span>.</div>
                             </div>
                         </div>
                     </div>

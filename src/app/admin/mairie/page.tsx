@@ -48,7 +48,7 @@ export default function MairieDashboard() {
                         <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary italic">Administration Municipale</p>
                     </div>
                     <h1 className="text-4xl sm:text-6xl font-black uppercase italic tracking-tighter leading-none dark:text-white">
-                        WaveClean <span className="text-primary">City OS</span>
+                        CITICLINE <span className="text-primary">City OS</span>
                     </h1>
                     <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-4">Gestion des zones de collecte et des concessions environnementales.</p>
                 </div>

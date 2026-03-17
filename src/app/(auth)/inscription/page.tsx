@@ -129,7 +129,7 @@ function SignupForm() {
                         {step === 1 ? "Créer un compte" : step === 2 ? "Informations Profil" : "Compte de Connexion"}
                     </h2>
                     <p className="mt-2 text-sm text-center text-gray-500 dark:text-gray-400">
-                        {step === 1 ? "Rejoignez l'aventure WaveClean" : "Presque terminé !"}
+                        {step === 1 ? "Rejoignez l'aventure CITICLINE" : "Presque terminé !"}
                     </p>
                 </div>
 

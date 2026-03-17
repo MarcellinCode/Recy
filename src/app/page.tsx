@@ -26,7 +26,7 @@ export default async function Home() {
         <div className="absolute inset-0 z-0">
           <img
             src="/images/hero.png"
-            alt="WaveClean Future"
+            alt="CITICLINE Future"
             className="w-full h-full object-cover scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/90 to-zinc-950/40"></div>
@@ -46,7 +46,7 @@ export default async function Home() {
             </h1>
 
             <p className="max-w-2xl text-lg md:text-2xl text-gray-300 font-medium leading-relaxed">
-              WaveClean transforme la gestion des déchets en un écosystème rentable pour les citoyens, efficace pour les agents et transparent pour les municipalités.
+              CITICLINE transforme la gestion des déchets en un écosystème rentable pour les citoyens, efficace pour les agents et transparent pour les municipalités.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-6">
@@ -81,7 +81,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* --- L'ÉCOSYSTÈME WAVECLEAN (LES 3 PILIERS) --- */}
+      {/* --- L'ÉCOSYSTÈME CITICLINE (LES 3 PILIERS) --- */}
       <section id="ecosystem" className="py-32 bg-white dark:bg-zinc-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-24">
@@ -113,7 +113,7 @@ export default async function Home() {
               title="Municipalités"
               subtitle="Gouvernance Urbaine"
               desc="Prenez le contrôle de la propreté urbaine et suivez l'impact écologique de votre cité en temps réel."
-              features={["Découpage des zones", "Validation concessions", "Analytics City Clean"]}
+              features={["Découpage des zones", "Validation concessions", "Analytics CITICLINE"]}
               color="bg-zinc-900"
             />
           </div>

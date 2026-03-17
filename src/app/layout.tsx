@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "WaveClean - Vendez vos déchets recyclables",
+  title: "CITICLINE - Vendez vos déchets recyclables",
   description: "Plateforme citoyenne pour la collecte et la valorisation des déchets recyclables.",
   manifest: "/manifest.json",
   icons: {
