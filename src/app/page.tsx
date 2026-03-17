@@ -42,7 +42,7 @@ export default async function Home() {
             <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-white leading-[0.85] uppercase italic">
               L'Intelligence <br />
               <span className="text-primary italic">Urbaine</span> <br />
-              au service du tri
+              CITI<span className="text-primary tracking-tighter">CLINE</span>
             </h1>
 
             <p className="max-w-2xl text-lg md:text-2xl text-gray-300 font-medium leading-relaxed">

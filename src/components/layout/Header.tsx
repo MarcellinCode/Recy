@@ -60,8 +60,8 @@ export function Header() {
                     <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white transition-all shadow-md">
                         <Leaf className="w-8 h-8" />
                     </div>
-                    <span className="text-3xl font-black tracking-tighter text-gray-900 dark:text-white uppercase italic">
-                        Wave<span className="text-primary tracking-tighter">Clean</span>
+                    <span className="text-3xl font-black tracking-tighter text-gray-900 dark:text-white uppercase italic leading-none">
+                        CITI<span className="text-primary tracking-tighter">CLINE</span>
                     </span>
                 </Link>
 
