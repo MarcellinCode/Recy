@@ -10,9 +10,33 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "CITICLINE - Vendez vos déchets recyclables",
-  description: "Plateforme citoyenne pour la collecte et la valorisation des déchets recyclables.",
+  title: "CITICLINE - Valorisez vos déchets recyclables & Gagnez de l'argent",
+  description: "Rejoignez l'intelligence urbaine. CITICLINE transforme vos déchets en ressources. Marketplace de collecte, suivi d'impact écologique et paiements sécurisés.",
   manifest: "/manifest.json",
+  keywords: ["recyclage", "écologie", "déchets", "marketplace", "économie circulaire", "CITICLINE", "city clean"],
+  authors: [{ name: "CITICLINE Team" }],
+  openGraph: {
+    title: "CITICLINE - L'Intelligence Urbaine au service du tri",
+    description: "Vendez vos déchets recyclables, trouvez des points de collecte et suivez votre impact sur l'environnement.",
+    url: "https://www.citicline.com",
+    siteName: "CITICLINE",
+    images: [
+      {
+        url: "/logo.png",
+        width: 1200,
+        height: 630,
+        alt: "CITICLINE Logo",
+      },
+    ],
+    locale: "fr_FR",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CITICLINE - Valorisez vos déchets",
+    description: "La plateforme citoyenne pour un monde plus propre et plus rentable.",
+    images: ["/logo.png"],
+  },
   icons: {
     icon: [
       { url: "/logo.png", sizes: "32x32", type: "image/png" },

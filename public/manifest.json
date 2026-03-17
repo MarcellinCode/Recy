@@ -1,7 +1,7 @@
 {
   "name": "CITICLINE - Vendez vos déchets recyclables",
   "short_name": "CITICLINE",
-  "description": "Plateforme citoyenne pour la collecte et la valorisation des déchets recyclables.",
+  "description": "CITICLINE : L'intelligence urbaine pour transformer vos déchets en ressources et revenus réels.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
