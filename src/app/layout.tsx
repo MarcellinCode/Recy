@@ -10,7 +10,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "CITICLINE - Valorisez vos déchets recyclables & Gagnez de l'argent",
+  metadataBase: new URL("https://www.citicline.com"),
+  title: {
+    default: "CITICLINE - Valorisez vos déchets recyclables & Gagnez de l'argent",
+    template: "%s | CITICLINE"
+  },
   description: "Rejoignez l'intelligence urbaine. CITICLINE transforme vos déchets en ressources. Marketplace de collecte, suivi d'impact écologique et paiements sécurisés.",
   manifest: "/manifest.json",
   keywords: ["recyclage", "écologie", "déchets", "marketplace", "économie circulaire", "CITICLINE", "city clean"],
