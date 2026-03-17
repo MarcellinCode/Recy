@@ -39,7 +39,7 @@ export default async function Home() {
               <span className="text-xs font-black tracking-[0.2em] uppercase">City Waste Management OS</span>
             </div>
 
-            <h1 className="text-6xl md:text-8xl font-black tracking-tighter text-white leading-[0.85] uppercase italic">
+            <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter text-white leading-none sm:leading-[0.85] uppercase italic">
               L'Intelligence <br />
               <span className="text-primary italic">Urbaine</span> <br />
               CITI<span className="text-primary tracking-tighter">CLINE</span>

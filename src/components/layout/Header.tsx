@@ -56,11 +56,11 @@ export function Header() {
             <div className="flex items-center justify-between h-16 px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
 
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-3 group">
-                    <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-white text-primary group-hover:scale-105 transition-all shadow-md overflow-hidden">
+                <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
+                    <div className="flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white text-primary group-hover:scale-105 transition-all shadow-md overflow-hidden">
                         <img src="/logo.png" alt="CITICLINE Logo" className="w-full h-full object-cover" />
                     </div>
-                    <span className="text-3xl font-black tracking-tighter text-gray-900 dark:text-white uppercase italic leading-none">
+                    <span className="text-xl sm:text-3xl font-black tracking-tighter text-gray-900 dark:text-white uppercase italic leading-none">
                         CITI<span className="text-primary tracking-tighter">CLINE</span>
                     </span>
                 </Link>
@@ -120,9 +120,10 @@ export function Header() {
                         ) : (
                             <Link
                                 href="/connexion"
-                                className="px-6 py-2.5 text-xs font-black uppercase tracking-widest text-white transition-all rounded-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 active:scale-95"
+                                className="px-4 sm:px-6 py-2 sm:py-2.5 text-[10px] sm:text-xs font-black uppercase tracking-widest text-white transition-all rounded-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 active:scale-95"
                             >
-                                Connexion
+                                <span className="hidden xs:inline">Connexion</span>
+                                <span className="xs:hidden">Login</span>
                             </Link>
                         )
                     )}
