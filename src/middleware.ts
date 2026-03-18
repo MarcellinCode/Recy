@@ -37,22 +37,37 @@ export async function middleware(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
-    // Protect dashboard routes
-    const isAuthPage = request.nextUrl.pathname.startsWith('/connexion') ||
-        request.nextUrl.pathname.startsWith('/inscription')
+    const pathname = request.nextUrl.pathname
 
-    const isDashboardRoute = request.nextUrl.pathname.startsWith('/mes-dechets') ||
-        request.nextUrl.pathname.startsWith('/marketplace') ||
-        request.nextUrl.pathname.startsWith('/wallet') ||
-        request.nextUrl.pathname.startsWith('/profil') ||
-        request.nextUrl.pathname.startsWith('/chat')
+    // Auth pages (login / inscription)
+    const isAuthPage = pathname.startsWith('/connexion') || pathname.startsWith('/inscription')
+
+    // All protected routes (require authentication)
+    const protectedPaths = [
+        '/dashboard',
+        '/marketplace',
+        '/mes-dechets',
+        '/wallet',
+        '/profil',
+        '/chat',
+        '/notifications',
+        '/abonnement',
+        '/abonnements',
+        '/missions',
+        '/reservations',
+        '/carte',
+        '/appels-offres',
+        '/bourse',
+        '/admin',
+    ]
+    const isDashboardRoute = protectedPaths.some(p => pathname.startsWith(p))
 
     if (!user && isDashboardRoute) {
         return NextResponse.redirect(new URL('/connexion', request.url))
     }
 
     if (user && isAuthPage) {
-        return NextResponse.redirect(new URL('/', request.url))
+        return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
     return response

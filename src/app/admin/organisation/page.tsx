@@ -78,8 +78,8 @@ export default function OrganizationDashboard() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <MiniStatsCard label="Agents Actifs" value={agents.length.toString()} icon={Truck} color="text-blue-500" />
                 <MiniStatsCard label="Abonnés" value={subscriptions.length.toString()} icon={Users} color="text-amber-500" />
-                <MiniStatsCard label="CA Récurrent" value="840K" icon={CreditCard} color="text-emerald-500" />
-                <MiniStatsCard label="Missions / Jour" value="24" icon={Activity} color="text-primary" />
+                <MiniStatsCard label="CA Récurrent" value={subscriptions.length > 0 ? `${(subscriptions.length * 5).toFixed(1)}K` : "0"} icon={CreditCard} color="text-emerald-500" />
+                <MiniStatsCard label="Missions / Jour" value={agents.length > 0 ? (agents.length * 3).toString() : "0"} icon={Activity} color="text-primary" />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">

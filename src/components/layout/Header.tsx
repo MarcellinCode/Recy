@@ -17,12 +17,21 @@ export function Header() {
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [user, setUser] = useState<User | null>(null);
+    const [role, setRole] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const getSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
             setUser(session?.user ?? null);
+            if (session?.user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', session.user.id)
+                    .single();
+                setRole(profile?.role ?? null);
+            }
             setLoading(false);
         };
 
@@ -42,14 +51,49 @@ export function Header() {
         router.refresh();
     };
 
-    const desktopLinks = user ? [
-        { href: "/dashboard", label: "Dashboard" },
-        { href: "/marketplace", label: "Marché" },
-        { href: "/chat", label: "Messages", badge: unreadMessages },
-    ] : [
-        { href: "/#features", label: "Fonctionnalités" },
-        { href: "/#impact", label: "Notre Impact" },
-    ];
+    const roleLinks: Record<string, { href: string; label: string; badge?: number }[]> = {
+        vendeur: [
+            { href: "/dashboard",   label: "Hub" },
+            { href: "/marketplace", label: "Marché" },
+            { href: "/mes-dechets", label: "Mes Lots" },
+            { href: "/chat",        label: "Messages", badge: unreadMessages },
+        ],
+        collecteur: [
+            { href: "/dashboard",   label: "Hub" },
+            { href: "/marketplace", label: "Marché" },
+            { href: "/missions",    label: "Missions" },
+            { href: "/chat",        label: "Messages", badge: unreadMessages },
+        ],
+        agent_collecteur: [
+            { href: "/dashboard",   label: "Hub" },
+            { href: "/missions",    label: "Missions" },
+            { href: "/chat",        label: "Messages", badge: unreadMessages },
+        ],
+        entreprise: [
+            { href: "/dashboard",          label: "Hub" },
+            { href: "/admin/organisation", label: "Ma Flotte" },
+            { href: "/appels-offres",      label: "B2B" },
+            { href: "/chat",               label: "Messages", badge: unreadMessages },
+        ],
+        organisation_admin: [
+            { href: "/dashboard",          label: "Hub" },
+            { href: "/admin/organisation", label: "Ma Flotte" },
+            { href: "/appels-offres",      label: "B2B" },
+            { href: "/chat",               label: "Messages", badge: unreadMessages },
+        ],
+        mairie: [
+            { href: "/dashboard",    label: "Hub" },
+            { href: "/admin/mairie", label: "City OS" },
+            { href: "/chat",         label: "Messages", badge: unreadMessages },
+        ],
+    };
+
+    const desktopLinks = user
+        ? (role ? roleLinks[role] : roleLinks.vendeur) ?? roleLinks.vendeur
+        : [
+            { href: "/#features", label: "Fonctionnalités" },
+            { href: "/#impact",   label: "Notre Impact" },
+          ];
 
     return (
         <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/80">

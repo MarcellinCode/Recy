@@ -2,26 +2,100 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { MessageSquare, Trash2, Map, Wallet, UserCircle, MapPin, Building2 } from "lucide-react";
+import { 
+    MessageSquare, Map, Wallet, UserCircle, Building2, 
+    Home, Package, Truck, Navigation, BarChart3, Users
+} from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUnreadBadges } from "@/hooks/useUnreadBadges";
+import { createClient } from "@/lib/supabase";
+import { useState, useEffect } from "react";
+
+type NavLink = { href: string; label: string; icon: any; badge?: number };
+
+/* ─── Configurations de navigation par rôle ─── */
+const NAV_CONFIG: Record<string, NavLink[]> = {
+    vendeur: [
+        { href: "/dashboard",   label: "Hub",       icon: Home },
+        { href: "/marketplace", label: "Marché",    icon: Map },
+        { href: "/mes-dechets", label: "Mes lots",  icon: Package },
+        { href: "/chat",        label: "Messages",  icon: MessageSquare },
+        { href: "/profil",      label: "Profil",    icon: UserCircle },
+    ],
+    collecteur: [
+        { href: "/dashboard",   label: "Hub",        icon: Home },
+        { href: "/marketplace", label: "Marché",     icon: Map },
+        { href: "/missions",    label: "Missions",   icon: Navigation },
+        { href: "/chat",        label: "Messages",   icon: MessageSquare },
+        { href: "/profil",      label: "Profil",     icon: UserCircle },
+    ],
+    agent_collecteur: [
+        { href: "/dashboard",   label: "Hub",        icon: Home },
+        { href: "/marketplace", label: "Marché",     icon: Map },
+        { href: "/missions",    label: "Missions",   icon: Navigation },
+        { href: "/chat",        label: "Messages",   icon: MessageSquare },
+        { href: "/profil",      label: "Profil",     icon: UserCircle },
+    ],
+    entreprise: [
+        { href: "/dashboard",           label: "Hub",      icon: Home },
+        { href: "/admin/organisation",  label: "Flotte",   icon: Truck },
+        { href: "/appels-offres",       label: "B2B",      icon: BarChart3 },
+        { href: "/chat",                label: "Messages", icon: MessageSquare },
+        { href: "/profil",              label: "Profil",   icon: UserCircle },
+    ],
+    organisation_admin: [
+        { href: "/dashboard",           label: "Hub",      icon: Home },
+        { href: "/admin/organisation",  label: "Flotte",   icon: Truck },
+        { href: "/appels-offres",       label: "B2B",      icon: BarChart3 },
+        { href: "/chat",                label: "Messages", icon: MessageSquare },
+        { href: "/profil",              label: "Profil",   icon: UserCircle },
+    ],
+    mairie: [
+        { href: "/dashboard",       label: "Hub",    icon: Home },
+        { href: "/admin/mairie",    label: "Admin",  icon: Building2 },
+        { href: "/profil",          label: "Profil", icon: UserCircle },
+    ],
+};
+
+const DEFAULT_NAV: NavLink[] = [
+    { href: "/dashboard",   label: "Accueil",  icon: Home },
+    { href: "/marketplace", label: "Marché",   icon: Map },
+    { href: "/chat",        label: "Messages", icon: MessageSquare },
+    { href: "/profil",      label: "Profil",   icon: UserCircle },
+];
 
 export function BottomNavigation() {
     const pathname = usePathname();
     const { unreadMessages } = useUnreadBadges();
+    const [role, setRole] = useState<string | null>(null);
+    const supabase = createClient();
 
-    const links = [
-        { href: "/dashboard", label: "Accueil", icon: Building2 },
-        { href: "/marketplace", label: "Marché", icon: Map },
-        { href: "/chat", label: "Messages", icon: MessageSquare, badge: unreadMessages },
-        { href: "/profil", label: "Profil", icon: UserCircle },
-    ];
+    useEffect(() => {
+        const fetchRole = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+            const { data } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+            setRole(data?.role || null);
+        };
+        fetchRole();
+    }, []);
+
+    const links: NavLink[] = (role ? NAV_CONFIG[role] : null) || DEFAULT_NAV;
+
+    // Injecter le badge messages sur le lien Chat
+    const linksWithBadges: NavLink[] = links.map(l => 
+        l.href === '/chat' ? { ...l, badge: unreadMessages } : l
+    );
 
     return (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[92%] max-w-lg md:hidden">
             <nav className="bg-white/80 dark:bg-zinc-950/80 backdrop-blur-xl border border-white/20 dark:border-zinc-800 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.15)] rounded-[2rem] px-4 py-2 flex items-center justify-between pointer-events-auto">
-                {links.map((link) => {
+                {linksWithBadges.map((link) => {
                     const Icon = link.icon;
                     const isActive = pathname === link.href || (pathname.startsWith(link.href) && link.href !== "/");
 

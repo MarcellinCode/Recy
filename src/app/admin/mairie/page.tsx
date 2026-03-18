@@ -28,11 +28,19 @@ export default function MairieDashboard() {
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            const { data: zonesData } = await supabase.from('zones').select('*');
-            const { data: concessionsData } = await supabase.from('concessions').select('*, zones(*), profiles(*)');
-            
-            setZones(zonesData || []);
-            setConcessions(concessionsData || []);
+            try {
+                // Fetch Zones
+                const { data: zonesData, error: zonesError } = await supabase.from('zones').select('*');
+                if (!zonesError) setZones(zonesData || []);
+
+                // Fetch Concessions
+                const { data: concessionsData, error: concError } = await supabase
+                    .from('concessions')
+                    .select('*, profiles(*)');
+                if (!concError) setConcessions(concessionsData || []);                
+            } catch (err) {
+                console.error("Erreur chargement Mairie:", err);
+            }
             setLoading(false);
         };
         fetchData();
@@ -75,8 +83,8 @@ export default function MairieDashboard() {
                     color="text-emerald-500"
                 />
                 <StatCard 
-                    label="Revenus Municipaux" 
-                    value="2.4M" 
+                    label="Revenus Mensuels (Est.)" 
+                    value={concessions.length > 0 ? `${(concessions.length * 1.2).toFixed(1)}M` : "0"} 
                     sub="F CFA / Mois" 
                     icon={TrendingUp}
                     color="text-primary"
@@ -119,11 +127,12 @@ export default function MairieDashboard() {
                                                 zone.status === 'rented' ? "bg-blue-100 text-blue-700" :
                                                 "bg-amber-100 text-amber-700"
                                             )}>
-                                                {zone.status}
+                                                {zone.status || "Inconnu"}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5 font-medium text-sm text-zinc-600 dark:text-zinc-400">
-                                            {zone.status === 'rented' ? "Trier-Pro SARL" : "—"}
+                                            {/* Si une concession est active sur cette zone */}
+                                            {concessions.find(c => c.zone_name === zone.name)?.profiles?.full_name || "—"}
                                         </td>
                                         <td className="px-6 py-5">
                                             <button className="text-primary font-black text-[10px] uppercase hover:underline">Détails</button>
@@ -133,7 +142,7 @@ export default function MairieDashboard() {
                                     <tr>
                                         <td colSpan={4} className="px-6 py-20 text-center opacity-30 italic">
                                             <MapIcon className="w-12 h-12 mx-auto mb-4" />
-                                            Aunuce zone définie pour le moment.
+                                            Aucune zone définie pour le moment.
                                         </td>
                                     </tr>
                                 )}
