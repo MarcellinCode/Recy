@@ -84,13 +84,13 @@ export default function DashboardPage() {
             color: "bg-blue-500", 
             badge: unreadReservations
         },
-        { 
+        ...(profile?.role !== 'vendeur' ? [{ 
             title: "Carte Live", 
             description: "Explorer les déchets autour", 
             icon: MapPin, 
             href: "/carte", 
             color: "bg-emerald-500" 
-        },
+        }] : []),
         { 
             title: "Mes Déchets", 
             description: "Gérer vos publications", 
@@ -262,8 +262,8 @@ export default function DashboardPage() {
                 ))}
             </div>
 
-            {/* Bottom Promotional / System Card - Only for citizens/collectors looking to upgrade */}
-            {(profile?.role === 'vendeur' || profile?.role === 'collecteur') && (
+            {/* Bottom Promotional / System Card - Only for collectors looking to upgrade */}
+            {(profile?.role === 'collecteur') && (
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}

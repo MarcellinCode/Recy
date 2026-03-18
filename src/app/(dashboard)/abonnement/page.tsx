@@ -25,6 +25,9 @@ export default function SubscriptionPage() {
     const [availablePlans, setAvailablePlans] = useState<any[]>([]);
     const [zone, setZone] = useState<any>(null);
     const [isAlerting, setIsAlerting] = useState(false);
+    const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
+    const [isLocating, setIsLocating] = useState(false);
+    const [isSimulatingId, setIsSimulatingId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchSubscriptionData = async () => {
@@ -76,6 +79,46 @@ export default function SubscriptionPage() {
         setTimeout(() => setIsAlerting(false), 3000);
     };
 
+    const handleSubscribe = async (plan: any) => {
+        setIsSimulatingId(plan.id);
+        
+        // Simulation d'attente
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        // Simulez une validation locale directement pour la démo
+        setSubscription({
+            status: 'active',
+            subscription_plans: plan
+        });
+        
+        setIsSimulatingId(null);
+    };
+
+    const handleGeolocate = () => {
+        setIsLocating(true);
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    setLocation({
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude
+                    });
+                    setIsLocating(false);
+                },
+                (error) => {
+                    console.error("Erreur de géolocalisation:", error);
+                    alert("Impossible d'obtenir votre position.");
+                    setIsLocating(false);
+                }
+            );
+        } else {
+            alert("La géolocalisation n'est pas supportée par votre navigateur.");
+            setIsLocating(false);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
@@ -103,7 +146,21 @@ export default function SubscriptionPage() {
                             Zone : {zone.name}
                         </div>
                     ) : (
-                        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-4">Abonnez-vous pour un service de collecte régulier à domicile.</p>
+                        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-4 mb-4">Abonnez-vous pour un service de collecte régulier à domicile.</p>
+                    )}
+
+                    {!subscription && (
+                        <button 
+                            onClick={handleGeolocate} 
+                            disabled={isLocating}
+                            className={cn(
+                                "flex items-center gap-2 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
+                                location ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400",
+                                isLocating && "opacity-50"
+                            )}>
+                            <MapPin className="w-4 h-4" />
+                            {isLocating ? 'Recherche...' : location ? 'Position enregistrée ✓' : 'Me géolocaliser automatiquement'}
+                        </button>
                     )}
                 </div>
             </header>
@@ -115,7 +172,12 @@ export default function SubscriptionPage() {
                         <h2 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white">Forfaits Disponibles</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {availablePlans.map((plan) => (
-                                <PlanCard key={plan.id} plan={plan} />
+                                <PlanCard 
+                                    key={plan.id} 
+                                    plan={plan} 
+                                    onSubscribe={handleSubscribe} 
+                                    isSimulating={isSimulatingId === plan.id}
+                                />
                             ))}
                         </div>
                     </div>
@@ -214,7 +276,7 @@ export default function SubscriptionPage() {
     );
 }
 
-function PlanCard({ plan }: any) {
+function PlanCard({ plan, onSubscribe, isSimulating }: any) {
     return (
         <div className="p-10 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[3rem] shadow-sm hover:border-primary/40 transition-all group relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform">
@@ -226,8 +288,12 @@ function PlanCard({ plan }: any) {
                 <div className="text-4xl font-black text-gray-900 dark:text-white italic tracking-tighter mb-8">
                     {plan.price_cfa?.toLocaleString()} <span className="text-sm font-bold opacity-30">CFA / mois</span>
                 </div>
-                <button className="w-full py-5 bg-primary text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-3">
-                    S'abonner Maintenant <ArrowRight className="w-4 h-4" />
+                <button 
+                    onClick={() => onSubscribe(plan)}
+                    disabled={isSimulating}
+                    className="w-full py-5 bg-primary text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-3">
+                    {isSimulating ? "Simulation..." : "S'abonner (Simult.)"} 
+                    {isSimulating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
                 </button>
             </div>
         </div>
