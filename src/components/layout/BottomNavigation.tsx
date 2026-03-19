@@ -26,14 +26,12 @@ const NAV_CONFIG: Record<string, NavLink[]> = {
     collecteur: [
         { href: "/dashboard",   label: "Hub",        icon: Home },
         { href: "/marketplace", label: "Marché",     icon: Map },
-        { href: "/missions",    label: "Missions",   icon: Navigation },
         { href: "/chat",        label: "Messages",   icon: MessageSquare },
         { href: "/profil",      label: "Profil",     icon: UserCircle },
     ],
     agent_collecteur: [
         { href: "/dashboard",   label: "Hub",        icon: Home },
         { href: "/marketplace", label: "Marché",     icon: Map },
-        { href: "/missions",    label: "Missions",   icon: Navigation },
         { href: "/chat",        label: "Messages",   icon: MessageSquare },
         { href: "/profil",      label: "Profil",     icon: UserCircle },
     ],

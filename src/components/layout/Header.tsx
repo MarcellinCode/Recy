@@ -61,12 +61,10 @@ export function Header() {
         collecteur: [
             { href: "/dashboard",   label: "Hub" },
             { href: "/marketplace", label: "Marché" },
-            { href: "/missions",    label: "Missions" },
             { href: "/chat",        label: "Messages", badge: unreadMessages },
         ],
         agent_collecteur: [
             { href: "/dashboard",   label: "Hub" },
-            { href: "/missions",    label: "Missions" },
             { href: "/chat",        label: "Messages", badge: unreadMessages },
         ],
         entreprise: [

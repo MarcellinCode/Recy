@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { Header } from "@/components/layout/Header";
-import { BottomNavigation } from "@/components/layout/BottomNavigation";
+import { NavigationWrapper } from "@/components/layout/NavigationWrapper";
 import "./globals.css";
+import { ToastProvider } from "@/components/ui/toast";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -53,8 +53,6 @@ export const metadata: Metadata = {
   },
 };
 
-import { ToastProvider } from "@/components/ui/toast";
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -64,13 +62,9 @@ export default function RootLayout({
     <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ToastProvider />
-        <Header />
-
-        <main className="min-h-screen bg-gray-50/50 dark:bg-zinc-950/50">
-          {children}
-        </main>
-
-        <BottomNavigation />
+        <NavigationWrapper>
+            {children}
+        </NavigationWrapper>
       </body>
     </html>
   );
