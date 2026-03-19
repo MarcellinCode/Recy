@@ -52,7 +52,8 @@ export default function UsersPage() {
             .order('created_at', { ascending: false });
         
         if (error) {
-            showToast("Erreur lors du chargement des utilisateurs", "error");
+            console.error("Fetch users error:", error);
+            showToast("Erreur de chargement : Vérifiez vos droits RLS", "error");
         } else {
             setUsers(data || []);
         }

@@ -70,6 +70,19 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
+    // Admin role check
+    if (user && pathname.startsWith('/admin')) {
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single()
+
+        if (profile?.role !== 'super_admin') {
+            return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
+    }
+
     return response
 }
 
