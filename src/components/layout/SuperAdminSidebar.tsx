@@ -18,10 +18,10 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
-    { href: "/admin/super", label: "Tableau de Bord", icon: LayoutDashboard },
-    { href: "/admin/super/organizations", label: "Organisations", icon: Building2 },
-    { href: "/admin/super/users", label: "Utilisateurs", icon: Users },
-    { href: "/admin/super/settings", label: "Configuration", icon: Settings },
+    { href: "/admin", label: "Tableau de Bord", icon: LayoutDashboard },
+    { href: "/admin/organizations", label: "Organisations", icon: Building2 },
+    { href: "/admin/users", label: "Utilisateurs", icon: Users },
+    { href: "/admin/settings", label: "Configuration", icon: Settings },
 ];
 
 export function SuperAdminSidebar() {
@@ -55,7 +55,7 @@ export function SuperAdminSidebar() {
                 <div className="flex flex-col h-full p-8">
                     {/* Header */}
                     <div className="mb-12">
-                        <Link href="/admin/super" className="flex items-center gap-3">
+                        <Link href="/admin" className="flex items-center gap-3">
                             <div className="w-10 h-10 bg-gray-900 text-white rounded-xl flex items-center justify-center shadow-lg">
                                 <ShieldCheck size={20} />
                             </div>

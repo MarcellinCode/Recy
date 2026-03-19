@@ -6,7 +6,7 @@ import { BottomNavigation } from "@/components/layout/BottomNavigation";
 
 export function NavigationWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const isSuperAdmin = pathname?.startsWith("/admin/super");
+    const isSuperAdmin = pathname?.startsWith("/admin");
 
     return (
         <>
