@@ -41,8 +41,8 @@ export async function confirmCollection(wasteId: string, finalWeight: number) {
         if (updateError) throw updateError;
 
         // 4. Mise à jour des Wallets (Simulation)
-        const { data: sellerProfile } = await supabase.from('profiles').select('wallet_balance, eco_points').eq('id', waste.seller_id).single();
-        const { data: collectorProfile } = await supabase.from('profiles').select('wallet_balance').eq('id', waste.collector_id).single();
+        const { data: sellerProfile } = await supabase.from('profiles').select('wallet_balance, eco_points, push_token').eq('id', waste.seller_id).single();
+        const { data: collectorProfile } = await supabase.from('profiles').select('wallet_balance, push_token').eq('id', waste.collector_id).single();
 
         if (sellerProfile && collectorProfile) {
             // Crédit vendeur + Points Éco
@@ -74,7 +74,7 @@ export async function confirmCollection(wasteId: string, finalWeight: number) {
             }
         ]);
 
-        // 6. Envoi des Notifications
+        // 6. Envoi des Notifications Internes
         await supabase.from('notifications').insert([
             {
                 profile_id: waste.seller_id,
@@ -89,6 +89,27 @@ export async function confirmCollection(wasteId: string, finalWeight: number) {
                 type: 'collection'
             }
         ]);
+
+        // 7. Envoi des Notifications Push
+        const { sendPushNotification } = await import("@/lib/push");
+        
+        if (sellerProfile?.push_token) {
+            await sendPushNotification(
+                sellerProfile.push_token,
+                "Paiement Reçu ! 💰",
+                `Votre vente de ${waste.waste_types.name} est validée. +${sellerAmount} FCFA.`,
+                { type: 'payment', wasteId }
+            );
+        }
+
+        if (collectorProfile?.push_token) {
+            await sendPushNotification(
+                collectorProfile.push_token,
+                "Collecte Terminée ✅",
+                `Vous avez finalisé la collecte de ${finalWeight}kg de ${waste.waste_types.name}.`,
+                { type: 'collection', wasteId }
+            );
+        }
 
         revalidatePath(`/mes-dechets/${wasteId}`);
         revalidatePath(`/wallet`);

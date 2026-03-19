@@ -9,19 +9,62 @@ import {
     ShieldCheck, 
     Zap,
     RefreshCw,
-    CircleEllipsis
+    CircleEllipsis,
+    Loader2
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase";
+import { showToast } from "@/components/ui/toast";
 
-const WASTE_TYPES = [
-    { id: 1, name: "Plastique HDPE", price: 150, emoji: "🧴", status: "Actif" },
-    { id: 2, name: "Aluminium", price: 400, emoji: "🥫", status: "Actif" },
-    { id: 3, name: "Papier / Carton", price: 50, emoji: "📦", status: "Actif" },
-    { id: 4, name: "Verre", price: 30, emoji: "🍾", status: "Inactif" },
-];
+type WasteType = {
+    id: string;
+    name: string;
+    price_per_kg: number;
+    emoji: string;
+};
 
 export default function SettingsPage() {
+    const [wasteTypes, setWasteTypes] = useState<WasteType[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [saving, setSaving] = useState(false);
+    const supabase = createClient();
+
+    useEffect(() => {
+        fetchWasteTypes();
+    }, []);
+
+    async function fetchWasteTypes() {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('waste_types')
+            .select('*')
+            .order('name');
+        
+        if (error) {
+            showToast("Erreur lors du chargement des tarifs", "error");
+        } else {
+            setWasteTypes(data || []);
+        }
+        setLoading(false);
+    }
+
+    async function updatePrice(id: string, newPrice: number) {
+        setSaving(true);
+        const { error } = await supabase
+            .from('waste_types')
+            .update({ price_per_kg: newPrice })
+            .eq('id', id);
+
+        if (error) {
+            showToast("Erreur lors de la mise à jour du tarif", "error");
+        } else {
+            showToast("Tarif mis à jour");
+            fetchWasteTypes();
+        }
+        setSaving(false);
+    }
+
     return (
         <div className="space-y-12 pb-20">
             {/* Header Area */}
@@ -32,9 +75,12 @@ export default function SettingsPage() {
                     </h1>
                     <p className="text-gray-500 text-xs font-bold uppercase tracking-widest leading-relaxed">Paramètres globaux de l'économie circulaire CITICLINE</p>
                 </div>
-                <button className="flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-primary/20">
-                    <Save size={16} />
-                    Enregistrer tout
+                <button 
+                    onClick={fetchWasteTypes}
+                    className="flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-primary/20"
+                >
+                    {loading ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                    Actualiser
                 </button>
             </header>
 
@@ -52,44 +98,43 @@ export default function SettingsPage() {
                                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Rémunération par Kg (FCFA)</p>
                                 </div>
                             </div>
-                            <button className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-xl text-primary hover:bg-primary/10 transition-colors">
-                                <Plus size={20} />
-                            </button>
                         </div>
 
                         <div className="space-y-4">
-                            {WASTE_TYPES.map((type) => (
+                            {loading ? (
+                                <div className="py-20 flex justify-center">
+                                    <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                                </div>
+                            ) : (
+                                wasteTypes.map((type) => (
                                 <div key={type.id} className="group flex items-center gap-6 p-6 bg-gray-50/50 dark:bg-zinc-800/30 rounded-3xl border border-transparent hover:border-gray-200 dark:hover:border-zinc-700 transition-all">
                                     <div className="w-14 h-14 bg-white dark:bg-zinc-900 rounded-2xl flex items-center justify-center text-3xl shadow-sm border border-gray-100 dark:border-zinc-800">
-                                        {type.emoji}
+                                        {type.emoji || "♻️"}
                                     </div>
                                     <div className="flex-1">
                                         <div className="flex items-center gap-3 mb-1">
                                             <p className="text-sm font-black text-gray-900 dark:text-white uppercase">{type.name}</p>
-                                            <span className={cn(
-                                                "text-[8px] font-black uppercase px-2 py-0.5 rounded-full",
-                                                type.status === 'Actif' ? "bg-emerald-100 text-emerald-600" : "bg-gray-200 text-gray-500"
-                                            )}>{type.status}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                             <input 
                                                 type="number" 
-                                                defaultValue={type.price}
+                                                defaultValue={type.price_per_kg}
+                                                onBlur={(e) => {
+                                                    const newVal = Number(e.target.value);
+                                                    if (newVal !== type.price_per_kg) updatePrice(type.id, newVal);
+                                                }}
                                                 className="w-24 bg-transparent border-b border-gray-200 dark:border-zinc-700 text-lg font-black text-primary focus:border-primary outline-none"
                                             />
                                             <span className="text-[10px] font-black text-gray-400 uppercase">FCFA / Kg</span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <button className="p-2 text-gray-400 hover:text-red-500 transition-colors">
-                                            <Trash2 size={18} />
-                                        </button>
                                         <button className="p-2 text-gray-400 hover:text-gray-900 transition-colors">
                                             <CircleEllipsis size={18} />
                                         </button>
                                     </div>
                                 </div>
-                            ))}
+                            )))}
                         </div>
                     </section>
 

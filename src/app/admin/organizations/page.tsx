@@ -11,20 +11,75 @@ import {
     Users,
     ChevronRight,
     Plus,
-    School
+    School,
+    Ban,
+    Trash2
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase";
+import { showToast } from "@/components/ui/toast";
 
-const ORGS = [
-    { id: 1, name: "Mairie de Cocody", type: "Mairie", city: "Abidjan", status: "Actif", agents: 34, joined: "12 Mars 2024" },
-    { id: 2, name: "Eco-Collect CI", type: "Entreprise", city: "Abidjan", status: "En attente", agents: 8, joined: "15 Mars 2024" },
-    { id: 3, name: "Mairie de Bouaké", type: "Mairie", city: "Bouaké", status: "Actif", agents: 21, joined: "10 Fév 2024" },
-    { id: 4, name: "Recup Ivoire", type: "Entreprise", city: "San Pédro", status: "Suspendu", agents: 15, joined: "05 Jan 2024" },
-];
+type Organization = {
+    id: string;
+    full_name: string;
+    role: string;
+    city: string;
+    status: string;
+    created_at: string;
+};
 
 export default function OrganizationsPage() {
     const [search, setSearch] = useState("");
+    const [orgs, setOrgs] = useState<Organization[]>([]);
+    const [loading, setLoading] = useState(true);
+    const supabase = createClient();
+
+    useEffect(() => {
+        fetchOrgs();
+    }, []);
+
+    async function fetchOrgs() {
+        setLoading(true);
+        const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .in('role', ['mairie', 'entreprise'])
+            .order('created_at', { ascending: false });
+        
+        if (error) {
+            showToast("Erreur lors du chargement des organisations", "error");
+        } else {
+            setOrgs(data || []);
+        }
+        setLoading(false);
+    }
+
+    async function handleStatusChange(org: Organization, newStatus: string) {
+        const { error } = await supabase
+            .from('profiles')
+            .update({ status: newStatus })
+            .eq('id', org.id);
+
+        if (error) {
+            showToast("Erreur lors de la mise à jour", "error");
+        } else {
+            showToast(`Organisation ${newStatus.toLowerCase()} avec succès`);
+            fetchOrgs();
+        }
+    }
+
+    async function deleteOrg(id: string) {
+        if (!confirm("Supprimer cette organisation ?")) return;
+        const { error } = await supabase.from('profiles').delete().eq('id', id);
+        if (error) showToast("Erreur lors de la suppression", "error");
+        else {
+            showToast("Organisation supprimée");
+            fetchOrgs();
+        }
+    }
+
+    const filteredOrgs = orgs.filter(o => o.full_name?.toLowerCase().includes(search.toLowerCase()));
 
     return (
         <div className="space-y-10">
@@ -71,43 +126,43 @@ export default function OrganizationsPage() {
                                 <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Organisation</th>
                                 <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Type</th>
                                 <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Localisation</th>
-                                <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Effectif</th>
                                 <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Statut</th>
                                 <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 dark:divide-zinc-800/50">
-                            {ORGS.map((org) => (
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={5} className="px-8 py-20 text-center">
+                                         <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+                                    </td>
+                                </tr>
+                            ) : (
+                                filteredOrgs.map((org) => (
                                 <tr key={org.id} className="group hover:bg-gray-50/50 dark:hover:bg-zinc-800/20 transition-colors">
                                     <td className="px-8 py-6">
                                         <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl flex items-center justify-center text-indigo-600">
-                                                {org.type === 'Mairie' ? <School size={20} /> : <Building2 size={20} />}
+                                                {org.role === 'mairie' ? <School size={20} /> : <Building2 size={20} />}
                                             </div>
                                             <div>
-                                                <p className="text-sm font-black text-gray-900 dark:text-white uppercase leading-none mb-1">{org.name}</p>
-                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Inscrit le {org.joined}</p>
+                                                <p className="text-sm font-black text-gray-900 dark:text-white uppercase leading-none mb-1">{org.full_name}</p>
+                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Inscrit le {new Date(org.created_at).toLocaleDateString()}</p>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
                                         <span className={cn(
                                             "text-[10px] font-black uppercase tracking-widest",
-                                            org.type === 'Mairie' ? "text-indigo-500" : "text-amber-500"
+                                            org.role === 'mairie' ? "text-indigo-500" : "text-amber-500"
                                         )}>
-                                            {org.type}
+                                            {org.role}
                                         </span>
                                     </td>
                                     <td className="px-8 py-6">
                                         <div className="flex items-center gap-2 text-gray-500">
                                             <MapPin size={14} />
-                                            <span className="text-xs font-bold uppercase tracking-wider">{org.city}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-8 py-6">
-                                        <div className="flex items-center gap-2 text-gray-500">
-                                            <Users size={14} />
-                                            <span className="text-xs font-bold">{org.agents} Agents</span>
+                                            <span className="text-xs font-bold uppercase tracking-wider">{org.city || 'N/A'}</span>
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
@@ -123,20 +178,36 @@ export default function OrganizationsPage() {
                                     <td className="px-8 py-6 text-right">
                                         <div className="flex items-center justify-end gap-2">
                                             {org.status === 'En attente' && (
-                                                <button className="p-2 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-lg transition-colors" title="Valider">
+                                                <button 
+                                                    onClick={() => handleStatusChange(org, 'Actif')}
+                                                    className="p-2 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-lg transition-colors" 
+                                                    title="Approuver"
+                                                >
                                                     <CheckCircle2 size={18} />
                                                 </button>
                                             )}
+                                            {org.status === 'Actif' && (
+                                                <button 
+                                                    onClick={() => handleStatusChange(org, 'Suspendu')}
+                                                    className="p-2 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors" 
+                                                    title="Suspendre"
+                                                >
+                                                    <Ban size={18} />
+                                                </button>
+                                            )}
+                                             <button 
+                                                onClick={() => deleteOrg(org.id)}
+                                                className="p-2 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
                                             <button className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
                                                 <MoreVertical size={18} />
-                                            </button>
-                                            <button className="ml-2 w-8 h-8 bg-gray-50 dark:bg-zinc-800 rounded-lg flex items-center justify-center text-gray-400 group-hover:text-primary transition-colors">
-                                                <ChevronRight size={14} />
                                             </button>
                                         </div>
                                     </td>
                                 </tr>
-                            ))}
+                            )))}
                         </tbody>
                     </table>
                 </div>
@@ -144,3 +215,4 @@ export default function OrganizationsPage() {
         </div>
     );
 }
+
