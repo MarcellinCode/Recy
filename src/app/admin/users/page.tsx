@@ -19,8 +19,7 @@ import {
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
-import { Modal } from "@/components/ui/Modal";
-import { toast } from "react-hot-toast";
+import { showToast } from "@/components/ui/toast";
 
 type Profile = {
     id: string;
@@ -52,7 +51,7 @@ export default function UsersPage() {
             .order('created_at', { ascending: false });
         
         if (error) {
-            toast.error("Erreur lors du chargement des utilisateurs");
+            showToast("Erreur lors du chargement des utilisateurs", "error");
         } else {
             setUsers(data || []);
         }
@@ -66,9 +65,9 @@ export default function UsersPage() {
         ]);
 
         if (error) {
-            toast.error("Erreur lors de l'ajout : " + error.message);
+            showToast("Erreur lors de l'ajout : " + error.message, "error");
         } else {
-            toast.success("Utilisateur ajouté avec succès");
+            showToast("Utilisateur ajouté avec succès", "success");
             setIsAddModalOpen(false);
             setNewUser({ full_name: "", email: "", role: "vendeur", city: "" });
             fetchUsers();
@@ -83,9 +82,9 @@ export default function UsersPage() {
             .eq('id', user.id);
 
         if (error) {
-            toast.error("Erreur lors de la modification du statut");
+            showToast("Erreur lors de la modification du statut", "error");
         } else {
-            toast.success(newStatus === 'Suspendu' ? "Utilisateur suspendu" : "Utilisateur réactivé");
+            showToast(newStatus === 'Suspendu' ? "Utilisateur suspendu" : "Utilisateur réactivé", "success");
             fetchUsers();
         }
     }
@@ -99,9 +98,9 @@ export default function UsersPage() {
             .eq('id', id);
 
         if (error) {
-            toast.error("Erreur lors de la suppression");
+            showToast("Erreur lors de la suppression", "error");
         } else {
-            toast.success("Utilisateur supprimé");
+            showToast("Utilisateur supprimé", "success");
             fetchUsers();
         }
     }
