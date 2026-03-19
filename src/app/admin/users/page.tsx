@@ -20,6 +20,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
+import { Modal } from "@/components/ui/Modal";
 
 type Profile = {
     id: string;
