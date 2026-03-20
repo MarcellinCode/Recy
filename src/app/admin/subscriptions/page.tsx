@@ -26,7 +26,14 @@ export default function SubscriptionsPage() {
     const [loading, setLoading] = useState(true);
     const [plans, setPlans] = useState<any[]>([]);
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
+    const [concessions, setConcessions] = useState<any[]>([]);
     const [isAddPlanModalOpen, setIsAddPlanModalOpen] = useState(false);
+    const [newPlan, setNewPlan] = useState({ 
+        name: "", 
+        price_cfa: 0, 
+        concession_id: "",
+        frequency_per_week: 1 
+    });
     const supabase = createClient();
 
     useEffect(() => {
@@ -36,15 +43,31 @@ export default function SubscriptionsPage() {
     async function fetchSubData() {
         setLoading(true);
         try {
-            const { data: plansData } = await supabase.from('subscription_plans').select('*');
-            const { data: subsData } = await supabase.from('household_subscriptions').select('*, profiles(full_name, email)');
+            const { data: plansData } = await supabase.from('subscription_plans').select('*, concessions(zones(name))');
+            const { data: subsData } = await supabase.from('household_subscriptions').select('*, profiles(full_name, email), subscription_plans(name, price_cfa)');
+            const { data: concData } = await supabase.from('concessions').select('*, zones(name), profiles(full_name)').eq('status', 'active');
             
             setPlans(plansData || []);
             setSubscriptions(subsData || []);
+            setConcessions(concData || []);
+            if (concData && concData.length > 0) setNewPlan(p => ({ ...p, concession_id: concData[0].id }));
         } catch (err) {
             console.error(err);
         }
         setLoading(false);
+    }
+
+    async function handleCreatePlan(e: React.FormEvent) {
+        e.preventDefault();
+        const { error } = await supabase.from('subscription_plans').insert([newPlan]);
+        if (error) {
+            showToast("Erreur lors de la création", "error");
+        } else {
+            showToast("Plan d'abonnement publié", "success");
+            setIsAddPlanModalOpen(false);
+            setNewPlan({ name: "", price_cfa: 0, concession_id: concessions[0]?.id || "", frequency_per_week: 1 });
+            fetchSubData();
+        }
     }
 
     return (
@@ -70,7 +93,7 @@ export default function SubscriptionsPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {[
                     { label: "Abonnés Actifs", value: subscriptions.length, sub: "+12.5%", color: "text-emerald-500" },
-                    { label: "MRR (Est.)", value: (subscriptions.length * 5000).toLocaleString(), sub: "FCFA / Mois", color: "text-primary" },
+                    { label: "MRR (Est.)", value: (subscriptions.reduce((acc, s) => acc + (s.subscription_plans?.price_cfa || 0), 0)).toLocaleString(), sub: "FCFA / Mois", color: "text-primary" },
                     { label: "Taux de Churn", value: "2.4%", sub: "-0.5% vs mois d'avant", color: "text-blue-500" },
                     { label: "Plans Actifs", value: plans.length, sub: "Vérifiés", color: "text-amber-500" },
                 ].map((stat, i) => (
@@ -155,16 +178,26 @@ export default function SubscriptionsPage() {
                                                 </div>
                                             </td>
                                             <td className="px-8 py-6">
-                                                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">Standard Hebdo</span>
+                                                <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest">
+                                                    {sub.subscription_plans?.name || 'Plan Inconnu'}
+                                                </span>
+                                                <p className="text-[9px] text-gray-400 font-bold tracking-tighter">
+                                                    {sub.subscription_plans?.price_cfa?.toLocaleString()} CFA
+                                                </p>
                                             </td>
                                             <td className="px-8 py-6">
                                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-tighter">{new Date(sub.created_at).toLocaleDateString()}</p>
                                             </td>
                                             <td className="px-8 py-6">
-                                                <span className="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-full text-[9px] font-black uppercase tracking-widest">Payé</span>
+                                                <span className={cn(
+                                                    "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
+                                                    sub.status === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                                                )}>
+                                                    {sub.status === 'active' ? 'Payé' : sub.status}
+                                                </span>
                                             </td>
                                             <td className="px-8 py-6 text-right">
-                                                <button className="text-[10px] font-black text-primary uppercase hover:underline">Voir Facture</button>
+                                                <button className="text-[10px] font-black text-primary uppercase hover:underline">Détails</button>
                                             </td>
                                         </tr>
                                     )) : (
@@ -185,19 +218,61 @@ export default function SubscriptionsPage() {
                 onClose={() => setIsAddPlanModalOpen(false)}
                 title="Créer un Plan d'Abonnement"
             >
-                <div className="space-y-6">
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom du Plan</label>
-                        <input className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-sm outline-none" placeholder="Ex: Premium Mensuel..." />
+                <form onSubmit={handleCreatePlan} className="space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Concession / Zone</label>
+                        <select 
+                            required
+                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-sm outline-none appearance-none"
+                            value={newPlan.concession_id}
+                            onChange={(e) => setNewPlan({ ...newPlan, concession_id: e.target.value })}
+                        >
+                            {concessions.map(c => (
+                                <option key={c.id} value={c.id}>{c.zones?.name} ({c.profiles?.full_name})</option>
+                            ))}
+                        </select>
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Prix (FCFA)</label>
-                        <input type="number" className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-sm outline-none font-black text-primary" placeholder="5000" />
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom du Plan</label>
+                        <input 
+                            required
+                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-sm outline-none" 
+                            placeholder="Ex: Premium Mensuel..." 
+                            value={newPlan.name}
+                            onChange={(e) => setNewPlan({ ...newPlan, name: e.target.value })}
+                        />
                     </div>
-                    <button className="w-full py-5 bg-gray-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-900/10 mt-4">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Prix (FCFA)</label>
+                            <input 
+                                required
+                                type="number" 
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-sm outline-none font-black text-primary" 
+                                placeholder="5000" 
+                                value={newPlan.price_cfa}
+                                onChange={(e) => setNewPlan({ ...newPlan, price_cfa: Number(e.target.value) })}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Fréq. / Sem.</label>
+                            <input 
+                                required
+                                type="number" 
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-sm outline-none font-black" 
+                                placeholder="1" 
+                                value={newPlan.frequency_per_week}
+                                onChange={(e) => setNewPlan({ ...newPlan, frequency_per_week: Number(e.target.value) })}
+                            />
+                        </div>
+                    </div>
+                    <button 
+                        type="submit"
+                        className="w-full py-5 bg-gray-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-900/10 mt-4"
+                    >
                         Publier le Plan
                     </button>
-                </div>
+                </form>
             </Modal>
         </div>
     );

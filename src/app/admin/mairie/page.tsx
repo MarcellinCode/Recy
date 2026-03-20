@@ -34,7 +34,10 @@ export default function MairieManagementPage() {
     async function fetchMairieData() {
         setLoading(true);
         try {
-            const { data: zonesData } = await supabase.from('zones').select('*');
+            const { data: zonesData } = await supabase
+                .from('zones')
+                .select('*, concessions(status, profiles(full_name))');
+            
             const { data: concessionsData } = await supabase
                 .from('concessions')
                 .select('*, profiles(full_name, role), zones(name)')
@@ -139,7 +142,9 @@ export default function MairieManagementPage() {
                                         <Building2 size={14} className="text-primary" />
                                         <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Partenaire</span>
                                     </div>
-                                    <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase">SOCIÉTÉ GNAORÉ</span>
+                                    <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase">
+                                        {zone.concessions?.find((c: any) => c.status === 'active')?.profiles?.full_name || 'Aucun'}
+                                    </span>
                                 </div>
                             </motion.div>
                         )) : (

@@ -26,41 +26,62 @@ type WasteType = {
 
 export default function SettingsPage() {
     const [wasteTypes, setWasteTypes] = useState<WasteType[]>([]);
+    const [settings, setSettings] = useState<Record<string, any>>({
+        min_withdrawal_threshold: 5000,
+        platform_commission: 5,
+        maintenance_mode: false
+    });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
     const supabase = createClient();
 
     useEffect(() => {
-        fetchWasteTypes();
+        fetchData();
     }, []);
 
-    async function fetchWasteTypes() {
+    async function fetchData() {
         setLoading(true);
-        const { data, error } = await supabase
-            .from('waste_types')
-            .select('*')
-            .order('name');
-        
-        if (error) {
-            showToast("Erreur lors du chargement des tarifs", "error");
-        } else {
-            setWasteTypes(data || []);
-        }
+        await Promise.all([fetchWasteTypes(), fetchSystemSettings()]);
         setLoading(false);
+    }
+
+    async function fetchWasteTypes() {
+        const { data } = await supabase.from('waste_types').select('*').order('name');
+        setWasteTypes(data || []);
+    }
+
+    async function fetchSystemSettings() {
+        const { data } = await supabase.from('system_settings').select('key, value');
+        if (data) {
+            const settingsMap: any = {};
+            data.forEach(s => settingsMap[s.key] = s.value);
+            setSettings(prev => ({ ...prev, ...settingsMap }));
+        }
     }
 
     async function updatePrice(id: string, newPrice: number) {
         setSaving(true);
-        const { error } = await supabase
-            .from('waste_types')
-            .update({ price_per_kg: newPrice })
-            .eq('id', id);
-
-        if (error) {
-            showToast("Erreur lors de la mise à jour du tarif", "error");
-        } else {
+        const { error } = await supabase.from('waste_types').update({ price_per_kg: newPrice }).eq('id', id);
+        if (error) showToast("Erreur", "error");
+        else {
             showToast("Tarif mis à jour");
             fetchWasteTypes();
+        }
+        setSaving(false);
+    }
+
+    async function saveGlobalSettings() {
+        setSaving(true);
+        const updates = Object.entries(settings).map(([key, value]) => ({
+            key, value
+        }));
+
+        const { error } = await supabase.from('system_settings').upsert(updates);
+        
+        if (error) {
+            showToast("Erreur lors de la sauvegarde", "error");
+        } else {
+            showToast("Paramètres globaux enregistrés", "success");
         }
         setSaving(false);
     }
@@ -139,25 +160,45 @@ export default function SettingsPage() {
                     </section>
 
                     <section className="bg-gray-900 p-10 rounded-[3rem] shadow-2xl">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-primary">
-                                <Zap size={24} />
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center text-primary">
+                                    <Zap size={24} />
+                                </div>
+                                <h2 className="text-xl font-black text-white uppercase tracking-tight italic">Optimisation Réseau</h2>
                             </div>
-                            <h2 className="text-xl font-black text-white uppercase tracking-tight italic">Optimisation Réseau</h2>
+                            <button 
+                                onClick={saveGlobalSettings}
+                                disabled={saving}
+                                className="px-6 py-3 bg-primary text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all flex items-center gap-2 disabled:opacity-50"
+                            >
+                                {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                                Enregistrer
+                            </button>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="p-6 bg-white/5 border border-white/10 rounded-3xl">
+                            <div className="p-6 bg-white/5 border border-white/10 rounded-3xl group hover:border-primary/50 transition-all">
                                 <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-4">Seuil de retrait minimum</p>
                                 <div className="flex items-center gap-3">
-                                    <input type="text" defaultValue="5 000" className="bg-transparent text-2xl font-black text-white outline-none w-32 border-b border-white/20" />
-                                    <span className="text-sm font-bold text-gray-500 uppercase">FCFA</span>
+                                    <input 
+                                        type="number" 
+                                        value={settings.min_withdrawal_threshold} 
+                                        onChange={(e) => setSettings({...settings, min_withdrawal_threshold: Number(e.target.value)})}
+                                        className="bg-transparent text-2xl font-black text-white outline-none w-32 border-b border-white/20 focus:border-primary transition-all" 
+                                    />
+                                    <span className="text-sm font-bold text-gray-500 uppercase tracking-widest italic">FCFA</span>
                                 </div>
                             </div>
-                            <div className="p-6 bg-white/5 border border-white/10 rounded-3xl">
-                                <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-4">Comission plateforme</p>
+                            <div className="p-6 bg-white/5 border border-white/10 rounded-3xl group hover:border-primary/50 transition-all">
+                                <p className="text-[10px] font-black text-primary uppercase tracking-widest mb-4">Commission plateforme</p>
                                 <div className="flex items-center gap-3">
-                                    <input type="text" defaultValue="5" className="bg-transparent text-2xl font-black text-white outline-none w-16 border-b border-white/20" />
-                                    <span className="text-sm font-bold text-gray-500 uppercase">%</span>
+                                    <input 
+                                        type="number" 
+                                        value={settings.platform_commission} 
+                                        onChange={(e) => setSettings({...settings, platform_commission: Number(e.target.value)})}
+                                        className="bg-transparent text-2xl font-black text-white outline-none w-16 border-b border-white/20 focus:border-primary transition-all" 
+                                    />
+                                    <span className="text-sm font-bold text-gray-500 uppercase italic">%</span>
                                 </div>
                             </div>
                         </div>
@@ -174,16 +215,30 @@ export default function SettingsPage() {
                             <h2 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tight italic">Sécurité Globale</h2>
                         </div>
                         <div className="space-y-4">
-                            <label className="flex items-center justify-between p-4 cursor-pointer">
-                                <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">Double Authentification</span>
+                            <label className="flex items-center justify-between p-4 cursor-pointer group">
+                                <span className="text-xs font-bold text-gray-600 uppercase tracking-widest group-hover:text-primary transition-colors">Double Authentification</span>
                                 <div className="w-10 h-5 bg-primary/20 rounded-full relative">
-                                    <div className="absolute right-1 top-1 w-3 h-3 bg-primary rounded-full" />
+                                    <div className="absolute right-1 top-1 w-3 h-3 bg-primary rounded-full shadow-sm" />
                                 </div>
                             </label>
-                            <label className="flex items-center justify-between p-4 cursor-pointer opacity-50">
-                                <span className="text-xs font-bold text-gray-600 uppercase tracking-widest">Maintenance Mode</span>
-                                <div className="w-10 h-5 bg-gray-200 rounded-full relative">
-                                    <div className="absolute left-1 top-1 w-3 h-3 bg-white rounded-full shadow-sm" />
+                            <label 
+                                onClick={() => {
+                                    const newVal = !settings.maintenance_mode;
+                                    setSettings({...settings, maintenance_mode: newVal});
+                                    // Save immediately for maintenance mode
+                                    supabase.from('system_settings').upsert({key: 'maintenance_mode', value: newVal}).then(() => showToast("Maintenance mode : " + (newVal ? "ON" : "OFF")));
+                                }}
+                                className="flex items-center justify-between p-4 cursor-pointer group"
+                            >
+                                <span className="text-xs font-bold text-gray-600 uppercase tracking-widest group-hover:text-red-500 transition-colors">Maintenance Mode</span>
+                                <div className={cn(
+                                    "w-10 h-5 rounded-full relative transition-colors duration-300",
+                                    settings.maintenance_mode ? "bg-red-500" : "bg-gray-200"
+                                )}>
+                                    <div className={cn(
+                                        "absolute top-1 w-3 h-3 bg-white rounded-full shadow-sm transition-all duration-300",
+                                        settings.maintenance_mode ? "left-6" : "left-1"
+                                    )} />
                                 </div>
                             </label>
                         </div>

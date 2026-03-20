@@ -21,11 +21,11 @@ import { motion } from "framer-motion";
 
 export default function FinancePage() {
     const [loading, setLoading] = useState(true);
-    const [transactions, setTransactions] = useState([]);
+    const [transactions, setTransactions] = useState<any[]>([]);
     const [stats, setStats] = useState({
-        totalRevenue: "0",
-        commissions: "0",
-        pendingPayouts: "0"
+        totalRevenue: 0,
+        commissions: 0,
+        pendingPayouts: 0
     });
     const supabase = createClient();
 
@@ -35,10 +35,36 @@ export default function FinancePage() {
 
     async function fetchFinanceData() {
         setLoading(true);
-        // Simulé pour le moment, à connecter aux tables de transactions
-        setTimeout(() => {
-            setLoading(false);
-        }, 800);
+        try {
+            // Fetch Transactions
+            const { data: txs, error } = await supabase
+                .from('transactions')
+                .select('*, profiles(full_name)')
+                .order('created_at', { ascending: false });
+
+            if (txs) {
+                setTransactions(txs);
+                
+                // Calculate Stats
+                const totalRev = txs
+                    .filter(t => t.type === 'income')
+                    .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+                
+                // Estimation de commission (à enrichir via system_settings si besoin)
+                const comms = txs.reduce((acc, curr) => acc + (Number(curr.commission_amount) || 0), 0);
+                
+                const pending = txs.filter(t => t.status === 'Pending').length;
+
+                setStats({
+                    totalRevenue: totalRev,
+                    commissions: comms || (totalRev * 0.05),
+                    pendingPayouts: pending
+                });
+            }
+        } catch (err) {
+            console.error(err);
+        }
+        setLoading(false);
     }
 
     return (
@@ -66,36 +92,24 @@ export default function FinancePage() {
             {/* Financial Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
-                    { label: "Volume Total (Brut)", value: "12,450,000", icon: Banknote, color: "text-blue-500", trend: "+12%", up: true },
-                    { label: "Commissions CITICLINE", value: "622,500", icon: TrendingUp, color: "text-primary", trend: "+8%", up: true },
-                    { label: "Paiements en Attente", value: "340,000", icon: History, color: "text-amber-500", trend: "5 Dossiers", up: null },
+                    { label: "Volume Total (Brut)", value: stats.totalRevenue.toLocaleString(), icon: Banknote, color: "text-blue-500", trend: "+12%", up: true },
+                    { label: "Commissions CITICLINE", value: stats.commissions.toLocaleString(), icon: TrendingUp, color: "text-primary", trend: "+8%", up: true },
+                    { label: "Paiements en Attente", value: stats.pendingPayouts.toString(), icon: History, color: "text-amber-500", trend: `${stats.pendingPayouts} Dossiers`, up: null },
                 ].map((stat, i) => (
                     <motion.div 
                         key={i}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.1 }}
-                        className="bg-white dark:bg-zinc-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm"
+                        className="bg-white dark:bg-zinc-900 p-8 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm transition-all hover:scale-[1.02]"
                     >
                         <div className="flex items-center justify-between mb-4">
                             <div className={cn("w-12 h-12 rounded-2xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center", stat.color)}>
                                 <stat.icon size={22} />
                             </div>
-                            {stat.up !== null && (
-                                <div className={cn(
-                                    "flex items-center gap-1 text-[9px] font-black uppercase px-2 py-0.5 rounded-full",
-                                    stat.up ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
-                                )}>
-                                    {stat.up ? <ArrowUpRight size={10} /> : <ArrowDownRight size={10} />}
-                                    {stat.trend}
-                                </div>
-                            )}
-                             {stat.up === null && (
-                                <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">{stat.trend}</span>
-                            )}
                         </div>
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                        <p className="text-2xl font-black text-gray-900 dark:text-white italic tracking-tighter">
+                        <p className="text-3xl font-black text-gray-900 dark:text-white italic tracking-tighter">
                             {stat.value} <span className="text-[10px]">FCFA</span>
                         </p>
                     </motion.div>
@@ -128,27 +142,25 @@ export default function FinancePage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 dark:divide-zinc-800/50">
-                            {[
-                                { date: "Hier, 14:20", id: "#TR-9821", name: "Mairie de Cocody", type: "Paiement Zone", amount: "150,000", comm: "7,500", status: "Succeeded" },
-                                { date: "Aujourd'hui, 09:12", id: "#TR-9822", name: "Kouakou Jean", type: "Vente Déchets", amount: "5,400", comm: "270", status: "Succeeded" },
-                                { date: "Aujourd'hui, 10:45", id: "#TR-9823", name: "EcoService SARL", type: "Retrait", amount: "80,000", comm: "0", status: "Pending" },
-                            ].map((tr, i) => (
+                            {transactions.map((tr, i) => (
                                 <tr key={i} className="hover:bg-gray-50/50 dark:hover:bg-zinc-800/20 transition-colors">
                                     <td className="px-8 py-5">
-                                        <p className="text-[11px] font-black text-gray-900 dark:text-white leading-none mb-1">{tr.date}</p>
-                                        <p className="text-[9px] text-gray-400 font-bold tracking-widest">{tr.id}</p>
+                                        <p className="text-[11px] font-black text-gray-900 dark:text-white leading-none mb-1">
+                                            {new Date(tr.created_at).toLocaleDateString('fr-FR')}
+                                        </p>
+                                        <p className="text-[9px] text-gray-400 font-bold tracking-widest">#{tr.id}</p>
                                     </td>
                                     <td className="px-8 py-5">
-                                        <p className="text-[11px] font-black text-gray-900 dark:text-white uppercase">{tr.name}</p>
+                                        <p className="text-[11px] font-black text-gray-900 dark:text-white uppercase">{tr.profiles?.full_name || 'Inconnu'}</p>
                                     </td>
                                     <td className="px-8 py-5">
                                         <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">{tr.type}</span>
                                     </td>
                                     <td className="px-8 py-5">
-                                        <p className="text-[11px] font-black text-gray-900 dark:text-white italic">{tr.amount}</p>
+                                        <p className="text-[11px] font-black text-gray-900 dark:text-white italic">{tr.amount.toLocaleString()}</p>
                                     </td>
                                     <td className="px-8 py-5">
-                                        <p className="text-[11px] font-black text-primary italic">{tr.comm}</p>
+                                        <p className="text-[11px] font-black text-primary italic">{(tr.commission_amount || (tr.amount * 0.05)).toLocaleString()}</p>
                                     </td>
                                     <td className="px-8 py-5 text-right">
                                         <span className={cn(
@@ -160,6 +172,11 @@ export default function FinancePage() {
                                     </td>
                                 </tr>
                             ))}
+                            {transactions.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="px-8 py-20 text-center opacity-30 italic font-black uppercase tracking-widest text-xs">Aucune transaction enregistrée</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
