@@ -117,12 +117,28 @@ export default function WasteManagementPage() {
                             <div className="w-16 h-16 bg-gray-50 dark:bg-zinc-800 rounded-3xl flex items-center justify-center text-4xl shadow-sm border border-gray-100 dark:border-zinc-800 transition-transform group-hover:scale-110">
                                 {type.emoji}
                             </div>
-                            <button 
-                                onClick={() => deleteType(type.id)}
-                                className="p-2 text-gray-300 hover:text-red-500 transition-colors"
-                            >
-                                <Trash2 size={18} />
-                            </button>
+                            <div className="flex gap-2">
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteType(type.id);
+                                    }}
+                                    className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                                    title="Supprimer ce matériau"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
+                                <button 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        showToast(`Détails de ${type.name} : Statistiques étendues en cours de calcul`, "info");
+                                    }}
+                                    className="p-2 text-gray-300 hover:text-primary transition-colors"
+                                    title="Plus d'options"
+                                >
+                                    <MoreVertical size={18} />
+                                </button>
+                            </div>
                         </div>
                         
                         <h3 className="text-xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-2">{type.name}</h3>

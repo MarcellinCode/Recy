@@ -219,25 +219,41 @@ export default function UsersPage() {
                                </span>
                            </div>
                            <div className="flex items-center gap-2 ml-4">
+                            <div className="flex items-center gap-2 ml-4">
                                <button 
-                                   onClick={() => toggleBan(user)}
+                                   onClick={(e) => {
+                                       e.stopPropagation();
+                                       toggleBan(user);
+                                   }}
                                    className={cn(
                                        "p-3 bg-gray-50 dark:bg-zinc-800 rounded-2xl transition-all",
-                                       user.status === 'Suspendu' ? "text-emerald-500 hover:bg-emerald-50" : "text-gray-400 hover:text-red-500 hover:bg-red-50"
+                                       user.status === 'Suspendu' ? "text-emerald-500 hover:bg-emerald-100" : "text-gray-400 hover:text-red-500 hover:bg-red-50"
                                    )} 
-                                   title={user.status === 'Suspendu' ? "Réactiver" : "Suspendre"}
+                                   title={user.status === 'Suspendu' ? "Réactiver l'utilisateur" : "Suspendre l'utilisateur (Ban)"}
                                >
                                    <Ban size={18} />
                                </button>
                                <button 
-                                    onClick={() => deleteUser(user.id)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        deleteUser(user.id);
+                                    }}
                                     className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-gray-400 hover:text-red-600 hover:bg-red-50 transition-all"
+                                    title="Supprimer définitivement"
                                 >
                                    <Trash2 size={18} />
                                </button>
-                               <button className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-gray-400 hover:text-primary transition-all">
+                               <button 
+                                   onClick={(e) => {
+                                       e.stopPropagation();
+                                       showToast(`Détails de ${user.full_name} : Fonction d'édition avancée en cours de déploiement`, "info");
+                                   }}
+                                   className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-gray-400 hover:text-primary hover:bg-primary/5 transition-all"
+                                   title="Plus d'options"
+                               >
                                    <MoreVertical size={18} />
                                </button>
+                            </div>
                            </div>
                        </div>
                    </div>

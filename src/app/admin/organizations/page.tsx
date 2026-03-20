@@ -201,29 +201,46 @@ export default function OrganizationsPage() {
                                         <div className="flex items-center justify-end gap-2">
                                             {org.status === 'En attente' && (
                                                 <button 
-                                                    onClick={() => handleStatusChange(org, 'Actif')}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleStatusChange(org, 'Actif');
+                                                    }}
                                                     className="p-2 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/20 rounded-lg transition-colors" 
-                                                    title="Approuver"
+                                                    title="Approuver l'organisation"
                                                 >
                                                     <CheckCircle2 size={18} />
                                                 </button>
                                             )}
                                             {org.status === 'Actif' && (
                                                 <button 
-                                                    onClick={() => handleStatusChange(org, 'Suspendu')}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleStatusChange(org, 'Suspendu');
+                                                    }}
                                                     className="p-2 text-amber-500 hover:bg-amber-50 rounded-lg transition-colors" 
-                                                    title="Suspendre"
+                                                    title="Suspendre l'organisation"
                                                 >
                                                     <Ban size={18} />
                                                 </button>
                                             )}
                                              <button 
-                                                onClick={() => deleteOrg(org.id)}
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    deleteOrg(org.id);
+                                                }}
                                                 className="p-2 text-gray-400 hover:text-red-600 rounded-lg transition-colors"
+                                                title="Supprimer définitivement"
                                             >
                                                 <Trash2 size={18} />
                                             </button>
-                                            <button className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    showToast(`Détails de ${org.full_name} : Consultation étendue bientôt disponible`, "info");
+                                                }}
+                                                className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
+                                                title="Plus d'options"
+                                            >
                                                 <MoreVertical size={18} />
                                             </button>
                                         </div>
