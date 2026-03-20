@@ -137,36 +137,50 @@ function ChatContainer() {
                 return acc;
             }, {});
 
-            let query = supabase
+            // 1. Fetch ALL wastes to find those involving the user
+            const { data: allWastes } = await supabase
                 .from('wastes')
                 .select(`
                     id, status, seller_id, collector_id, estimated_weight,
                     waste_types(name),
                     seller:profiles!seller_id(id, full_name),
                     collector:profiles!collector_id(id, full_name)
-                `);
+                `)
+                .order('created_at', { ascending: false });
 
-            const messageWasteIds = Array.from(new Set((userMessages || []).map(m => m.waste_id)));
+            // 2. Identify wastes where user is seller, collector, OR has messages
+            const { data: userMessages } = await supabase
+                .from('messages')
+                .select('waste_id, is_read, receiver_id')
+                .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
 
-            if (messageWasteIds.length > 0) {
-                query = query.or(`seller_id.eq.${user.id},collector_id.eq.${user.id},id.in.(${messageWasteIds.join(',')})`);
-            } else {
-                query = query.or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`);
-            }
+            const wasteIdsWithMessages = new Set((userMessages || []).map(m => m.waste_id).filter(Boolean));
 
-            const { data: wastes } = await query.order('created_at', { ascending: false });
-            
-            const uniqueWastes = Array.from(new Map((wastes as any[] || []).map(item => [item.id, item])).values())
-                .map(conv => ({
-                    ...conv,
-                    unreadCount: unreadCounts[conv.id] || 0
-                }));
+            const filteredWastes = (allWastes || []).filter(w => 
+                w.seller_id === user.id || 
+                w.collector_id === user.id || 
+                wasteIdsWithMessages.has(w.id)
+            );
 
-            setConversations(uniqueWastes as Conversation[]);
+            // 3. Calculate unread counts
+            const unreadCountsMap = (userMessages || []).reduce((acc: any, msg: any) => {
+                if (msg.receiver_id === user.id && !msg.is_read) {
+                    acc[msg.waste_id] = (acc[msg.waste_id] || 0) + 1;
+                }
+                return acc;
+            }, {});
+
+            const conversationsWithBadges = filteredWastes.map(conv => ({
+                ...conv,
+                unreadCount: unreadCountsMap[conv.id] || 0
+            }));
+
+            setConversations(conversationsWithBadges as any[]);
+            setLoading(false);
 
             if (targetWasteId) {
-                const found = uniqueWastes.find(c => c.id === targetWasteId);
-                if (found) setSelectedConv(found as Conversation);
+                const found = conversationsWithBadges.find(c => c.id === targetWasteId);
+                if (found) setSelectedConv(found as any);
             }
             setLoading(false);
         };
