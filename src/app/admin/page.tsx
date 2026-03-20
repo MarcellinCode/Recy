@@ -1,5 +1,3 @@
-"use client";
-
 import { 
     Users, 
     BarChart3, 
@@ -10,35 +8,102 @@ import {
     Activity,
     ShieldCheck,
     Building2,
-    Globe
+    Globe,
+    Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase";
 
 export default function SuperAdminDashboard() {
+    const supabase = createClient();
+    const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        users: 0,
+        tons: 0,
+        transactions: 0,
+        impact: 0
+    });
+    const [orgs, setOrgs] = useState<any[]>([]);
+
+    useEffect(() => {
+        async function fetchDashboardData() {
+            setLoading(true);
+            try {
+                // 1. Total Users
+                const { count: userCount } = await supabase
+                    .from('profiles')
+                    .select('*', { count: 'exact', head: true });
+
+                // 2. Total Tons (from wastes)
+                const { data: wasteData } = await supabase
+                    .from('wastes')
+                    .select('final_weight')
+                    .eq('status', 'collected');
+                const totalTons = (wasteData?.reduce((acc, curr) => acc + (Number(curr.final_weight) || 0), 0) || 0) / 1000;
+
+                // 3. Global Transactions Count
+                const { count: transCount } = await supabase
+                    .from('transactions')
+                    .select('*', { count: 'exact', head: true });
+
+                // 4. Recent Organizations
+                const { data: orgsData } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .in('role', ['mairie', 'entreprise'])
+                    .limit(3)
+                    .order('created_at', { ascending: false });
+
+                setStats({
+                    users: userCount || 0,
+                    tons: totalTons,
+                    transactions: transCount || 0,
+                    impact: Math.round(totalTons * 1000 * 2.5) // kg CO2
+                });
+                setOrgs(orgsData || []);
+
+            } catch (err) {
+                console.error("Dashboard Dashboard Error:", err);
+            }
+            setLoading(false);
+        }
+        fetchDashboardData();
+    }, [supabase]);
+
     const kpis = [
-        { label: "Utilisateurs Totaux", value: "32,840", icon: Users, color: "bg-blue-500", trend: "+12.5%", trendUp: true },
-        { label: "Collecte (Tonnes)", value: "1,420.5", icon: BarChart3, color: "bg-primary", trend: "+8.2%", trendUp: true },
-        { label: "Volume d'Affaires", value: "24.5M", icon: Banknote, color: "bg-amber-500", trend: "+15.3%", trendUp: true },
-        { label: "Impact Éco (CO2)", value: "840kg", icon: Globe, color: "bg-emerald-500", trend: "-5.4%", trendUp: false },
+        { label: "Citoyens & Collecteurs", value: stats.users.toLocaleString(), icon: Users, color: "bg-blue-500", trend: "+12.5%", trendUp: true },
+        { label: "Collecte (Tonnes)", value: stats.tons.toFixed(1), icon: BarChart3, color: "bg-primary", trend: "+8.2%", trendUp: true },
+        { label: "Transactions", value: stats.transactions.toLocaleString(), icon: Banknote, color: "bg-amber-500", trend: "+15.3%", trendUp: true },
+        { label: "Impact Éco (CO2)", value: stats.impact.toLocaleString() + "kg", icon: Globe, color: "bg-emerald-500", trend: "Impact Réel", trendUp: true },
     ];
+
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[70vh] gap-4">
+                <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                <p className="text-gray-400 font-black uppercase tracking-widest text-[10px]">Calcul de l'écosystème en cours...</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-12">
-            {/* Header */}
+            {/* Header Area */}
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-8 border-b border-gray-100 dark:border-zinc-800">
                 <div>
                     <h1 className="text-4xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-1">
                         Tableau de <span className="text-primary tracking-tighter">Bord Global</span>
                     </h1>
-                    <p className="text-gray-500 text-sm font-bold uppercase tracking-widest flex items-center gap-2">
+                    <p className="text-gray-500 text-sm font-bold uppercase tracking-widest flex items-center gap-2 text-balance">
                         <Activity size={14} className="text-primary" />
-                        Supervision en temps réel de l'écosystème CITICLINE
+                        Gouvernance et supervision en temps réel
                     </p>
                 </div>
                 <div className="flex items-center gap-4 bg-white dark:bg-zinc-900 p-2 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800">
                    <div className="px-4 py-2 bg-primary/10 rounded-xl">
-                        <span className="text-[10px] font-black text-primary uppercase tracking-widest">Système de santé</span>
+                        <span className="text-[10px] font-black text-primary uppercase tracking-widest leading-none block mb-1">Système de santé</span>
                         <div className="flex items-center gap-2">
                             <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
                             <span className="text-xs font-black text-gray-900 dark:text-white uppercase italic">Opérationnel</span>
@@ -89,35 +154,33 @@ export default function SuperAdminDashboard() {
                             <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-950/20 rounded-2xl flex items-center justify-center text-indigo-600">
                                 <Building2 size={24} />
                             </div>
-                            <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight italic">Organisations Actives</h2>
+                            <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight italic">Partenaires Récents</h2>
                         </div>
                         <button className="text-xs font-black text-primary uppercase tracking-widest hover:underline">Voir tout</button>
                     </div>
 
                     <div className="space-y-6">
-                        {[
-                            { name: "Mairie d'Abidjan", zone: "Zone A", agents: 45, status: "Actif" },
-                            { name: "Eco-Collect CI", zone: "Zone B", agents: 12, status: "En attente" },
-                            { name: "Ville de San Pédro", zone: "Zone C", agents: 28, status: "Actif" },
-                        ].map((org, i) => (
+                        {orgs.length > 0 ? orgs.map((org, i) => (
                             <div key={i} className="flex items-center justify-between p-6 bg-gray-50 dark:bg-zinc-800/50 rounded-3xl border border-gray-100 dark:border-zinc-800/50 hover:translate-x-2 transition-transform cursor-pointer">
                                 <div className="flex items-center gap-4">
                                     <div className="w-10 h-10 bg-white dark:bg-zinc-950 rounded-xl flex items-center justify-center border border-gray-100 dark:border-zinc-800 shadow-sm">
                                         <div className="w-2 h-2 rounded-full bg-primary" />
                                     </div>
-                                    <div>
-                                        <p className="text-sm font-black text-gray-900 dark:text-white uppercase">{org.name}</p>
-                                        <p className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-widest">{org.zone} • {org.agents} Agents</p>
+                                    <div className="min-w-0">
+                                        <p className="text-sm font-black text-gray-900 dark:text-white uppercase truncate">{org.full_name}</p>
+                                        <p className="text-[10px] font-bold text-gray-400 mt-0.5 uppercase tracking-widest">{org.city || 'Non assigné'} • {org.role}</p>
                                     </div>
                                 </div>
                                 <span className={cn(
-                                    "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
+                                    "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest whitespace-nowrap",
                                     org.status === 'Actif' ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"
                                 )}>
-                                    {org.status}
+                                    {org.status || 'Actif'}
                                 </span>
                             </div>
-                        ))}
+                        )) : (
+                            <div className="py-10 text-center opacity-30 italic">Aucune organisation enregistrée</div>
+                        )}
                     </div>
                 </motion.div>
 

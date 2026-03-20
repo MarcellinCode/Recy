@@ -21,6 +21,9 @@ const NAV_ITEMS = [
     { href: "/admin", label: "Tableau de Bord", icon: LayoutDashboard },
     { href: "/admin/organizations", label: "Organisations", icon: Building2 },
     { href: "/admin/users", label: "Utilisateurs", icon: Users },
+    { href: "/admin/subscriptions", label: "Abonnements", icon: Activity },
+    { href: "/admin/finance", label: "Finances", icon: TrendingUp },
+    { href: "/admin/waste", label: "Gestion Déchets", icon: ShieldAlert },
     { href: "/admin/settings", label: "Configuration", icon: Settings },
 ];
 

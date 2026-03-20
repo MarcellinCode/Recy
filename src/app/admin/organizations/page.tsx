@@ -19,6 +19,7 @@ import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
+import { Modal } from "@/components/ui/Modal";
 
 type Organization = {
     id: string;
@@ -33,6 +34,8 @@ export default function OrganizationsPage() {
     const [search, setSearch] = useState("");
     const [orgs, setOrgs] = useState<Organization[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [newOrg, setNewOrg] = useState({ full_name: "", role: "mairie", city: "" });
     const supabase = createClient();
 
     useEffect(() => {
@@ -53,6 +56,22 @@ export default function OrganizationsPage() {
             setOrgs(data || []);
         }
         setLoading(false);
+    }
+
+    async function handleAddOrg(e: React.FormEvent) {
+        e.preventDefault();
+        const { error } = await supabase.from('profiles').insert([
+            { ...newOrg, status: 'Actif' }
+        ]);
+
+        if (error) {
+            showToast("Erreur lors de l'ajout : " + error.message, "error");
+        } else {
+            showToast("Organisation ajoutée avec succès", "success");
+            setIsAddModalOpen(false);
+            setNewOrg({ full_name: "", role: "mairie", city: "" });
+            fetchOrgs();
+        }
     }
 
     async function handleStatusChange(org: Organization, newStatus: string) {
@@ -91,7 +110,10 @@ export default function OrganizationsPage() {
                     </h1>
                     <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Contrôle et validation des partenaires institutionnels</p>
                 </div>
-                <button className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-900/10">
+                <button 
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-900/10"
+                >
                     <Plus size={16} />
                     Nouvelle Organisation
                 </button>
@@ -212,6 +234,56 @@ export default function OrganizationsPage() {
                     </table>
                 </div>
             </section>
+            {/* Add Organization Modal */}
+            <Modal
+                isOpen={isAddModalOpen}
+                onClose={() => setIsAddModalOpen(false)}
+                title="Ajouter une Organisation"
+            >
+                <form onSubmit={handleAddOrg} className="space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de l'Organisation / Mairie</label>
+                        <input 
+                            required
+                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase tracking-tight"
+                            placeholder="Ex: MAIRIE DE COCODY..."
+                            value={newOrg.full_name}
+                            onChange={(e) => setNewOrg({...newOrg, full_name: e.target.value})}
+                        />
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Type</label>
+                            <select 
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer"
+                                value={newOrg.role}
+                                onChange={(e) => setNewOrg({...newOrg, role: e.target.value})}
+                            >
+                                <option value="mairie">Mairie</option>
+                                <option value="entreprise">Entreprise</option>
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville / Zone</label>
+                            <input 
+                                required
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all"
+                                placeholder="Abidjan"
+                                value={newOrg.city}
+                                onChange={(e) => setNewOrg({...newOrg, city: e.target.value})}
+                            />
+                        </div>
+                    </div>
+
+                    <button 
+                        type="submit"
+                        className="w-full py-5 bg-gray-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-900/10 mt-4"
+                    >
+                        Créer le Partenaire
+                    </button>
+                </form>
+            </Modal>
         </div>
     );
 }
