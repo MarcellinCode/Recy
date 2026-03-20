@@ -1,12 +1,65 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
+import { createClient } from "@/lib/supabase";
+import { showToast } from "@/components/ui/toast";
 
 export function NavigationWrapper({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
+    const router = useRouter();
+    const supabase = createClient();
     const isSuperAdmin = pathname?.startsWith("/admin");
+
+    useEffect(() => {
+        if (isSuperAdmin) return;
+
+        let channel: any;
+
+        const setupListener = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            channel = supabase
+                .channel('global_web_messages')
+                .on(
+                    'postgres_changes',
+                    { 
+                        event: 'INSERT', 
+                        schema: 'public', 
+                        table: 'messages',
+                        filter: `receiver_id=eq.${user.id}`
+                    },
+                    async (payload: any) => {
+                        // Ne pas notifier si on est déjà sur le chat lié à ce lot/personne
+                        const isChatPage = pathname?.includes("/chat");
+                        
+                        if (!isChatPage) {
+                            // Récupérer le nom de l'expéditeur
+                            const { data: sender } = await supabase
+                                .from('profiles')
+                                .select('full_name')
+                                .eq('id', payload.new.sender_id)
+                                .single();
+
+                            showToast(
+                                `${sender?.full_name || 'Nouveau message'}: ${payload.new.content.substring(0, 50)}${payload.new.content.length > 50 ? '...' : ''}`,
+                                "info"
+                            );
+                        }
+                    }
+                )
+                .subscribe();
+        };
+
+        setupListener();
+
+        return () => {
+            if (channel) supabase.removeChannel(channel);
+        };
+    }, [supabase, pathname, isSuperAdmin]);
 
     return (
         <>
