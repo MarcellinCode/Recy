@@ -24,6 +24,7 @@ export default function MairieManagementPage() {
     const [zones, setZones] = useState<any[]>([]);
     const [pendingConcessions, setPendingConcessions] = useState<any[]>([]);
     const [isAddZoneModalOpen, setIsAddZoneModalOpen] = useState(false);
+    const [editingZone, setEditingZone] = useState<any | null>(null);
     const [newZone, setNewZone] = useState({ name: "", city: "Abidjan", status: "available" });
     const supabase = createClient();
 
@@ -60,6 +61,38 @@ export default function MairieManagementPage() {
             showToast("Zone de collecte créée avec succès", "success");
             setIsAddZoneModalOpen(false);
             setNewZone({ name: "", city: "Abidjan", status: "available" });
+            fetchMairieData();
+        }
+    }
+
+    async function handleUpdateZone(e: React.FormEvent) {
+        e.preventDefault();
+        if (!editingZone) return;
+
+        const { error } = await supabase
+            .from('zones')
+            .update({
+                name: editingZone.name,
+                city: editingZone.city,
+                status: editingZone.status
+            })
+            .eq('id', editingZone.id);
+
+        if (error) {
+            showToast("Erreur lors de la mise à jour", "error");
+        } else {
+            showToast("Zone mise à jour avec succès", "success");
+            setEditingZone(null);
+            fetchMairieData();
+        }
+    }
+
+    async function deleteZone(id: string) {
+        if (!confirm("Supprimer cette zone ? Cela peut affecter les concessions liées.")) return;
+        const { error } = await supabase.from('zones').delete().eq('id', id);
+        if (error) showToast("Erreur", "error");
+        else {
+            showToast("Zone supprimée avec succès", "success");
             fetchMairieData();
         }
     }
@@ -127,12 +160,28 @@ export default function MairieManagementPage() {
                                     <div className="px-3 py-1 bg-gray-50 dark:bg-zinc-800 rounded-full text-[9px] font-black text-gray-400 uppercase tracking-widest">
                                         ID: {zone.id.slice(0, 8)}
                                     </div>
-                                    <span className={cn(
-                                        "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest",
-                                        zone.status === 'available' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-                                    )}>
-                                        {zone.status === 'available' ? 'Disponible' : 'Occupée'}
-                                    </span>
+                                    <div className="flex gap-1">
+                                        <button 
+                                            onClick={() => setEditingZone(zone)}
+                                            className="p-1.5 text-gray-400 hover:text-primary transition-colors"
+                                            title="Modifier la zone"
+                                        >
+                                            <Filter size={14} />
+                                        </button>
+                                        <button 
+                                            onClick={() => deleteZone(zone.id)}
+                                            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                                            title="Supprimer la zone"
+                                        >
+                                            <XCircle size={14} />
+                                        </button>
+                                         <span className={cn(
+                                            "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ml-2",
+                                            zone.status === 'available' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
+                                        )}>
+                                            {zone.status === 'available' ? 'Disponible' : 'Occupée'}
+                                        </span>
+                                    </div>
                                 </div>
                                 <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-1">{zone.name}</h3>
                                 <p className="text-[10px] font-bold text-gray-400 uppercase mb-6">{zone.city}</p>
@@ -249,6 +298,57 @@ export default function MairieManagementPage() {
                         Publier la Zone au Catalogue
                     </button>
                 </form>
+            </Modal>
+
+            {/* Edit Zone Modal */}
+            <Modal
+                isOpen={!!editingZone}
+                onClose={() => setEditingZone(null)}
+                title="Modifier la Zone de Collecte"
+            >
+                {editingZone && (
+                    <form onSubmit={handleUpdateZone} className="space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de la Zone</label>
+                            <input 
+                                required
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase tracking-tight"
+                                value={editingZone.name}
+                                onChange={(e) => setEditingZone({...editingZone, name: e.target.value})}
+                            />
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville</label>
+                                <input 
+                                    required
+                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase"
+                                    value={editingZone.city}
+                                    onChange={(e) => setEditingZone({...editingZone, city: e.target.value})}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Statut</label>
+                                <select 
+                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer font-black"
+                                    value={editingZone.status}
+                                    onChange={(e) => setEditingZone({...editingZone, status: e.target.value})}
+                                >
+                                    <option value="available">Disponible</option>
+                                    <option value="occupied">Occupée</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <button 
+                            type="submit"
+                            className="w-full py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-xl shadow-primary/10 mt-4"
+                        >
+                            Enregistrer les modifications
+                        </button>
+                    </form>
+                )}
             </Modal>
         </div>
     );

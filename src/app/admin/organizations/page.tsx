@@ -35,6 +35,7 @@ export default function OrganizationsPage() {
     const [orgs, setOrgs] = useState<Organization[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
     const [newOrg, setNewOrg] = useState({ full_name: "", role: "mairie", city: "" });
     const supabase = createClient();
 
@@ -89,11 +90,34 @@ export default function OrganizationsPage() {
     }
 
     async function deleteOrg(id: string) {
-        if (!confirm("Supprimer cette organisation ?")) return;
+        if (!confirm("Êtes-vous sûr de vouloir supprimer cette organisation ? Cette action est irréversible.")) return;
         const { error } = await supabase.from('profiles').delete().eq('id', id);
         if (error) showToast("Erreur lors de la suppression", "error");
         else {
-            showToast("Organisation supprimée");
+            showToast("Organisation supprimée avec succès", "success");
+            fetchOrgs();
+        }
+    }
+
+    async function handleUpdateOrg(e: React.FormEvent) {
+        e.preventDefault();
+        if (!editingOrg) return;
+
+        const { error } = await supabase
+            .from('profiles')
+            .update({
+                full_name: editingOrg.full_name,
+                role: editingOrg.role,
+                city: editingOrg.city,
+                status: editingOrg.status
+            })
+            .eq('id', editingOrg.id);
+
+        if (error) {
+            showToast("Erreur lors de la mise à jour", "error");
+        } else {
+            showToast("Organisation mise à jour", "success");
+            setEditingOrg(null);
             fetchOrgs();
         }
     }
@@ -236,10 +260,10 @@ export default function OrganizationsPage() {
                                             <button 
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    showToast(`Détails de ${org.full_name} : Consultation étendue bientôt disponible`, "info");
+                                                    setEditingOrg(org);
                                                 }}
                                                 className="p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"
-                                                title="Plus d'options"
+                                                title="Modifier l'organisation"
                                             >
                                                 <MoreVertical size={18} />
                                             </button>
@@ -300,6 +324,70 @@ export default function OrganizationsPage() {
                         Créer le Partenaire
                     </button>
                 </form>
+            </Modal>
+
+            {/* Edit Organization Modal */}
+            <Modal
+                isOpen={!!editingOrg}
+                onClose={() => setEditingOrg(null)}
+                title="Modifier l'Organisation"
+            >
+                {editingOrg && (
+                    <form onSubmit={handleUpdateOrg} className="space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de l'Organisation / Mairie</label>
+                            <input 
+                                required
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase tracking-tight"
+                                value={editingOrg.full_name}
+                                onChange={(e) => setEditingOrg({...editingOrg, full_name: e.target.value})}
+                            />
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Type</label>
+                                <select 
+                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer font-black"
+                                    value={editingOrg.role}
+                                    onChange={(e) => setEditingOrg({...editingOrg, role: e.target.value})}
+                                >
+                                    <option value="mairie">Mairie</option>
+                                    <option value="entreprise">Entreprise</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Statut</label>
+                                <select 
+                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer font-black"
+                                    value={editingOrg.status}
+                                    onChange={(e) => setEditingOrg({...editingOrg, status: e.target.value})}
+                                >
+                                    <option value="Actif">Actif</option>
+                                    <option value="Suspendu">Suspendu</option>
+                                    <option value="En attente">En attente</option>
+                                </select>
+                            </div>
+                        </div>
+
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville / Zone</label>
+                            <input 
+                                required
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase"
+                                value={editingOrg.city || ""}
+                                onChange={(e) => setEditingOrg({...editingOrg, city: e.target.value})}
+                            />
+                        </div>
+
+                        <button 
+                            type="submit"
+                            className="w-full py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-xl shadow-primary/10 mt-4"
+                        >
+                            Enregistrer les modifications
+                        </button>
+                    </form>
+                )}
             </Modal>
         </div>
     );

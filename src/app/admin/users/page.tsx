@@ -37,6 +37,7 @@ export default function UsersPage() {
     const [users, setUsers] = useState<Profile[]>([]);
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [editingUser, setEditingUser] = useState<Profile | null>(null);
     const [newUser, setNewUser] = useState({ full_name: "", email: "", role: "vendeur", city: "" });
     const supabase = createClient();
 
@@ -92,7 +93,7 @@ export default function UsersPage() {
     }
 
     async function deleteUser(id: string) {
-        if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ?")) return;
+        if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.")) return;
 
         const { error } = await supabase
             .from('profiles')
@@ -102,7 +103,30 @@ export default function UsersPage() {
         if (error) {
             showToast("Erreur lors de la suppression", "error");
         } else {
-            showToast("Utilisateur supprimé", "success");
+            showToast("Utilisateur supprimé avec succès", "success");
+            fetchUsers();
+        }
+    }
+
+    async function handleUpdateUser(e: React.FormEvent) {
+        e.preventDefault();
+        if (!editingUser) return;
+
+        const { error } = await supabase
+            .from('profiles')
+            .update({
+                full_name: editingUser.full_name,
+                role: editingUser.role,
+                city: editingUser.city,
+                status: editingUser.status
+            })
+            .eq('id', editingUser.id);
+
+        if (error) {
+            showToast("Erreur lors de la mise à jour", "error");
+        } else {
+            showToast("Profil utilisateur mis à jour", "success");
+            setEditingUser(null);
             fetchUsers();
         }
     }
@@ -246,10 +270,10 @@ export default function UsersPage() {
                                <button 
                                    onClick={(e) => {
                                        e.stopPropagation();
-                                       showToast(`Détails de ${user.full_name} : Fonction d'édition avancée en cours de déploiement`, "info");
+                                       setEditingUser(user);
                                    }}
                                    className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-gray-400 hover:text-primary hover:bg-primary/5 transition-all"
-                                   title="Plus d'options"
+                                   title="Modifier l'utilisateur"
                                >
                                    <MoreVertical size={18} />
                                </button>
@@ -317,6 +341,70 @@ export default function UsersPage() {
                         Créer le profil
                     </button>
                 </form>
+            </Modal>
+
+            {/* Edit User Modal */}
+            <Modal
+                isOpen={!!editingUser}
+                onClose={() => setEditingUser(null)}
+                title="Modifier le Profil"
+            >
+                {editingUser && (
+                    <form onSubmit={handleUpdateUser} className="space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom Complet</label>
+                            <input 
+                                required
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase"
+                                value={editingUser.full_name}
+                                onChange={(e) => setEditingUser({...editingUser, full_name: e.target.value})}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Rôle</label>
+                                <select 
+                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer font-black"
+                                    value={editingUser.role}
+                                    onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
+                                >
+                                    <option value="vendeur">Citoyen</option>
+                                    <option value="collecteur">Collecteur</option>
+                                    <option value="agent_collecteur">Agent</option>
+                                    <option value="entreprise">Entreprise</option>
+                                    <option value="mairie">Mairie</option>
+                                    <option value="super_admin">Super Admin</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Statut</label>
+                                <select 
+                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer font-black"
+                                    value={editingUser.status}
+                                    onChange={(e) => setEditingUser({...editingUser, status: e.target.value})}
+                                >
+                                    <option value="Actif">Actif</option>
+                                    <option value="Suspendu">Suspendu</option>
+                                    <option value="Vérifié">Vérifié</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville / Zone</label>
+                            <input 
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase"
+                                value={editingUser.city || ""}
+                                onChange={(e) => setEditingUser({...editingUser, city: e.target.value})}
+                            />
+                        </div>
+                        <button 
+                            type="submit"
+                            className="w-full py-5 bg-primary text-white rounded-[2rem] text-xs font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-xl shadow-primary/10 mt-4"
+                        >
+                            Sauvegarder les modifications
+                        </button>
+                    </form>
+                )}
             </Modal>
         </div>
     );

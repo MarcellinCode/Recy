@@ -35,6 +35,7 @@ export default function WasteManagementPage() {
     const [loading, setLoading] = useState(true);
     const [wasteTypes, setWasteTypes] = useState<WasteType[]>([]);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [editingType, setEditingType] = useState<WasteType | null>(null);
     const [newType, setNewType] = useState({ name: "", price_per_kg: 0, emoji: "♻️" });
     const supabase = createClient();
 
@@ -66,6 +67,28 @@ export default function WasteManagementPage() {
             showToast("Nouveau type de déchet ajouté", "success");
             setIsAddModalOpen(false);
             setNewType({ name: "", price_per_kg: 0, emoji: "♻️" });
+            fetchWasteTypes();
+        }
+    }
+
+    async function handleUpdateType(e: React.FormEvent) {
+        e.preventDefault();
+        if (!editingType) return;
+
+        const { error } = await supabase
+            .from('waste_types')
+            .update({
+                name: editingType.name,
+                price_per_kg: editingType.price_per_kg,
+                emoji: editingType.emoji
+            })
+            .eq('id', editingType.id);
+
+        if (error) {
+            showToast("Erreur lors de la mise à jour", "error");
+        } else {
+            showToast("Type de déchet mis à jour", "success");
+            setEditingType(null);
             fetchWasteTypes();
         }
     }
@@ -132,10 +155,10 @@ export default function WasteManagementPage() {
                                 <button 
                                     onClick={(e) => {
                                         e.stopPropagation();
-                                        showToast(`Détails de ${type.name} : Statistiques étendues en cours de calcul`, "info");
+                                        setEditingType(type);
                                     }}
                                     className="p-2 text-gray-300 hover:text-primary transition-colors"
-                                    title="Plus d'options"
+                                    title="Modifier ce matériau"
                                 >
                                     <MoreVertical size={18} />
                                 </button>
@@ -211,6 +234,57 @@ export default function WasteManagementPage() {
                         Enregistrer dans le catalogue
                     </button>
                 </form>
+            </Modal>
+
+            {/* Edit Waste Type Modal */}
+            <Modal
+                isOpen={!!editingType}
+                onClose={() => setEditingType(null)}
+                title="Modifier le Type de Déchet"
+            >
+                {editingType && (
+                    <form onSubmit={handleUpdateType} className="space-y-6">
+                        <div className="grid grid-cols-4 gap-4">
+                            <div className="space-y-2 col-span-1">
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Emoji</label>
+                                 <input 
+                                    required
+                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-2xl text-center outline-none" 
+                                    value={editingType.emoji}
+                                    onChange={(e) => setEditingType({...editingType, emoji: e.target.value})}
+                                 />
+                            </div>
+                            <div className="space-y-2 col-span-3">
+                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom du matériau</label>
+                                 <input 
+                                    required
+                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-sm outline-none font-black uppercase" 
+                                    value={editingType.name}
+                                    onChange={(e) => setEditingType({...editingType, name: e.target.value})}
+                                 />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Prix par Kilo (FCFA)</label>
+                            <div className="relative">
+                                <Scale className="absolute left-6 top-1/2 -translate-y-1/2 text-primary" size={20} />
+                                <input 
+                                    required
+                                    type="number"
+                                    className="w-full pl-16 pr-6 py-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-xl font-black text-gray-900 dark:text-white outline-none" 
+                                    value={editingType.price_per_kg}
+                                    onChange={(e) => setEditingType({...editingType, price_per_kg: Number(e.target.value)})}
+                                />
+                            </div>
+                        </div>
+                        <button 
+                            type="submit"
+                            className="w-full py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-xl shadow-primary/10 mt-4"
+                        >
+                            Mettre à jour le catalogue
+                        </button>
+                    </form>
+                )}
             </Modal>
         </div>
     );

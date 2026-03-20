@@ -13,7 +13,8 @@ import {
     Calendar,
     ArrowUpRight,
     Package,
-    ShieldCheck
+    ShieldCheck,
+    XCircle
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -28,6 +29,7 @@ export default function SubscriptionsPage() {
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
     const [concessions, setConcessions] = useState<any[]>([]);
     const [isAddPlanModalOpen, setIsAddPlanModalOpen] = useState(false);
+    const [editingPlan, setEditingPlan] = useState<any | null>(null);
     const [newPlan, setNewPlan] = useState({ 
         name: "", 
         price_cfa: 0, 
@@ -50,7 +52,9 @@ export default function SubscriptionsPage() {
             setPlans(plansData || []);
             setSubscriptions(subsData || []);
             setConcessions(concData || []);
-            if (concData && concData.length > 0) setNewPlan(p => ({ ...p, concession_id: concData[0].id }));
+            if (concData && concData.length > 0 && !newPlan.concession_id) {
+                setNewPlan(p => ({ ...p, concession_id: concData[0].id }));
+            }
         } catch (err) {
             console.error(err);
         }
@@ -66,6 +70,39 @@ export default function SubscriptionsPage() {
             showToast("Plan d'abonnement publié", "success");
             setIsAddPlanModalOpen(false);
             setNewPlan({ name: "", price_cfa: 0, concession_id: concessions[0]?.id || "", frequency_per_week: 1 });
+            fetchSubData();
+        }
+    }
+
+    async function handleUpdatePlan(e: React.FormEvent) {
+        e.preventDefault();
+        if (!editingPlan) return;
+
+        const { error } = await supabase
+            .from('subscription_plans')
+            .update({
+                name: editingPlan.name,
+                price_cfa: editingPlan.price_cfa,
+                concession_id: editingPlan.concession_id,
+                frequency_per_week: editingPlan.frequency_per_week
+            })
+            .eq('id', editingPlan.id);
+
+        if (error) {
+            showToast("Erreur lors de la mise à jour", "error");
+        } else {
+            showToast("Plan d'abonnement mis à jour", "success");
+            setEditingPlan(null);
+            fetchSubData();
+        }
+    }
+
+    async function deletePlan(id: string) {
+        if (!confirm("Supprimer ce plan ? Cela peut affecter les abonnements en cours.")) return;
+        const { error } = await supabase.from('subscription_plans').delete().eq('id', id);
+        if (error) showToast("Erreur lors de la suppression", "error");
+        else {
+            showToast("Plan supprimé avec succès", "success");
             fetchSubData();
         }
     }
@@ -133,9 +170,21 @@ export default function SubscriptionsPage() {
                                      <div className="flex items-center gap-2 text-[10px] text-gray-500 font-bold uppercase"><CheckCircle2 size={12} className="text-emerald-500" /> 1 Ramassage / Semaine</div>
                                      <div className="flex items-center gap-2 text-[10px] text-gray-500 font-bold uppercase"><CheckCircle2 size={12} className="text-emerald-500" /> Rapports Mensuels</div>
                                 </div>
-                                <button className="w-full py-3 text-[10px] font-black uppercase tracking-widest text-gray-400 border border-gray-100 dark:border-zinc-800 rounded-xl group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all">
-                                    Modifier
-                                </button>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick={() => setEditingPlan(plan)}
+                                        className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/20 rounded-xl hover:bg-primary hover:text-white transition-all"
+                                    >
+                                        Modifier
+                                    </button>
+                                    <button 
+                                        onClick={() => deletePlan(plan.id)}
+                                        className="px-4 py-3 text-gray-400 border border-gray-100 dark:border-zinc-800 rounded-xl hover:text-red-500 hover:border-red-100 transition-all"
+                                        title="Supprimer le plan"
+                                    >
+                                        <XCircle size={14} />
+                                    </button>
+                                </div>
                             </div>
                         )) : (
                             <div className="p-10 text-center opacity-30 italic bg-gray-50 rounded-3xl border-2 border-dashed">
@@ -273,6 +322,68 @@ export default function SubscriptionsPage() {
                         Publier le Plan
                     </button>
                 </form>
+            </Modal>
+
+            {/* Edit Plan Modal */}
+            <Modal
+                isOpen={!!editingPlan}
+                onClose={() => setEditingPlan(null)}
+                title="Modifier le Plan"
+            >
+                {editingPlan && (
+                    <form onSubmit={handleUpdatePlan} className="space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Concession / Zone</label>
+                            <select 
+                                required
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-sm outline-none appearance-none font-black"
+                                value={editingPlan.concession_id}
+                                onChange={(e) => setEditingPlan({ ...editingPlan, concession_id: e.target.value })}
+                            >
+                                {concessions.map(c => (
+                                    <option key={c.id} value={c.id}>{c.zones?.name} ({c.profiles?.full_name})</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom du Plan</label>
+                            <input 
+                                required
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-sm outline-none font-black uppercase" 
+                                value={editingPlan.name}
+                                onChange={(e) => setEditingPlan({ ...editingPlan, name: e.target.value })}
+                            />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Prix (FCFA)</label>
+                                <input 
+                                    required
+                                    type="number" 
+                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-sm outline-none font-black text-primary" 
+                                    value={editingPlan.price_cfa}
+                                    onChange={(e) => setEditingPlan({ ...editingPlan, price_cfa: Number(e.target.value) })}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Fréq. / Sem.</label>
+                                <input 
+                                    required
+                                    type="number" 
+                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-sm outline-none font-black" 
+                                    value={editingPlan.frequency_per_week}
+                                    onChange={(e) => setEditingPlan({ ...editingPlan, frequency_per_week: Number(e.target.value) })}
+                                />
+                            </div>
+                        </div>
+                        <button 
+                            type="submit"
+                            className="w-full py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-xl shadow-primary/10 mt-4"
+                        >
+                            Dossier de mise à jour
+                        </button>
+                    </form>
+                )}
             </Modal>
         </div>
     );
