@@ -50,6 +50,7 @@ export default function BulkMarketplacePage() {
             const { data: reqs } = await supabase
                 .from('bulk_requests')
                 .select('*, profiles(full_name), waste_types(name)')
+                .eq('status', 'open')
                 .order('created_at', { ascending: false });
 
             setRequests(reqs || []);

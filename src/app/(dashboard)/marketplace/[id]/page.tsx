@@ -230,7 +230,7 @@ function WasteDetailsContent({ id }: { id: string }) {
             
             setTimeout(() => {
                 router.refresh();
-                router.push("/chat");
+                router.push(`/chat?wasteId=${id}`);
             }, 3000); // 3 seconds of "Wow" before redirect
         } catch (err: any) {
             console.error(err);

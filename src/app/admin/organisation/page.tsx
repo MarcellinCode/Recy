@@ -63,7 +63,28 @@ export default function OrganizationDashboard() {
                     <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-4">Pilotez votre flotte d'agents et suivez vos revenus récurrents.</p>
                 </div>
                 <div className="flex gap-4">
-                    <button className="flex items-center gap-3 px-8 py-4 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-900 dark:text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:border-primary transition-all shadow-sm">
+                    <button 
+                        onClick={() => {
+                            const name = prompt("Nom complet de l'agent :");
+                            const email = prompt("Email de l'agent (pour la connexion) :");
+                            if (name && email) {
+                                (async () => {
+                                    const { data, error } = await supabase.from('profiles').insert({
+                                        full_name: name,
+                                        role: 'agent_collecteur',
+                                        city: 'Abidjan' // Default
+                                    }).select();
+                                    
+                                    if (error) alert("Erreur : " + error.message);
+                                    else {
+                                        alert("Agent ajouté avec succès ! Il peut maintenant se connecter avec son email.");
+                                        window.location.reload();
+                                    }
+                                })();
+                            }
+                        }}
+                        className="flex items-center gap-3 px-8 py-4 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-900 dark:text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:border-primary transition-all shadow-sm"
+                    >
                         <UserPlus className="w-5 h-5" />
                         Ajouter un Agent
                     </button>
