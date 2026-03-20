@@ -125,18 +125,6 @@ function ChatContainer() {
             if (!user) return;
             setCurrentUser(user);
 
-            const { data: userMessages } = await supabase
-                .from('messages')
-                .select('waste_id, is_read, receiver_id')
-                .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
-
-            const unreadCounts = (userMessages || []).reduce((acc: any, msg: any) => {
-                if (msg.receiver_id === user.id && !msg.is_read) {
-                    acc[msg.waste_id] = (acc[msg.waste_id] || 0) + 1;
-                }
-                return acc;
-            }, {});
-
             // 1. Fetch ALL wastes to find those involving the user
             const { data: allWastes } = await supabase
                 .from('wastes')
