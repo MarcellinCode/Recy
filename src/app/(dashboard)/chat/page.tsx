@@ -240,12 +240,18 @@ function ChatContainer() {
 
         const fetchMessages = async () => {
             setMessagesLoading(true);
-            const { data } = await supabase
-                .from('messages')
-                .select('*')
-                .eq('waste_id', selectedConv.id)
-                .order('created_at', { ascending: true });
+            const otherUserId = selectedConv.seller_id === currentUser.id ? selectedConv.collector_id : selectedConv.seller_id;
+            
+            let query = supabase.from('messages').select('*').order('created_at', { ascending: true });
+            
+            if (otherUserId) {
+                // Fetch messages for this waste_id OR messages without waste_id exchanged with the other user
+                query = query.or(`waste_id.eq.${selectedConv.id},and(waste_id.is.null,or(sender_id.eq.${otherUserId},receiver_id.eq.${otherUserId}))`);
+            } else {
+                query = query.eq('waste_id', selectedConv.id);
+            }
 
+            const { data } = await query;
             setMessages(data || []);
             setMessagesLoading(false);
             setTimeout(scrollToBottom, 100);
@@ -269,8 +275,14 @@ function ChatContainer() {
                 }
             })
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
-                if (payload.new.waste_id !== selectedConv.id) return;
-                appendMessage(payload.new as Message);
+                const msg = payload.new as Message;
+                const otherUserId = selectedConv.seller_id === currentUser.id ? selectedConv.collector_id : selectedConv.seller_id;
+                
+                const isExactMatch = msg.waste_id === selectedConv.id;
+                const isFallbackMatch = !msg.waste_id && otherUserId && (msg.sender_id === otherUserId || msg.receiver_id === otherUserId);
+                
+                if (!isExactMatch && !isFallbackMatch) return;
+                appendMessage(msg);
             })
             .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
                 setMessages(prev => prev.map(msg => msg.id.toString() === payload.new.id.toString() ? { ...msg, ...payload.new } : msg));
