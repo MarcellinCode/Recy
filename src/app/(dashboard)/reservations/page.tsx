@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { confirmCollection } from "@/app/actions/collection";
+import { showToast } from "@/components/ui/toast";
 import { 
     CalendarDays, 
     ArrowLeft, 
@@ -128,7 +131,10 @@ export default function ReservationsPage() {
                         className="space-y-4"
                     >
                         {filteredReservations.map((res) => (
-                            <ReservationCard key={res.id} reservation={res} role={currentTab} />
+                            <ReservationCard key={res.id} reservation={res} role={currentTab} onFinalized={() => {
+                                // Simple update to remove it from the list
+                                setReservations(prev => prev.filter(r => r.id !== res.id));
+                            }} />
                         ))}
                     </motion.div>
                 ) : (
@@ -157,7 +163,30 @@ export default function ReservationsPage() {
     );
 }
 
-function ReservationCard({ reservation, role }: { reservation: Reservation, role: string }) {
+function ReservationCard({ reservation, role, onFinalized }: { reservation: Reservation, role: string, onFinalized?: () => void }) {
+    const router = useRouter();
+    const [showModal, setShowModal] = useState(false);
+    const [finalWeight, setFinalWeight] = useState(reservation.estimated_weight.toString());
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleFinalize = async () => {
+        if (!finalWeight || isNaN(Number(finalWeight))) {
+            showToast("Veuillez saisir un poids valide", "error");
+            return;
+        }
+        setIsSubmitting(true);
+        const res = await confirmCollection(reservation.id, Number(finalWeight));
+        setIsSubmitting(false);
+        if (res.success) {
+            showToast("Collecte finalisée avec succès !", "success");
+            setShowModal(false);
+            if (onFinalized) onFinalized();
+            router.push('/wallet'); // Redirect to wallet
+        } else {
+            showToast(res.error || "Une erreur est survenue", "error");
+        }
+    };
+
     return (
         <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border-2 border-zinc-50 dark:border-zinc-800 p-6 sm:p-8 flex flex-col sm:flex-row gap-6 hover:border-primary/20 dark:hover:border-primary/20 transition-all group">
             {/* Info Section */}
@@ -202,18 +231,68 @@ function ReservationCard({ reservation, role }: { reservation: Reservation, role
                     <span className="text-[10px] font-black uppercase tracking-widest sm:hidden lg:inline">Chat</span>
                 </Link>
                 {role === "collectes" && (
-                    <button className="flex-1 sm:w-full h-14 bg-primary text-white rounded-2xl flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20">
-                        <Navigation className="w-5 h-5" />
-                        <span className="text-[10px] font-black uppercase tracking-widest sm:hidden lg:inline">Trajet</span>
-                    </button>
-                )}
-                {role === "ventes" && (
-                    <button className="flex-1 sm:w-full h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-emerald-500/20">
-                        <CheckCircle2 className="w-5 h-5" />
-                        <span className="text-[10px] font-black uppercase tracking-widest sm:hidden lg:inline">Finaliser</span>
-                    </button>
+                    <>
+                        <button className="flex-1 sm:w-full h-14 bg-primary text-white rounded-2xl flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20">
+                            <Navigation className="w-5 h-5" />
+                            <span className="text-[10px] font-black uppercase tracking-widest sm:hidden lg:inline">Trajet</span>
+                        </button>
+                        <button 
+                            onClick={() => setShowModal(true)}
+                            className="flex-1 sm:w-full h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-emerald-500/20"
+                        >
+                            <CheckCircle2 className="w-5 h-5" />
+                            <span className="text-[10px] font-black uppercase tracking-widest sm:hidden lg:inline">Finaliser</span>
+                        </button>
+                    </>
                 )}
             </div>
+
+            {/* Modal de Finalisation */}
+            <AnimatePresence>
+                {showModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-950/80 backdrop-blur-sm">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-[2rem] p-6 shadow-2xl border border-zinc-100 dark:border-zinc-800"
+                        >
+                            <h3 className="text-xl font-black italic uppercase tracking-tighter mb-4 dark:text-white">Validation de Collecte</h3>
+                            <p className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6 border-l-2 border-primary pl-3">
+                                Veuillez confirmer le poids réel pour le paiement.
+                            </p>
+                            
+                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">
+                                Poids Réel (kg)
+                            </label>
+                            <input 
+                                type="number" 
+                                value={finalWeight} 
+                                onChange={(e) => setFinalWeight(e.target.value)}
+                                className="w-full bg-zinc-100 dark:bg-zinc-800 border-none rounded-2xl p-4 font-black text-xl italic outline-none focus:ring-2 focus:ring-primary dark:text-white transition-all mb-8"
+                                placeholder="ex: 5.5"
+                            />
+                            
+                            <div className="flex gap-3">
+                                <button 
+                                    onClick={() => setShowModal(false)}
+                                    className="flex-1 py-4 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 font-black uppercase tracking-widest text-[10px] rounded-2xl hover:bg-zinc-200"
+                                >
+                                    Annuler
+                                </button>
+                                <button 
+                                    onClick={handleFinalize}
+                                    disabled={isSubmitting}
+                                    className="flex-1 py-4 bg-emerald-500 text-white font-black uppercase tracking-widest text-[10px] rounded-2xl flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed hover:bg-emerald-600 transition-colors"
+                                >
+                                    {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                                    Finaliser
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
