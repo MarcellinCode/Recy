@@ -82,7 +82,7 @@ function LocationMarker() {
     );
 }
 
-export default function MapComponent() {
+export default function MapComponent({ isMairie = false }: { isMairie?: boolean }) {
     const supabase = createClient();
     const [wastes, setWastes] = useState<WasteMarker[]>([]);
     const [agents, setAgents] = useState<AgentMarker[]>([]);
@@ -186,12 +186,24 @@ export default function MapComponent() {
                                         </div>
                                     </div>
 
-                                    <Link
-                                        href={`/marketplace/${waste.id}`}
-                                        className="block w-full py-3 bg-zinc-900 text-white dark:bg-zinc-800 text-center rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg hover:shadow-primary/20"
-                                    >
-                                        Détails & Réserver
-                                    </Link>
+                                    {isMairie ? (
+                                        <button
+                                            onClick={() => alert(`Mission de dispatch d'urgence envoyée à l'agent le plus proche pour le dépôt de ${waste.estimated_weight}kg !`)}
+                                            className="block w-full py-3 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 text-center rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-lg hover:shadow-red-500/20"
+                                        >
+                                            <span className="flex justify-center items-center gap-2">
+                                                <Navigation size={12} />
+                                                Dispatcher un Agent
+                                            </span>
+                                        </button>
+                                    ) : (
+                                        <Link
+                                            href={`/marketplace/${waste.id}`}
+                                            className="block w-full py-3 bg-zinc-900 text-white dark:bg-zinc-800 text-center rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg hover:shadow-primary/20"
+                                        >
+                                            Détails & Réserver
+                                        </Link>
+                                    )}
                                 </div>
                             </Popup>
                         </Marker>

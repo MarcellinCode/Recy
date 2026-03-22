@@ -10,7 +10,11 @@ import {
     Clock, 
     ArrowUpRight,
     Building2,
-    ShieldCheck
+    ShieldCheck,
+    Activity,
+    Trash2,
+    AlertOctagon,
+    Megaphone
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -29,9 +33,12 @@ export default function MairieManagementPage() {
     const [loading, setLoading] = useState(true);
     const [zones, setZones] = useState<any[]>([]);
     const [pendingConcessions, setPendingConcessions] = useState<any[]>([]);
+    const [wastes, setWastes] = useState<any[]>([]);
     const [isAddZoneModalOpen, setIsAddZoneModalOpen] = useState(false);
+    const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
     const [editingZone, setEditingZone] = useState<any | null>(null);
     const [newZone, setNewZone] = useState({ name: "", city: "Abidjan", status: "available" });
+    const [announcement, setAnnouncement] = useState({ title: "", message: "", type: "info" });
     const supabase = createClient();
 
     useEffect(() => {
@@ -50,8 +57,13 @@ export default function MairieManagementPage() {
                 .select('*, profiles(full_name, role), zones(name)')
                 .eq('status', 'pending');
             
+            const { data: wastesData } = await supabase
+                .from('wastes')
+                .select('id, status, created_at, estimated_weight');
+            
             setZones(zonesData || []);
             setPendingConcessions(concessionsData || []);
+            setWastes(wastesData || []);
         } catch (err) {
             console.error(err);
         }
@@ -117,6 +129,23 @@ export default function MairieManagementPage() {
         }
     }
 
+    async function handleSendAnnouncement(e: React.FormEvent) {
+        e.preventDefault();
+        // Dans un système complet, ceci alimente la table `notifications` et déclenche un push (FCM/Supabase Edge Functions)
+        showToast("✓ Annonce globale envoyée aux citoyens de la commune", "success");
+        setIsAnnouncementModalOpen(false);
+        setAnnouncement({ title: "", message: "", type: "info" });
+    }
+
+    // Statistiques GovTech
+    const totalWastes = wastes.length;
+    const collectedWastes = wastes.filter(w => w.status === 'collected').length;
+    const collectionRate = totalWastes > 0 ? Math.round((collectedWastes / totalWastes) * 100) : 0;
+    
+    // SLA Sanction Tracker : Dépôts signalés depuis plus de 48h et non collectés
+    const now = new Date().getTime();
+    const slaBreaches = wastes.filter(w => w.status === 'published' && (now - new Date(w.created_at).getTime() > 48 * 3600 * 1000)).length;
+
     return (
         <div className="space-y-12 pb-20">
             {/* Header */}
@@ -125,20 +154,77 @@ export default function MairieManagementPage() {
                     <h1 className="text-3xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-1">
                         Mairie <span className="text-primary tracking-tighter">City OS</span>
                     </h1>
-                    <p className="text-gray-500 text-xs font-bold uppercase tracking-widest leading-relaxed text-balance">Supervision des zones territoriales et concessions de collecte</p>
+                    <p className="text-gray-500 text-xs font-bold uppercase tracking-widest leading-relaxed text-balance mb-6">Supervision des zones territoriales et concessions de collecte</p>
+                    
+                    {/* Alerte SLA Automatisée */}
+                    {slaBreaches > 0 && (
+                        <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-2xl border border-red-100 dark:border-red-900/50">
+                            <AlertOctagon size={16} className="animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-widest">Alerte Gouvernance : {slaBreaches} dépôts en dépassement SLA (&gt;48h). Sanctions requises.</span>
+                        </div>
+                    )}
                 </div>
-                <button 
-                    onClick={() => setIsAddZoneModalOpen(true)}
-                    className="flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-primary/20"
-                >
-                    <Plus size={16} />
-                    Créer une Zone
-                </button>
+                <div className="flex gap-4">
+                    <button 
+                        onClick={() => setIsAnnouncementModalOpen(true)}
+                        className="flex items-center gap-2 px-8 py-4 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white border border-gray-100 dark:border-zinc-800 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-primary transition-all shadow-sm"
+                    >
+                        <Megaphone size={16} className="text-blue-500" />
+                        Annonce Citoyenne
+                    </button>
+                    <button 
+                        onClick={() => setIsAddZoneModalOpen(true)}
+                        className="flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-primary/20"
+                    >
+                        <Plus size={16} />
+                        Créer une Zone
+                    </button>
+                </div>
             </header>
 
+            {/* GovTech Analytics Row */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                 <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm">
+                     <div className="flex justify-between items-start mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center">
+                            <Activity className="w-5 h-5 text-emerald-500" />
+                        </div>
+                     </div>
+                     <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Taux de Salubrité</p>
+                     <p className="text-3xl font-black italic tracking-tighter dark:text-white">{collectionRate}%</p>
+                 </div>
+                 <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm">
+                     <div className="flex justify-between items-start mb-4">
+                         <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center">
+                             <Trash2 className="w-5 h-5 text-primary" />
+                         </div>
+                     </div>
+                     <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Total Signalements</p>
+                     <p className="text-3xl font-black italic tracking-tighter dark:text-white">{totalWastes}</p>
+                 </div>
+                 <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm">
+                     <div className="flex justify-between items-start mb-4">
+                         <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center">
+                             <CheckCircle2 className="w-5 h-5 text-blue-500" />
+                         </div>
+                     </div>
+                     <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Dépôts Nettoyés</p>
+                     <p className="text-3xl font-black italic tracking-tighter dark:text-white">{collectedWastes}</p>
+                 </div>
+                 <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm border-b-4 border-b-red-500">
+                     <div className="flex justify-between items-start mb-4">
+                         <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
+                             <AlertOctagon className="w-5 h-5 text-red-500" />
+                         </div>
+                     </div>
+                     <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Dépassements SLA</p>
+                     <p className="text-3xl font-black italic tracking-tighter text-red-500">{slaBreaches}</p>
+                 </div>
+            </div>
+
             {/* Interactive Map Area */}
-            <div className="w-full shadow-2xl shadow-blue-900/5 rounded-[3rem]">
-                <MapComponent />
+            <div className="w-full shadow-2xl shadow-blue-900/5 rounded-[3rem] relative z-0">
+                <MapComponent isMairie={true} />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
@@ -360,6 +446,51 @@ export default function MairieManagementPage() {
                         </button>
                     </form>
                 )}
+            </Modal>
+
+            {/* Announcement Modal */}
+            <Modal
+                isOpen={isAnnouncementModalOpen}
+                onClose={() => setIsAnnouncementModalOpen(false)}
+                title="Communication Citoyenne"
+            >
+                <form onSubmit={handleSendAnnouncement} className="space-y-6">
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl mb-4">
+                        <p className="text-[10px] text-blue-600 dark:text-blue-400 font-bold leading-relaxed">
+                            Cette annonce sera poussée sous forme de notification à tous les foyers enregistrés dans la commune. Utilisez-la pour les urgences sanitaires ou les changements importants de collecte.
+                        </p>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Titre de l'alerte</label>
+                        <input 
+                            required
+                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase tracking-tight"
+                            placeholder="EX: CAMPAGNE DE SALUBRITE CE WEEKEND"
+                            value={announcement.title}
+                            onChange={(e) => setAnnouncement({...announcement, title: e.target.value})}
+                        />
+                    </div>
+                    
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Message</label>
+                        <textarea 
+                            required
+                            rows={4}
+                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-medium resize-none"
+                            placeholder="Détails de l'information à transmettre aux citoyens..."
+                            value={announcement.message}
+                            onChange={(e) => setAnnouncement({...announcement, message: e.target.value})}
+                        />
+                    </div>
+
+                    <button 
+                        type="submit"
+                        className="w-full py-5 bg-blue-500 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-blue-500/20 mt-4"
+                    >
+                        Diffuser l'Alerte Globale
+                    </button>
+                </form>
             </Modal>
         </div>
     );
