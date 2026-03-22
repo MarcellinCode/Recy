@@ -18,6 +18,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/Modal";
+import dynamic from "next/dynamic";
+
+const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
+    ssr: false,
+    loading: () => <div className="w-full h-[60vh] bg-gray-50 dark:bg-zinc-900 rounded-[3rem] animate-pulse border border-gray-100 flex items-center justify-center"><p className="text-[10px] font-black uppercase tracking-widest text-gray-300">Chargement de la carte...</p></div>
+});
 
 export default function MairieManagementPage() {
     const [loading, setLoading] = useState(true);
@@ -129,6 +135,11 @@ export default function MairieManagementPage() {
                     Créer une Zone
                 </button>
             </header>
+
+            {/* Interactive Map Area */}
+            <div className="w-full shadow-2xl shadow-blue-900/5 rounded-[3rem]">
+                <MapComponent />
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
                 {/* Zones Overview */}

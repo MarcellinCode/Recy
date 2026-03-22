@@ -25,6 +25,15 @@ interface WasteMarker {
     location: string;
 }
 
+interface AgentMarker {
+    id: string;
+    agent_id: string;
+    latitude: number;
+    longitude: number;
+    profiles?: { full_name: string };
+    vehicles?: { name: string; type: string };
+}
+
 // Custom Icon Creator
 const createCustomIcon = (emoji: string, color: string = "#22c55e") => {
     return L.divIcon({
@@ -76,23 +85,46 @@ function LocationMarker() {
 export default function MapComponent() {
     const supabase = createClient();
     const [wastes, setWastes] = useState<WasteMarker[]>([]);
+    const [agents, setAgents] = useState<AgentMarker[]>([]);
     const [loading, setLoading] = useState(true);
     const [showUserLocation, setShowUserLocation] = useState(false);
 
     useEffect(() => {
-        const fetchWastes = async () => {
-            const { data } = await supabase
+        const fetchData = async () => {
+            const { data: wastesData } = await supabase
                 .from('wastes')
                 .select('*, waste_types(*)')
                 .eq('status', 'published')
                 .not('latitude', 'is', null)
                 .not('longitude', 'is', null);
 
-            setWastes(data || []);
+            const { data: trackingData } = await supabase
+                .from('tracking_logs')
+                .select('*, profiles(full_name), vehicles(name, type)')
+                .order('timestamp', { ascending: false })
+                .limit(100);
+
+            if (trackingData) {
+                const latest = trackingData.reduce((acc: any, curr: any) => {
+                    if (!acc[curr.agent_id]) {
+                        acc[curr.agent_id] = curr;
+                    }
+                    return acc;
+                }, {});
+                setAgents(Object.values(latest));
+            }
+
+            setWastes(wastesData || []);
             setLoading(false);
         };
 
-        fetchWastes();
+        fetchData();
+
+        const channel = supabase.channel('tracking_changes')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tracking_logs' }, fetchData)
+            .subscribe();
+
+        return () => { supabase.removeChannel(channel); };
     }, [supabase]);
 
     if (loading) return (
@@ -164,6 +196,33 @@ export default function MapComponent() {
                             </Popup>
                         </Marker>
                     ))}
+                    
+                    {agents.map((agent) => (
+                        <Marker
+                            key={`agent-${agent.id}`}
+                            position={[agent.latitude, agent.longitude]}
+                            icon={createCustomIcon('🚐', '#3b82f6')}
+                        >
+                            <Popup className="premium-popup">
+                                <div className="p-3 min-w-[200px] bg-white dark:bg-zinc-900 rounded-2xl">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">
+                                            <Truck className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-black text-gray-900 dark:text-white uppercase text-xs tracking-tight italic">
+                                                {agent.profiles?.full_name || 'Agent Mobile'}
+                                            </h3>
+                                            <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">En Service</p>
+                                        </div>
+                                    </div>
+                                    <p className="text-[10px] font-bold text-gray-500 mt-3 uppercase tracking-widest bg-gray-50 dark:bg-zinc-800 p-2 rounded-lg text-center">
+                                        {agent.vehicles?.name || 'Camionnette Standard'}
+                                    </p>
+                                </div>
+                            </Popup>
+                        </Marker>
+                    ))}
                 </MarkerClusterGroup>
             </MapContainer>
 
@@ -183,10 +242,19 @@ export default function MapComponent() {
                 </button>
             </div>
 
-            <div className="absolute bottom-10 left-10 z-[1000] bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md px-6 py-3 rounded-full border border-white/20 shadow-2xl">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white">
-                    <span className="text-primary mr-2">●</span> {wastes.length} Lots trouvés
-                </p>
+            <div className="absolute bottom-10 left-10 z-[1000] flex gap-4">
+                <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md px-6 py-3 rounded-full border border-white/20 shadow-xl flex items-center gap-3">
+                    <span className="w-3 h-3 rounded-full bg-primary animate-pulse shadow-lg shadow-primary/50"></span>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white">
+                        {wastes.length} Dépôts
+                    </p>
+                </div>
+                <div className="bg-white/90 dark:bg-zinc-900/90 backdrop-blur-md px-6 py-3 rounded-full border border-white/20 shadow-xl flex items-center gap-3">
+                    <span className="w-3 h-3 rounded-full bg-blue-500 animate-pulse shadow-lg shadow-blue-500/50"></span>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-900 dark:text-white">
+                        {agents.length} Agents Actifs
+                    </p>
+                </div>
             </div>
 
             <style jsx global>{`

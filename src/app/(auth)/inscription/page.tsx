@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Leaf, User, Truck, ArrowRight, Loader2, Building2, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
+import { validateInvitation, consumeInvitation } from "@/app/actions/invitations";
 
 function SignupForm() {
     const router = useRouter();
@@ -21,8 +22,14 @@ function SignupForm() {
         const type = searchParams.get("type");
 
         if (type === "official" && token) {
-            setRole("mairie");
-            setStep(2);
+            validateInvitation(token).then((res) => {
+                if (res.valid) {
+                    setRole("mairie");
+                    setStep(2);
+                } else {
+                    setError("Le lien d'invitation est invalide ou expiré.");
+                }
+            });
         } else if (urlRole === "citoyen" || urlRole === "citizen" || urlRole === "vendeur") {
             setRole("vendeur");
         } else if (urlRole === "collecteur" || urlRole === "collector") {
@@ -62,7 +69,7 @@ function SignupForm() {
         setError(null);
 
         try {
-            const { error: authError } = await supabase.auth.signUp({
+            const { data, error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
                 options: {
@@ -83,6 +90,14 @@ function SignupForm() {
             });
 
             if (authError) throw authError;
+            
+            // Consume the invitation token if role is mairie
+            if (role === 'mairie') {
+                const token = searchParams.get("token");
+                if (token && data.user) {
+                    await consumeInvitation(token, data.user.id);
+                }
+            }
 
             router.push("/connexion?message=Vérifiez votre email pour confirmer l'inscription");
         } catch (err: any) {

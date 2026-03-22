@@ -12,18 +12,22 @@ import {
     MoreVertical,
     Activity,
     UserPlus,
-    Package
+    Package,
+    Wrench,
+    AlertTriangle
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { getVehicles, addVehicle } from "@/app/actions/fleet";
 
 export default function OrganizationDashboard() {
     const supabase = createClient();
     const [loading, setLoading] = useState(true);
     const [agents, setAgents] = useState<any[]>([]);
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
-
+    const [vehicles, setVehicles] = useState<any[]>([]);
+    
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
@@ -36,13 +40,17 @@ export default function OrganizationDashboard() {
                 .select('*')
                 .eq('role', 'agent_collecteur');
             
-            // Fetch Subscriptions (associated with the org's plans)
+            // Fetch Subscriptions 
             const { data: subsData } = await supabase
                 .from('household_subscriptions')
                 .select('*, profiles(*), subscription_plans(*, concessions(*))');
             
+            // Fetch Vehicles
+            const vRes = await getVehicles();
+            
             setAgents(agentsData || []);
             setSubscriptions(subsData || []);
+            setVehicles(vRes.success ? vRes.vehicles : []);
             setLoading(false);
         };
         fetchData();
@@ -92,12 +100,27 @@ export default function OrganizationDashboard() {
                         <Plus className="w-5 h-5" />
                         Nouveau Plan
                     </button>
+                    <button 
+                        onClick={() => {
+                            const name = prompt("Nom du véhicule (ex: Tricycle Zone 1) :");
+                            const type = prompt("Type (tricycle, truck, van) :");
+                            const reg = prompt("Immatriculation :");
+                            if (name && type && reg) {
+                                addVehicle(name, type, reg).then(() => window.location.reload());
+                            }
+                        }}
+                        className="flex items-center gap-3 px-8 py-4 bg-amber-500 text-white font-black text-xs uppercase tracking-widest rounded-2xl hover:scale-105 transition-all shadow-xl shadow-amber-500/20"
+                    >
+                        <Wrench className="w-5 h-5" />
+                        Nouveau Véhicule
+                    </button>
                 </div>
             </header>
 
             {/* Overview Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <MiniStatsCard label="Agents Actifs" value={agents.length.toString()} icon={Truck} color="text-blue-500" />
+                <MiniStatsCard label="Flotte (Véhicules)" value={vehicles.length.toString()} icon={Wrench} color="text-amber-500" />
                 <MiniStatsCard label="Abonnés" value={subscriptions.length.toString()} icon={Users} color="text-amber-500" />
                 <MiniStatsCard label="CA Récurrent" value={subscriptions.length > 0 ? `${(subscriptions.length * 5).toFixed(1)}K` : "0"} icon={CreditCard} color="text-emerald-500" />
                 <MiniStatsCard label="Missions / Jour" value={agents.length > 0 ? (agents.length * 3).toString() : "0"} icon={Activity} color="text-primary" />
@@ -109,7 +132,7 @@ export default function OrganizationDashboard() {
                     <div className="flex items-center justify-between">
                         <h2 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white flex items-center gap-3">
                             <Truck className="w-7 h-7 text-primary" />
-                            Suivi de la Flotte
+                            Agents en Service
                         </h2>
                         <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline">Voir Planning</button>
                     </div>
@@ -121,6 +144,24 @@ export default function OrganizationDashboard() {
                             <div className="col-span-2 py-16 text-center opacity-20 bg-gray-50/50 dark:bg-zinc-900/50 rounded-[2.5rem] border-2 border-dashed border-gray-100 dark:border-zinc-800">
                                 <Users className="w-12 h-12 mx-auto mb-4" />
                                 <p className="font-bold uppercase tracking-widest text-xs">Aucun agent enregistré</p>
+                            </div>
+                        )}
+                    </div>
+                    
+                    {/* FLOTTE ET ENTRETIEN */}
+                    <div className="flex items-center justify-between mt-12">
+                        <h2 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white flex items-center gap-3">
+                            <Wrench className="w-7 h-7 text-amber-500" />
+                            Carnet d'Entretien Flotte
+                        </h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {vehicles.length > 0 ? vehicles.map((v) => (
+                            <VehicleCard key={v.id} vehicle={v} />
+                        )) : (
+                            <div className="col-span-2 py-16 text-center opacity-20 bg-gray-50/50 dark:bg-zinc-900/50 rounded-[2.5rem] border-2 border-dashed border-gray-100 dark:border-zinc-800">
+                                <Truck className="w-12 h-12 mx-auto mb-4" />
+                                <p className="font-bold uppercase tracking-widest text-xs">Aucun véhicule enregistré</p>
                             </div>
                         )}
                     </div>
@@ -211,6 +252,52 @@ function AgentCard({ agent }: any) {
 
             <button className="w-full py-4 text-[10px] font-black uppercase tracking-widest text-primary border-2 border-primary/20 rounded-2xl group-hover:bg-primary group-hover:text-white transition-all">
                 Voir Itinéraire
+            </button>
+        </div>
+    );
+}
+
+function VehicleCard({ vehicle }: any) {
+    const isDue = vehicle.next_maintenance_date && new Date(vehicle.next_maintenance_date) < new Date();
+    
+    return (
+        <div className={cn(
+            "p-8 bg-white dark:bg-zinc-900 border rounded-[2.5rem] shadow-sm transition-all group",
+            isDue ? "border-amber-500/50" : "border-gray-100 dark:border-zinc-800 hover:border-amber-500/30"
+        )}>
+            <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                    <div className={cn(
+                        "w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl",
+                        isDue ? "bg-amber-100 text-amber-600" : "bg-zinc-100 text-zinc-600 dark:bg-zinc-800"
+                    )}>
+                        <Truck className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h4 className="font-black text-gray-900 dark:text-white uppercase text-sm tracking-tight">{vehicle.name}</h4>
+                        <span className="text-[10px] text-zinc-400 font-bold tracking-widest">{vehicle.registration_number || 'Sans Immatriculation'}</span>
+                    </div>
+                </div>
+                <button className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"><MoreVertical className="w-5 h-5 text-zinc-400" /></button>
+            </div>
+            
+            <div className="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-2xl mb-6">
+                <div className="flex items-center gap-3">
+                    {isDue ? <AlertTriangle className="w-5 h-5 text-amber-500" /> : <Activity className="w-5 h-5 text-emerald-500" />}
+                    <div>
+                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Entretien</p>
+                        <p className={cn(
+                            "text-sm font-black italic", 
+                            isDue ? "text-amber-500" : "text-emerald-500"
+                        )}>
+                            {isDue ? "Vidange requise !" : "À jour"}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <button className="w-full py-4 text-[10px] font-black uppercase tracking-widest text-amber-500 border-2 border-amber-500/20 rounded-2xl group-hover:bg-amber-500 group-hover:text-white transition-all">
+                Voir Carnet
             </button>
         </div>
     );

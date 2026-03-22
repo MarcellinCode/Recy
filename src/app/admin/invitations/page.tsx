@@ -11,26 +11,42 @@ import {
     MoreVertical,
     Send
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { showToast } from "@/components/ui/toast";
+import { createInvitation, getInvitations } from "@/app/actions/invitations";
 
 export default function InvitationsPage() {
     const [copied, setCopied] = useState(false);
     const [generatedLink, setGeneratedLink] = useState("");
     const [mairieName, setMairieName] = useState("");
+    const [invitationsList, setInvitationsList] = useState<any[]>([]);
 
-    const generateLink = () => {
+    useEffect(() => {
+        getInvitations().then(res => {
+            if (res.success) setInvitationsList(res.invitations);
+        });
+    }, []);
+
+    const generateLink = async () => {
         if (!mairieName) {
             showToast("Veuillez saisir le nom de la mairie", "error");
             return;
         }
-        // Simulation d'un token sécurisé
-        const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-        const baseUrl = window.location.origin;
-        const link = `${baseUrl}/inscription?type=official&token=${token}&org=${encodeURIComponent(mairieName)}`;
-        setGeneratedLink(link);
-        showToast("Lien généré avec succès");
+        
+        const res = await createInvitation(mairieName);
+        if (res.success && res.invitation) {
+            const baseUrl = window.location.origin;
+            const link = `${baseUrl}/inscription?type=official&token=${res.invitation.code}&org=${encodeURIComponent(mairieName)}`;
+            setGeneratedLink(link);
+            
+            getInvitations().then(r => {
+                if (r.success) setInvitationsList(r.invitations);
+            });
+            showToast("Lien généré avec succès");
+        } else {
+            showToast(res.error || "Erreur lors de la génération", "error");
+        }
     };
 
     const copyToClipboard = () => {
@@ -151,25 +167,23 @@ export default function InvitationsPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50 dark:divide-zinc-800/50">
-                            {[
-                                { name: "Mairie de Cocody", date: "12/03/2024", status: "Inscrit" },
-                                { name: "Mairie de Bouaké", date: "11/03/2024", status: "En attente" },
-                                { name: "Mairie de San Pedro", date: "10/03/2024", status: "Expiré" },
-                            ].map((inv, i) => (
-                                <tr key={i} className="group hover:bg-gray-50/50 dark:hover:bg-zinc-800/20 transition-all">
+                            {invitationsList.length > 0 ? invitationsList.map((inv, i) => (
+                                <tr key={inv.id || i} className="group hover:bg-gray-50/50 dark:hover:bg-zinc-800/20 transition-all">
                                     <td className="px-8 py-6 flex items-center gap-4">
                                         <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-950/30 rounded-xl flex items-center justify-center text-indigo-600">
                                             <Building2 size={20} />
                                         </div>
-                                        <p className="text-sm font-black text-gray-900 dark:text-white uppercase italic">{inv.name}</p>
+                                        <p className="text-sm font-black text-gray-900 dark:text-white uppercase italic">{inv.target_email || "Commune"}</p>
                                     </td>
-                                    <td className="px-8 py-6 text-right text-xs font-bold text-gray-400">{inv.date}</td>
+                                    <td className="px-8 py-6 text-right text-xs font-bold text-gray-400">
+                                        {new Date(inv.created_at).toLocaleDateString()}
+                                    </td>
                                     <td className="px-8 py-6 text-right">
                                         <span className={cn(
                                             "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
-                                            inv.status === 'Inscrit' ? "bg-emerald-100 text-emerald-600" : (inv.status === 'Expiré' ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600")
+                                            inv.is_used ? "bg-emerald-100 text-emerald-600" : (new Date(inv.expires_at) < new Date() ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600")
                                         )}>
-                                            {inv.status}
+                                            {inv.is_used ? "Inscrit" : (new Date(inv.expires_at) < new Date() ? "Expiré" : "En attente")}
                                         </span>
                                     </td>
                                     <td className="px-8 py-6 text-right">
@@ -178,7 +192,13 @@ export default function InvitationsPage() {
                                         </button>
                                     </td>
                                 </tr>
-                            ))}
+                            )) : (
+                                <tr>
+                                    <td colSpan={4} className="px-8 py-10 text-center text-xs text-gray-400 uppercase tracking-widest font-black">
+                                        Aucune invitation
+                                    </td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>
