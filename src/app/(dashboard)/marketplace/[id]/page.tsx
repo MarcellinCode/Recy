@@ -150,6 +150,7 @@ function WasteDetailsContent({ id }: { id: string }) {
         loading, 
         error: fetchError, 
         actionLoading, 
+        setActionLoading,
         reserve,
         refresh 
     } = useWasteDetails(id);
