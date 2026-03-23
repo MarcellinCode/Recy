@@ -43,17 +43,20 @@ export default function DashboardPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+            // Paralléliser les 2 requêtes
+            const [profRes, wastesRes] = await Promise.all([
+                supabase.from('profiles').select('*').eq('id', user.id).single(),
+                supabase.from('wastes').select('id, final_weight, estimated_weight')
+                    .or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`)
+                    .eq('status', 'collected')
+            ]);
+
+            const prof = profRes.data;
             setProfile(prof);
 
-            const { data: wastes } = await supabase
-                .from('wastes')
-                .select('*')
-                .or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`)
-                .eq('status', 'collected');
-
+            const wastes = wastesRes.data;
             if (wastes) {
-                const totalWeight = wastes.reduce((acc, w) => acc + (w.final_weight || w.estimated_weight), 0);
+                const totalWeight = wastes.reduce((acc: number, w: any) => acc + (w.final_weight || w.estimated_weight), 0);
                 setStats({
                     totalWeight,
                     co2Saved: totalWeight * 1.22,
@@ -64,7 +67,7 @@ export default function DashboardPage() {
             setLoading(false);
         };
         fetchStats();
-    }, [supabase]);
+    }, []);
 
     if (loading) {
         return (

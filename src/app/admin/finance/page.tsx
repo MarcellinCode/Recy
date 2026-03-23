@@ -47,13 +47,13 @@ export default function FinancePage() {
                 
                 // Calculate Stats
                 const totalRev = txs
-                    .filter(t => t.type === 'income')
-                    .reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0);
+                    .filter((t: any) => t.type === 'income')
+                    .reduce((acc: any, curr: any) => acc + (Number(curr.amount) || 0), 0);
                 
                 // Estimation de commission (à enrichir via system_settings si besoin)
-                const comms = txs.reduce((acc, curr) => acc + (Number(curr.commission_amount) || 0), 0);
+                const comms = txs.reduce((acc: any, curr: any) => acc + (Number(curr.commission_amount) || 0), 0);
                 
-                const pending = txs.filter(t => t.status === 'Pending').length;
+                const pending = txs.filter((t: any) => t.status === 'Pending').length;
 
                 setStats({
                     totalRevenue: totalRev,

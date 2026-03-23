@@ -72,7 +72,7 @@ export default function SubscriptionPage() {
             setLoading(false);
         };
         fetchSubscriptionData();
-    }, [supabase]);
+    }, []);
 
     const handleAlert = () => {
         setIsAlerting(true);

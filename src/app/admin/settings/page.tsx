@@ -54,7 +54,7 @@ export default function SettingsPage() {
         const { data } = await supabase.from('system_settings').select('key, value');
         if (data) {
             const settingsMap: any = {};
-            data.forEach(s => settingsMap[s.key] = s.value);
+            data.forEach((s: any) => settingsMap[s.key] = s.value);
             setSettings(prev => ({ ...prev, ...settingsMap }));
         }
     }

@@ -59,7 +59,7 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
         return () => {
             if (channel) supabase.removeChannel(channel);
         };
-    }, [supabase, pathname, isSuperAdmin]);
+    }, [pathname, isSuperAdmin]);
 
     return (
         <>

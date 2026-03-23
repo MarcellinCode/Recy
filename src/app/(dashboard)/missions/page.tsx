@@ -49,7 +49,7 @@ export default function AgentMissionsPage() {
 
             const allMissions = [
                 ...mockSubs,
-                ...(wastes?.map(w => ({ 
+                ...(wastes?.map((w: any) => ({ 
                     id: w.id, 
                     type: 'marketplace', 
                     name: w.waste_types?.name || 'Lot Recyclable',
@@ -57,14 +57,14 @@ export default function AgentMissionsPage() {
                     priority: w.is_priority,
                     wasteData: w 
                 })) || [])
-            ].sort((a, b) => (b.priority ? 1 : 0) - (a.priority ? 1 : 0));
+            ].sort((a: any, b: any) => (b.priority ? 1 : 0) - (a.priority ? 1 : 0));
 
             setMissions(allMissions);
             setStats({ done: 0, total: allMissions.length });
             setLoading(false);
         };
         fetchMissions();
-    }, [supabase]);
+    }, []);
 
     return (
         <div className="max-w-md mx-auto px-4 py-8 space-y-8 mb-24">

@@ -30,12 +30,12 @@ export default function NotificationsPage() {
                     .order('created_at', { ascending: false });
                 
                 // Optimistically map over them locally so they are visually empty / read
-                setNotifications(data?.map(n => ({ ...n, is_read: true })) || []);
+                setNotifications(data?.map((n: any) => ({ ...n, is_read: true })) || []);
             }
             setLoading(false);
         };
         fetchNotifications();
-    }, [supabase]);
+    }, []);
 
     const markAsRead = async (id: number) => {
         const { error } = await supabase

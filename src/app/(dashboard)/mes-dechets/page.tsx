@@ -68,7 +68,7 @@ export default function MyWastePage() {
         };
 
         fetchWastes();
-    }, [supabase]);
+    }, []);
 
     const filteredWastes = wastes.filter(w => w.status === activeTab);
 

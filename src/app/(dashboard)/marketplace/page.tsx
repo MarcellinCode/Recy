@@ -44,7 +44,7 @@ export default function MarketplacePage() {
         };
 
         fetchMarketplace();
-    }, [supabase]);
+    }, []);
 
     const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
         const R = 6371; // km

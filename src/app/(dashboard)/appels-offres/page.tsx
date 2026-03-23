@@ -57,7 +57,7 @@ export default function BulkMarketplacePage() {
             setLoading(false);
         };
         loadData();
-    }, [supabase]);
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

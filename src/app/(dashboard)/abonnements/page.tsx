@@ -24,7 +24,7 @@ export default function AbonnementsPage() {
             setLoading(false);
         };
         fetchData();
-    }, [supabase]);
+    }, []);
 
     const handleUpgrade = async (tier: string) => {
         if (!user) return;

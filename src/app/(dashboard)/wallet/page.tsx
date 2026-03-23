@@ -53,14 +53,14 @@ export default function WalletPage() {
                 .eq('seller_id', user.id)
                 .eq('status', 'collected');
             
-            const total = weightData?.reduce((acc, curr) => acc + (Number(curr.final_weight) || 0), 0) || 0;
+            const total = weightData?.reduce((acc: any, curr: any) => acc + (Number(curr.final_weight) || 0), 0) || 0;
             setTotalWeight(total);
 
             setLoading(false);
         };
 
         fetchWalletData();
-    }, [supabase]);
+    }, []);
 
     if (loading) {
         return (

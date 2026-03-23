@@ -44,7 +44,7 @@ export default function SuperAdminDashboard() {
             
             // Sum total weight from wastes (collected)
             const { data: weightData } = await supabase.from('wastes').select('final_weight').eq('status', 'collected');
-            const totalWeight = weightData?.reduce((acc, curr) => acc + (Number(curr.final_weight) || 0), 0) || 0;
+            const totalWeight = weightData?.reduce((acc: any, curr: any) => acc + (Number(curr.final_weight) || 0), 0) || 0;
 
             // Stats from transactions
             const { data: transData } = await supabase
@@ -54,7 +54,7 @@ export default function SuperAdminDashboard() {
                 .limit(5);
 
             const { data: allTrans } = await supabase.from('transactions').select('amount').eq('type', 'income');
-            const totalTransAmount = allTrans?.reduce((acc, curr) => acc + (Number(curr.amount) || 0), 0) || 0;
+            const totalTransAmount = allTrans?.reduce((acc: any, curr: any) => acc + (Number(curr.amount) || 0), 0) || 0;
             
             // Get commission from settings (fall back to 5% if not found)
             const { data: setts } = await supabase.from('system_settings').select('value').eq('key', 'platform_commission').single();

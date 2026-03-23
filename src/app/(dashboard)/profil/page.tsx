@@ -32,7 +32,7 @@ export default function ProfilePage() {
         };
 
         fetchUserData();
-    }, [supabase, router]);
+    }, [router]);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();

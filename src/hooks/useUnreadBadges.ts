@@ -97,7 +97,7 @@ export function useUnreadBadges() {
             if (notificationsCurrentChannel) supabase.removeChannel(notificationsCurrentChannel);
             if (wastesCurrentChannel) supabase.removeChannel(wastesCurrentChannel);
         };
-    }, [supabase, isChatPath]);
+    }, [isChatPath]);
 
     return { unreadMessages: effectiveUnreadMessages, unreadNotifications, unreadReservations };
 }

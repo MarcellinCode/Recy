@@ -142,9 +142,9 @@ function ChatContainer() {
                 .select('waste_id, is_read, receiver_id')
                 .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`);
 
-            const wasteIdsWithMessages = new Set((userMessages || []).map(m => m.waste_id).filter(Boolean));
+            const wasteIdsWithMessages = new Set((userMessages || []).map((m: any) => m.waste_id).filter(Boolean));
 
-            const filteredWastes = (allWastes || []).filter(w => 
+            const filteredWastes = (allWastes || []).filter((w: any) => 
                 w.seller_id === user.id || 
                 w.collector_id === user.id || 
                 wasteIdsWithMessages.has(w.id)
@@ -158,7 +158,7 @@ function ChatContainer() {
                 return acc;
             }, {});
 
-            const conversationsWithBadges = filteredWastes.map(conv => ({
+            const conversationsWithBadges = filteredWastes.map((conv: any) => ({
                 ...conv,
                 unreadCount: unreadCountsMap[conv.id] || 0
             }));
@@ -167,13 +167,13 @@ function ChatContainer() {
             setLoading(false);
 
             if (targetWasteId) {
-                const found = conversationsWithBadges.find(c => c.id === targetWasteId);
+                const found = conversationsWithBadges.find((c: any) => c.id === targetWasteId);
                 if (found) setSelectedConv(found as any);
             }
             setLoading(false);
         };
         fetchInitialData();
-    }, [supabase, targetWasteId]);
+    }, [targetWasteId]);
 
     // --- Actions ---
 
@@ -267,14 +267,14 @@ function ChatContainer() {
                 for (const id in newState) users.add(id);
                 setOnlineUsers(users);
             })
-            .on('broadcast', { event: 'typing' }, (payload) => {
+            .on('broadcast', { event: 'typing' }, (payload: any) => {
                 if (payload.payload.user_id !== currentUser.id) {
                     setIsTyping(true);
                     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
                     typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
                 }
             })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload) => {
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload: any) => {
                 const msg = payload.new as Message;
                 const otherUserId = selectedConv.seller_id === currentUser.id ? selectedConv.collector_id : selectedConv.seller_id;
                 
@@ -284,11 +284,11 @@ function ChatContainer() {
                 if (!isExactMatch && !isFallbackMatch) return;
                 appendMessage(msg);
             })
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload: any) => {
                 setMessages(prev => prev.map(msg => msg.id.toString() === payload.new.id.toString() ? { ...msg, ...payload.new } : msg));
             });
 
-        channel.subscribe(async (status) => {
+        channel.subscribe(async (status: any) => {
             if (status === 'SUBSCRIBED') await channel.track({ online_at: new Date().toISOString() });
         });
         

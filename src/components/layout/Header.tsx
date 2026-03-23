@@ -37,13 +37,13 @@ export function Header() {
 
         getSession();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
             setUser(session?.user ?? null);
             setLoading(false);
         });
 
         return () => subscription.unsubscribe();
-    }, [supabase]);
+    }, []);
 
     const handleLogout = async () => {
         await supabase.auth.signOut();

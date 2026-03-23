@@ -63,7 +63,7 @@ export default function ReservationsPage() {
             setLoading(false);
         };
         fetchReservations();
-    }, [supabase]);
+    }, []);
 
     const filteredReservations = reservations.filter(res => 
         currentTab === "collectes" 

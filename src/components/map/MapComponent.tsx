@@ -125,7 +125,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
-    }, [supabase]);
+    }, []);
 
     if (loading) return (
         <div className="w-full h-[70vh] flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-900 rounded-[3rem] border border-gray-100 dark:border-zinc-800">
