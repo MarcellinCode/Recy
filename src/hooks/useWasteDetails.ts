@@ -47,6 +47,7 @@ export function useWasteDetails(id: string) {
     loading,
     error,
     actionLoading,
+    setActionLoading,
     reserve,
     refresh: fetchWaste
   };
