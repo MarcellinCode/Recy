@@ -204,11 +204,11 @@ function WasteDetailsContent({ id }: { id: string }) {
         );
     }
 
-    if (error || !waste) {
+    if (fetchError || !waste) {
         return (
             <div className="max-w-5xl mx-auto px-4 py-20 text-center">
                 <h1 className="text-2xl font-black text-gray-900 mb-4">Oups !</h1>
-                <p className="text-gray-500 mb-8">{error || fetchError || "Ce lot n'existe plus ou a déjà été retiré."}</p>
+                <p className="text-gray-500 mb-8">{fetchError || "Ce lot n'existe plus ou a déjà été retiré."}</p>
                 <button onClick={() => navigateSafe(router, ROUTES.MARKETPLACE)} className="text-primary font-bold hover:underline">Retour au marché</button>
             </div>
         );
