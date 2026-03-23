@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { navigateSafe } from "@/utils/navigation";
 import { walletService } from "@/services/walletService";
+import { userService } from "@/services/userService";
 import { cn } from "@/lib/utils";
 
 export default function WalletPage() {
@@ -31,13 +32,13 @@ export default function WalletPage() {
         const fetchWalletData = async () => {
             setLoading(true);
             try {
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
+                const profile = await userService.getCurrentProfile();
+                if (!profile) {
                     navigateSafe(router, ROUTES.CONNEXION);
                     return;
                 }
 
-                const data = await walletService.getWalletData(user.id);
+                const data = await walletService.getWalletData(profile.id);
                 setProfile(data.profile);
                 setTransactions(data.transactions);
                 setTotalWeight(data.totalWeight);
@@ -49,7 +50,7 @@ export default function WalletPage() {
         };
 
         fetchWalletData();
-    }, [router, supabase]);
+    }, [router]);
 
     if (loading) {
         return (

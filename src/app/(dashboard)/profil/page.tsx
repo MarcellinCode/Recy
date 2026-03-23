@@ -39,18 +39,18 @@ export default function ProfilePage() {
     };
 
     const baseMenuItems = [
-        { icon: <UserCircle className="w-5 h-5 text-blue-500" />, label: "Informations personnelles", route: ROUTES.PROFILE + "/informations" },
-        { icon: <Shield className="w-5 h-5 text-green-500" />, label: "Sécurité & Mot de passe", route: ROUTES.PROFILE + "/securite" },
-        { icon: <Bell className="w-5 h-5 text-amber-500" />, label: "Notifications", route: "/notifications" },
+        { icon: <UserCircle className="w-5 h-5 text-blue-500" />, label: "Informations personnelles", route: ROUTES.PROFILE_INFOS },
+        { icon: <Shield className="w-5 h-5 text-green-500" />, label: "Sécurité & Mot de passe", route: ROUTES.PROFILE_SECURITY },
+        { icon: <Bell className="w-5 h-5 text-amber-500" />, label: "Notifications", route: ROUTES.NOTIFICATIONS },
     ];
 
     const collectorMenuItems = (profile?.role === 'collecteur' || profile?.role === 'entreprise') ? [
-        { icon: <Zap className="w-5 h-5 text-amber-500" />, label: "Forfaits & Abonnements", route: ROUTES.ABONNEMENTS as any },
+        { icon: <Zap className="w-5 h-5 text-amber-500" />, label: "Forfaits & Abonnements", route: ROUTES.ABONNEMENTS },
     ] : [];
 
     const extraMenuItems = [
-        { icon: <Settings className="w-5 h-5 text-gray-500" />, label: "Paramètres", route: ROUTES.PROFILE + "/parametres" },
-        { icon: <HelpCircle className="w-5 h-5 text-purple-500" />, label: "Aide & Support", route: ROUTES.PROFILE + "/aide" },
+        { icon: <Settings className="w-5 h-5 text-gray-500" />, label: "Paramètres", route: ROUTES.PROFILE_SETTINGS },
+        { icon: <HelpCircle className="w-5 h-5 text-purple-500" />, label: "Aide & Support", route: ROUTES.PROFILE_HELP },
     ];
 
     const menuItems = [...baseMenuItems, ...collectorMenuItems, ...extraMenuItems];
@@ -128,7 +128,7 @@ export default function ProfilePage() {
                 {menuItems.map((item, index) => (
                     <button
                         key={index}
-                        onClick={() => navigateSafe(router, (item as any).route)}
+                        onClick={() => navigateSafe(router, item.route as any)}
                         className={cn(
                             "w-full flex items-center justify-between p-8 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all group",
                             index !== menuItems.length - 1 && "border-b border-gray-50 dark:border-zinc-800"

@@ -6,6 +6,12 @@ export const ROUTES = {
   
   WALLET: '/wallet',
   PROFILE: '/profil',
+  PROFILE_INFOS: '/profil/informations',
+  PROFILE_SECURITY: '/profil/securite',
+  PROFILE_SETTINGS: '/profil/parametres',
+  PROFILE_HELP: '/profil/aide',
+  
+  ABONNEMENTS: '/abonnements',
   CARTE: '/carte',
   MES_DECHETS: '/mes-dechets',
   RESERVATIONS: '/reservations',
@@ -15,6 +21,9 @@ export const ROUTES = {
   
   CHAT: '/chat',
   CHAT_DETAILS: (id: string) => `/chat?wasteId=${id}`,
+  
+  NOTIFICATIONS: '/notifications',
+  ESPACE: '/espace',
 } as const;
 
 export type AppRoute = typeof ROUTES[keyof typeof ROUTES] | string;
