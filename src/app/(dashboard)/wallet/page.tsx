@@ -18,11 +18,9 @@ import { useRouter } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { navigateSafe } from "@/utils/navigation";
 import { walletService } from "@/services/walletService";
-import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 export default function WalletPage() {
-    const supabase = createClient();
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<any>(null);

@@ -9,7 +9,6 @@ import { userService } from "@/services/userService";
 import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
-    const supabase = createClient();
     const router = useRouter();
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
