@@ -3,56 +3,55 @@
 import { useState, useEffect } from "react";
 import { UserCircle, Settings, LogOut, Shield, Bell, HelpCircle, ChevronRight, Loader2, Mail, MapPin, Leaf, Zap } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase";
+import { ROUTES } from "@/constants/routes";
+import { navigateSafe } from "@/utils/navigation";
+import { userService } from "@/services/userService";
 import { cn } from "@/lib/utils";
 
 export default function ProfilePage() {
     const supabase = createClient();
     const router = useRouter();
-    const [user, setUser] = useState<any>(null);
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchUserData = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                router.push("/connexion");
-                return;
+            try {
+                const data = await userService.getCurrentProfile();
+                if (!data) {
+                    navigateSafe(router, ROUTES.CONNEXION);
+                    return;
+                }
+                setProfile(data);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
             }
-            setUser(user);
-
-            const { data: profileData } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-            setProfile(profileData);
-            setLoading(false);
         };
 
         fetchUserData();
     }, [router]);
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        await userService.signOut();
         router.refresh();
-        router.push("/connexion");
+        navigateSafe(router, ROUTES.CONNEXION);
     };
 
     const baseMenuItems = [
-        { icon: <UserCircle className="w-5 h-5 text-blue-500" />, label: "Informations personnelles", href: "/profil/informations" },
-        { icon: <Shield className="w-5 h-5 text-green-500" />, label: "Sécurité & Mot de passe", href: "/profil/securite" },
-        { icon: <Bell className="w-5 h-5 text-amber-500" />, label: "Notifications", href: "/notifications" },
+        { icon: <UserCircle className="w-5 h-5 text-blue-500" />, label: "Informations personnelles", route: ROUTES.PROFILE + "/informations" },
+        { icon: <Shield className="w-5 h-5 text-green-500" />, label: "Sécurité & Mot de passe", route: ROUTES.PROFILE + "/securite" },
+        { icon: <Bell className="w-5 h-5 text-amber-500" />, label: "Notifications", route: "/notifications" },
     ];
 
     const collectorMenuItems = (profile?.role === 'collecteur' || profile?.role === 'entreprise') ? [
-        { icon: <Zap className="w-5 h-5 text-amber-500" />, label: "Forfaits & Abonnements", href: "/abonnements" },
+        { icon: <Zap className="w-5 h-5 text-amber-500" />, label: "Forfaits & Abonnements", route: ROUTES.ABONNEMENTS as any },
     ] : [];
 
     const extraMenuItems = [
-        { icon: <Settings className="w-5 h-5 text-gray-500" />, label: "Paramètres", href: "/profil/parametres" },
-        { icon: <HelpCircle className="w-5 h-5 text-purple-500" />, label: "Aide & Support", href: "/profil/aide" },
+        { icon: <Settings className="w-5 h-5 text-gray-500" />, label: "Paramètres", route: ROUTES.PROFILE + "/parametres" },
+        { icon: <HelpCircle className="w-5 h-5 text-purple-500" />, label: "Aide & Support", route: ROUTES.PROFILE + "/aide" },
     ];
 
     const menuItems = [...baseMenuItems, ...collectorMenuItems, ...extraMenuItems];
@@ -92,7 +91,7 @@ export default function ProfilePage() {
                     <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start text-gray-400 font-bold text-[10px] uppercase tracking-widest">
                         <div className="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800 px-3 py-1.5 rounded-xl">
                             <Mail className="w-3 h-3 text-primary" />
-                            {user?.email}
+                            {profile?.email}
                         </div>
                         <div className="flex items-center gap-2 bg-gray-50 dark:bg-zinc-800 px-3 py-1.5 rounded-xl">
                             <MapPin className="w-3 h-3 text-primary" />
@@ -130,6 +129,7 @@ export default function ProfilePage() {
                 {menuItems.map((item, index) => (
                     <button
                         key={index}
+                        onClick={() => navigateSafe(router, (item as any).route)}
                         className={cn(
                             "w-full flex items-center justify-between p-8 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all group",
                             index !== menuItems.length - 1 && "border-b border-gray-50 dark:border-zinc-800"

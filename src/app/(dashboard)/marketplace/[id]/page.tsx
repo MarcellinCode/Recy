@@ -4,6 +4,9 @@ import { useState, useEffect, useMemo, useRef, Suspense, use } from "react";
 import { ArrowLeft, MapPin, Calendar, ShieldCheck, MessageSquare, Truck, Loader2, ChevronRight, Check } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
+import { ROUTES } from "@/constants/routes";
+import { navigateSafe } from "@/utils/navigation";
+import { useWasteDetails } from "@/hooks/useWasteDetails";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { RatingModal } from "@/components/ui/RatingModal";
@@ -142,10 +145,15 @@ function WasteDetailsContent({ id }: { id: string }) {
     const supabase = useMemo(() => createClient(), []);
     const view = searchParams.get("view") || "buyer";
 
-    const [waste, setWaste] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [actionLoading, setActionLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+    const { 
+        waste, 
+        loading, 
+        error: fetchError, 
+        actionLoading, 
+        reserve,
+        refresh 
+    } = useWasteDetails(id);
+
     const [currentUser, setCurrentUser] = useState<any>(null);
     const [activeImageIndex, setActiveImageIndex] = useState(0);
     const [showRatingModal, setShowRatingModal] = useState(false);
@@ -158,87 +166,32 @@ function WasteDetailsContent({ id }: { id: string }) {
     const [showConfetti, setShowConfetti] = useState(false);
 
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                const { data: { user } } = await supabase.auth.getUser();
-                setCurrentUser(user);
-
-                const { data, error: fetchError } = await supabase
-                    .from('wastes')
-                    .select('*, waste_types(name, emoji, price_per_kg), profiles!seller_id(full_name)')
-                    .eq('id', id)
-                    .single();
-
-                if (fetchError) throw fetchError;
-                setWaste(data);
-            } catch (err: any) {
-                console.error(err);
-                setError("Impossible de charger les détails du lot.");
-            } finally {
-                setLoading(false);
-            }
+        const fetchUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            setCurrentUser(user);
         };
-
-        fetchData();
-    }, [id, supabase]);
+        fetchUser();
+    }, [supabase]);
 
     const handleReserve = async () => {
         if (!currentUser) {
-            router.push("/connexion");
+            navigateSafe(router, ROUTES.CONNEXION);
             return;
         }
 
-        setActionLoading(true);
-        try {
-            const { data, error: reserveError } = await supabase
-                .from('wastes')
-                .update({
-                    status: 'reserved',
-                    collector_id: currentUser.id
-                })
-                .eq('id', id)
-                .select()
-                .single();
-
-            if (reserveError) throw reserveError;
-
-            await supabase.from('notifications').insert([
-                {
-                    profile_id: waste.seller_id,
-                    title: "Lot Réservé !",
-                    content: `Votre lot de ${waste.waste_types.name} a été réservé par un collecteur.`,
-                    type: 'offer'
-                },
-                {
-                    profile_id: currentUser.id,
-                    title: "Réservation confirmée",
-                    content: `Vous avez réservé avec succès le lot de ${waste.waste_types.name}. Rendez-vous dans les messages pour la suite !`,
-                    type: 'collection'
-                }
-            ]);
-
-            if (!data) {
-                showToast("Erreur : La réservation n'a pas pu être effectuée.", "error");
-                return;
-            }
-
-            // Success Animation State
-            setIsReserving(true);
+        setIsReserving(true);
+        const success = await reserve(currentUser.id);
+        
+        if (success) {
             setReservationSuccess(true);
             setShowConfetti(true);
             
             setTimeout(() => {
                 router.refresh();
-                router.push(`/chat?wasteId=${id}`);
-            }, 3000); // 3 seconds of "Wow" before redirect
-        } catch (err: any) {
-            console.error(err);
-            setError(err.message || "Erreur lors de la réservation.");
-            setActionLoading(false);
+                navigateSafe(router, ROUTES.CHAT, { wasteId: id });
+            }, 3000);
+        } else {
             setIsReserving(false);
-            setReservationSuccess(false);
-            setShowConfetti(false);
         }
     };
 
@@ -255,8 +208,8 @@ function WasteDetailsContent({ id }: { id: string }) {
         return (
             <div className="max-w-5xl mx-auto px-4 py-20 text-center">
                 <h1 className="text-2xl font-black text-gray-900 mb-4">Oups !</h1>
-                <p className="text-gray-500 mb-8">{error || "Ce lot n'existe plus ou a déjà été retiré."}</p>
-                <Link href="/marketplace" className="text-primary font-bold hover:underline">Retour au marché</Link>
+                <p className="text-gray-500 mb-8">{error || fetchError || "Ce lot n'existe plus ou a déjà été retiré."}</p>
+                <button onClick={() => navigateSafe(router, ROUTES.MARKETPLACE)} className="text-primary font-bold hover:underline">Retour au marché</button>
             </div>
         );
     }
@@ -266,10 +219,13 @@ function WasteDetailsContent({ id }: { id: string }) {
     return (
         <div className="max-w-7xl mx-auto px-4 py-8 relative">
             {showConfetti && <Confetti />}
-            <Link href={view === "seller" ? "/mes-dechets" : "/marketplace"} className="inline-flex items-center gap-2 text-gray-400 hover:text-primary mb-10 transition-all font-black uppercase tracking-widest text-[10px]">
+            <button 
+                onClick={() => navigateSafe(router, view === "seller" ? ROUTES.MES_DECHETS : ROUTES.MARKETPLACE)} 
+                className="inline-flex items-center gap-2 text-gray-400 hover:text-primary mb-10 transition-all font-black uppercase tracking-widest text-[10px]"
+            >
                 <ArrowLeft className="w-4 h-4" />
                 Détails du lot
-            </Link>
+            </button>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
                 <div className="lg:col-span-12 xl:col-span-8 space-y-8">
@@ -308,7 +264,7 @@ function WasteDetailsContent({ id }: { id: string }) {
                             <div className="mb-10 flex items-start justify-between">
                                 <div>
                                     <h1 className="text-4xl font-black text-gray-900 dark:text-white mb-2 uppercase tracking-tighter italic">{waste.waste_types?.name}</h1>
-                                    <div className="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase tracking-widest"><Calendar className="w-4 h-4 text-primary" />Publié le {new Date(waste.created_at).toLocaleDateString()}</div>
+                                    <div className="flex items-center gap-2 text-gray-500 text-xs font-bold uppercase tracking-widest"><Calendar className="w-4 h-4 text-primary" />Publié le {new Date(waste.created_at).toLocaleDateString('fr-FR')}</div>
                                 </div>
                                 <div className="text-right">
                                     <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Vendeur</p>
@@ -368,9 +324,12 @@ function WasteDetailsContent({ id }: { id: string }) {
                                             isSuccess={reservationSuccess}
                                         />
 
-                                        <Link href={`/chat?wasteId=${id}`} className="w-full py-5 bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-white font-black rounded-[2rem] hover:bg-gray-100 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs border-2 border-transparent hover:border-gray-200 dark:hover:border-zinc-600">
+                                        <button 
+                                            onClick={() => navigateSafe(router, ROUTES.CHAT, { wasteId: id })} 
+                                            className="w-full py-5 bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-white font-black rounded-[2rem] hover:bg-gray-100 dark:hover:bg-zinc-700 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-xs border-2 border-transparent hover:border-gray-200 dark:hover:border-zinc-600"
+                                        >
                                             <MessageSquare className="w-4 h-4" /> Poser une question au vendeur
-                                        </Link>
+                                        </button>
                                     </>
                                 ) : (
                                     <div className="space-y-4">
@@ -413,7 +372,7 @@ function WasteDetailsContent({ id }: { id: string }) {
                                                                                 const result = await confirmCollection(waste.id, Number(weight));
                                                                                 if (result.success) {
                                                                                     showToast("Collecte validée et paiement effectué !", "success");
-                                                                                    router.push("/wallet");
+                                                                                    navigateSafe(router, ROUTES.WALLET);
                                                                                 } else {
                                                                                     showToast(result.error || "Erreur lors de la validation", "error");
                                                                                     setActionLoading(false);
@@ -427,9 +386,12 @@ function WasteDetailsContent({ id }: { id: string }) {
                                                             />
                                                         ))}
                                                     </div>
-                                                    <Link href={`/chat?wasteId=${id}`} className="w-full py-5 bg-gray-50 dark:bg-zinc-800 text-gray-500 font-black rounded-[2rem] hover:bg-gray-100 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px]">
+                                                    <button 
+                                                        onClick={() => navigateSafe(router, ROUTES.CHAT, { wasteId: id })} 
+                                                        className="w-full py-5 bg-gray-50 dark:bg-zinc-800 text-gray-500 font-black rounded-[2rem] hover:bg-gray-100 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[10px]"
+                                                    >
                                                         <MessageSquare className="w-4 h-4" /> Discuter avec le vendeur
-                                                    </Link>
+                                                    </button>
                                                 </div>
                                             </div>
                                         )}

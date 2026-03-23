@@ -3,12 +3,16 @@
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Trash2, Plus, Search, MapPin, Calendar, ArrowRight, Loader2 } from "lucide-react";
+import { ROUTES } from "@/constants/routes";
+import { navigateSafe } from "@/utils/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { showToast } from "@/components/ui/toast";
 
 export default function MyWastePage() {
     const supabase = useMemo(() => createClient(), []);
+    const router = useRouter();
 
     const [wastes, setWastes] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -93,13 +97,13 @@ export default function MyWastePage() {
                     </p>
                 </div>
                 {userProfile?.role !== 'collecteur' && (
-                    <Link
-                        href="/mes-dechets/publier"
+                    <button
+                        onClick={() => navigateSafe(router, ROUTES.MARKETPLACE_PUBLISH)}
                         className="flex items-center justify-center gap-2 px-8 py-4 bg-primary text-white font-black rounded-3xl shadow-xl shadow-primary/25 hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm uppercase tracking-widest"
                     >
                         <Plus className="w-5 h-5" />
                         Publier un lot
-                    </Link>
+                    </button>
                 )}
             </div>
 
@@ -162,13 +166,13 @@ export default function MyWastePage() {
                                     <MapPin className="w-4 h-4 shrink-0 text-primary/60" />
                                     <span className="truncate">{waste.location}</span>
                                 </div>
-                                <Link
-                                    href={`/mes-dechets/${waste.id}`}
+                                <button
+                                    onClick={() => navigateSafe(router, ROUTES.MES_DECHETS + `/${waste.id}`)}
                                     className="flex items-center justify-center gap-2 w-full py-3.5 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all group/btn"
                                 >
                                     Détails & Suivi
                                     <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-                                </Link>
+                                </button>
                             </div>
                         </div>
                     ))}
@@ -182,12 +186,12 @@ export default function MyWastePage() {
                     <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto font-medium leading-relaxed">
                         C'est un bon début pour l'environnement ! <br /> Publiez votre premier lot pour commencer à gagner.
                     </p>
-                    <Link
-                        href="/mes-dechets/publier"
+                    <button
+                        onClick={() => navigateSafe(router, ROUTES.MARKETPLACE_PUBLISH)}
                         className="mt-8 px-8 py-4 bg-primary/10 text-primary font-black rounded-2xl hover:bg-primary hover:text-white transition-all text-xs uppercase tracking-widest"
                     >
                         Publiez maintenant
-                    </Link>
+                    </button>
                 </div>
             )}
         </div>

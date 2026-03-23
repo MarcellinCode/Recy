@@ -14,11 +14,16 @@ import {
     Leaf,
     ShieldCheck
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ROUTES } from "@/constants/routes";
+import { navigateSafe } from "@/utils/navigation";
+import { walletService } from "@/services/walletService";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 export default function WalletPage() {
     const supabase = createClient();
+    const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<any>(null);
     const [transactions, setTransactions] = useState<any[]>([]);
@@ -27,40 +32,26 @@ export default function WalletPage() {
     useEffect(() => {
         const fetchWalletData = async () => {
             setLoading(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    navigateSafe(router, ROUTES.CONNEXION);
+                    return;
+                }
 
-            // Fetch Profile (Balance)
-            const { data: profileData } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-            setProfile(profileData);
-
-            // Fetch Transactions
-            const { data: transData } = await supabase
-                .from('transactions')
-                .select('*')
-                .eq('profile_id', user.id)
-                .order('created_at', { ascending: false });
-            setTransactions(transData || []);
-
-            // Fetch Total Recycled Weight
-            const { data: weightData } = await supabase
-                .from('wastes')
-                .select('final_weight')
-                .eq('seller_id', user.id)
-                .eq('status', 'collected');
-            
-            const total = weightData?.reduce((acc: any, curr: any) => acc + (Number(curr.final_weight) || 0), 0) || 0;
-            setTotalWeight(total);
-
-            setLoading(false);
+                const data = await walletService.getWalletData(user.id);
+                setProfile(data.profile);
+                setTransactions(data.transactions);
+                setTotalWeight(data.totalWeight);
+            } catch (error) {
+                console.error(error);
+            } finally {
+                setLoading(false);
+            }
         };
 
         fetchWalletData();
-    }, []);
+    }, [router, supabase]);
 
     if (loading) {
         return (
