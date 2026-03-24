@@ -26,4 +26,4 @@ export const ROUTES = {
   ESPACE: '/espace',
 } as const;
 
-export type AppRoute = typeof ROUTES[keyof typeof ROUTES] | string;
+export type AppRoute = Extract<typeof ROUTES[keyof typeof ROUTES], string> | (string & {});
