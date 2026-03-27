@@ -159,7 +159,11 @@ export default function OrganizationDashboard() {
                 </div>
 
                 {/* Wallet Info */}
-                <div onClick={() => setIsWalletModalOpen(true)} className="cursor-pointer bg-white dark:bg-zinc-900 p-6 rounded-[2rem] border border-gray-100 dark:border-zinc-800 shadow-xl group hover:border-primary/50 transition-all flex items-center gap-6">
+                <button 
+                    type="button"
+                    onClick={() => setIsWalletModalOpen(true)} 
+                    className="w-full text-left cursor-pointer bg-white dark:bg-zinc-900 p-6 rounded-[2rem] border border-gray-100 dark:border-zinc-800 shadow-xl group hover:border-primary/50 transition-all flex items-center gap-6"
+                >
                     <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary">
                         <Wallet size={24} />
                     </div>
@@ -172,7 +176,7 @@ export default function OrganizationDashboard() {
                     <div className="p-3 bg-gray-50 dark:bg-zinc-800 rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
                         <Plus size={16} />
                     </div>
-                </div>
+                </button>
             </header>
 
             <AnimatePresence mode="wait">
