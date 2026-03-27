@@ -111,7 +111,12 @@ export default function OrganizationDashboard() {
 
     const handleBidSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const res = await submitBid(selectedTender.id, bidAmount);
+        const res = await submitBid({
+            tender_id: selectedTender.id,
+            bid_amount: bidAmount,
+            proposal_text: "Proposition standard d'organisation",
+            trucks_count: 1
+        });
         if (res.success) {
             showToast("Proposition soumise avec succès", "success");
             setIsBidModalOpen(false);
