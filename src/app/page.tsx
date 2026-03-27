@@ -25,8 +25,8 @@ export default async function Home() {
         {/* Background Image avec Overlay */}
         <div className="absolute inset-0 z-0">
           <img
-            src="/images/hero.png"
-            alt="CITICLINE Future"
+            src="https://www.kaweru.com/wp-content/uploads/2025/12/Cotonou.jpg"
+            alt="CITICLINE - Cotonou Propre"
             className="w-full h-full object-cover scale-105"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/90 to-zinc-950/40"></div>
