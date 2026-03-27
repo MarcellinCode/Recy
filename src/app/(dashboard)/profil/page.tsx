@@ -46,7 +46,7 @@ export default function ProfilePage() {
 
     const collectorMenuItems = (profile?.role === 'collecteur' || profile?.role === 'entreprise' || profile?.role === 'organisation_admin') ? [
         ...(profile?.role === 'organisation_admin' ? [
-            { icon: <Truck className="w-5 h-5 text-indigo-500" />, label: "Gestion de la Flotte & Organisation", route: "/admin/organisation" },
+            { icon: <Truck className="w-5 h-5 text-indigo-500" />, label: "Gestion de la Flotte & Organisation", route: "/organisation" },
         ] : []),
         { icon: <Zap className="w-5 h-5 text-amber-500" />, label: "Forfaits & Abonnements", route: ROUTES.ABONNEMENTS },
     ] : [];

@@ -58,6 +58,7 @@ export async function middleware(request: NextRequest) {
         '/carte',
         '/appels-offres',
         '/bourse',
+        '/organisation',
         '/admin',
     ]
     const isDashboardRoute = protectedPaths.some(p => pathname.startsWith(p))
@@ -70,7 +71,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
-    // Admin role check
+    // Admin role check (Strictly Super Admin for /admin)
     if (user && pathname.startsWith('/admin')) {
         const { data: profile } = await supabase
             .from('profiles')
