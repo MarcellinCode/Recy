@@ -17,6 +17,9 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { addVehicle } from "@/app/actions/fleet";
+import { showToast } from "@/components/ui/toast";
+import { Modal } from "@/components/ui/Modal";
 
 export default function FleetPage() {
     const supabase = createClient();
@@ -24,33 +27,52 @@ export default function FleetPage() {
     const [vehicles, setVehicles] = useState<any[]>([]);
     const [stats, setStats] = useState({ total: 0, maintenance: 0, alert: 0 });
 
+    // Modal State
+    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+    const [newVehicle, setNewVehicle] = useState({ name: "", type: "camion", regNumber: "" });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const fetchFleet = async () => {
+        setLoading(true);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data } = await supabase
+            .from('vehicles')
+            .select('*, maintenance_logs(*)')
+            .order('created_at', { ascending: false });
+
+        if (data) {
+            setVehicles(data);
+            const total = data.length;
+            const maintenance = data.filter((v: any) => v.status === 'in_maintenance').length;
+            const alert = data.filter((v: any) => {
+                const daysOld = (Date.now() - new Date(v.created_at).getTime()) / (1000 * 60 * 60 * 24);
+                return daysOld > 30 && !v.last_maintenance_date;
+            }).length;
+            setStats({ total, maintenance, alert });
+        }
+        setLoading(false);
+    };
+
     useEffect(() => {
-        const fetchFleet = async () => {
-            setLoading(true);
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data } = await supabase
-                .from('vehicles')
-                .select('*, maintenance_logs(*)')
-                .order('created_at', { ascending: false });
-
-            if (data) {
-                setVehicles(data);
-                const total = data.length;
-                const maintenance = data.filter((v: any) => v.status === 'in_maintenance').length;
-                const alert = data.filter((v: any) => {
-                    // Mocking alert logic based on created_at since mileage is missing in schema
-                    const daysOld = (Date.now() - new Date(v.created_at).getTime()) / (1000 * 60 * 60 * 24);
-                    return daysOld > 30 && !v.last_maintenance_date;
-                }).length;
-                setStats({ total, maintenance, alert });
-            }
-            setLoading(false);
-        };
-
         fetchFleet();
     }, []);
+
+    const handleAddVehicle = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        const res = await addVehicle(newVehicle.name, newVehicle.type, newVehicle.regNumber);
+        if (res.success) {
+            showToast("Véhicule enregistré", "success");
+            setIsAddModalOpen(false);
+            setNewVehicle({ name: "", type: "camion", regNumber: "" });
+            fetchFleet();
+        } else {
+            showToast(res.error || "Erreur", "error");
+        }
+        setIsSubmitting(false);
+    };
 
     if (loading) return (
         <div className="flex flex-col items-center justify-center h-[60vh] gap-4">
@@ -72,7 +94,10 @@ export default function FleetPage() {
                         Surveillance technique du parc automobile CITICLINE
                     </p>
                 </div>
-                <button className="flex items-center gap-2 px-8 py-4 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white font-black text-[10px] uppercase tracking-widest rounded-3xl hover:scale-105 active:scale-95 transition-all shadow-xl">
+                <button 
+                    onClick={() => setIsAddModalOpen(true)}
+                    className="flex items-center gap-2 px-8 py-4 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white font-black text-[10px] uppercase tracking-widest rounded-3xl hover:scale-105 active:scale-95 transition-all shadow-xl"
+                >
                     <Plus className="w-4 h-4" />
                     Ajouter un véhicule
                 </button>
@@ -125,6 +150,53 @@ export default function FleetPage() {
                     <VehicleCard key={vehicle.id} vehicle={vehicle} />
                 ))}
             </div>
+
+            {/* Modal Ajout Véhicule */}
+            <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Enregistrer un Véhicule">
+                <form onSubmit={handleAddVehicle} className="space-y-6">
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Nom du véhicule (ex: Camion 01)</label>
+                            <input 
+                                required
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                                placeholder="NOM DU VÉHICULE"
+                                value={newVehicle.name}
+                                onChange={(e) => setNewVehicle({...newVehicle, name: e.target.value})}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Numéro d'immatriculation</label>
+                            <input 
+                                required
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                                placeholder="AA-000-AA"
+                                value={newVehicle.regNumber}
+                                onChange={(e) => setNewVehicle({...newVehicle, regNumber: e.target.value.toUpperCase()})}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Type de véhicule</label>
+                            <select 
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                                value={newVehicle.type}
+                                onChange={(e) => setNewVehicle({...newVehicle, type: e.target.value})}
+                            >
+                                <option value="camion">Camion de collecte</option>
+                                <option value="tricycle">Tricycle motorisé</option>
+                                <option value="benne">Benne tasseuse</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button 
+                        type="submit" 
+                        disabled={isSubmitting}
+                        className="w-full py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-50"
+                    >
+                        {isSubmitting ? "Enregistrement..." : "Confirmer l'Ajout"}
+                    </button>
+                </form>
+            </Modal>
 
             {vehicles.length === 0 && (
                 <div className="text-center py-24 opacity-20">
