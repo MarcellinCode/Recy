@@ -70,13 +70,11 @@ export function Header() {
         ],
         entreprise: [
             { href: "/dashboard",    label: "Hub" },
-            { href: "/organisation", label: "Ma Flotte" },
             { href: "/appels-offres", label: "B2B" },
             { href: "/chat",         label: "Messages", badge: unreadMessages },
         ],
         organisation_admin: [
             { href: "/dashboard",    label: "Hub" },
-            { href: "/organisation", label: "Ma Flotte" },
             { href: "/appels-offres", label: "B2B" },
             { href: "/chat",         label: "Messages", badge: unreadMessages },
         ],

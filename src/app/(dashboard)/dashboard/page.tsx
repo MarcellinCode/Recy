@@ -137,7 +137,7 @@ export default function DashboardPage() {
             }
         ] : []),
         // Premium sections hidden for regular citizens
-        ...(profile?.role === 'entreprise' || profile?.role === 'collecteur' ? [
+        ...(profile?.role === 'entreprise' || profile?.role === 'organisation_admin' || profile?.role === 'collecteur' ? [
             { 
                 title: "Appels d'Offres", 
                 description: "Espace B2B & Entreprises", 
@@ -145,6 +145,22 @@ export default function DashboardPage() {
                 href: "/appels-offres", 
                 color: "bg-indigo-500" 
             },
+            ...(profile?.role !== 'collecteur' ? [
+                { 
+                    title: "Mission Control", 
+                    description: "Gestion agents & concessions", 
+                    icon: TrendingUp, 
+                    href: "/organisation", 
+                    color: "bg-zinc-900" 
+                },
+                { 
+                    title: "Carnet d'Entretien", 
+                    description: "Suivi technique & vidange", 
+                    icon: Truck, 
+                    href: "/flotte", 
+                    color: "bg-primary" 
+                }
+            ] : []),
             { 
                 title: "Impact RSE", 
                 description: "Votre bilan écologique", 
@@ -152,7 +168,7 @@ export default function DashboardPage() {
                 href: "#", 
                 color: "bg-green-600" 
             }
-        ] : [])
+        ] : []),
     ];
 
     return (
