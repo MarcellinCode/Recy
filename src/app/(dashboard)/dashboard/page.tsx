@@ -161,13 +161,13 @@ export default function DashboardPage() {
                     color: "bg-primary" 
                 }
             ] : []),
-            { 
-                title: "Impact RSE", 
-                description: "Votre bilan écologique", 
-                icon: Leaf, 
-                href: "#", 
-                color: "bg-green-600" 
-            }
+                { 
+                    title: "Impact RSE", 
+                    description: "Votre bilan écologique", 
+                    icon: Leaf, 
+                    href: "/impact-rse", 
+                    color: "bg-green-600" 
+                }
         ] : []),
     ];
 

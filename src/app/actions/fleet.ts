@@ -17,7 +17,7 @@ export async function getVehicles() {
     return { success: true, vehicles: data };
 }
 
-export async function addVehicle(name: string, type: string, regNumber: string) {
+export async function addVehicle(name: string, type: string, regNumber: string, initialMileage: number, insuranceExpiry: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Non authentifié" };
@@ -27,8 +27,11 @@ export async function addVehicle(name: string, type: string, regNumber: string) 
         name,
         type,
         registration_number: regNumber,
+        current_mileage: initialMileage,
+        last_oil_change_mileage: initialMileage,
+        insurance_expiry_date: insuranceExpiry,
         status: "active",
-        next_maintenance_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days default
+        next_maintenance_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
     }).select().single();
 
     if (error) return { success: false, error: error.message };

@@ -29,7 +29,13 @@ export default function FleetPage() {
 
     // Modal State
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-    const [newVehicle, setNewVehicle] = useState({ name: "", type: "camion", regNumber: "" });
+    const [newVehicle, setNewVehicle] = useState({ 
+        name: "", 
+        type: "camion", 
+        regNumber: "",
+        initialMileage: "0",
+        insuranceExpiry: ""
+    });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fetchFleet = async () => {
@@ -62,11 +68,23 @@ export default function FleetPage() {
     const handleAddVehicle = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
-        const res = await addVehicle(newVehicle.name, newVehicle.type, newVehicle.regNumber);
+        const res = await addVehicle(
+            newVehicle.name, 
+            newVehicle.type, 
+            newVehicle.regNumber,
+            parseInt(newVehicle.initialMileage) || 0,
+            newVehicle.insuranceExpiry
+        );
         if (res.success) {
             showToast("Véhicule enregistré", "success");
             setIsAddModalOpen(false);
-            setNewVehicle({ name: "", type: "camion", regNumber: "" });
+            setNewVehicle({ 
+                name: "", 
+                type: "camion", 
+                regNumber: "",
+                initialMileage: "0",
+                insuranceExpiry: ""
+            });
             fetchFleet();
         } else {
             showToast(res.error || "Erreur", "error");
@@ -187,6 +205,30 @@ export default function FleetPage() {
                                 <option value="benne">Benne tasseuse</option>
                             </select>
                         </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Km Initial</label>
+                                <input 
+                                    type="number"
+                                    required
+                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black"
+                                    placeholder="0"
+                                    value={newVehicle.initialMileage}
+                                    onChange={(e) => setNewVehicle({...newVehicle, initialMileage: e.target.value})}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Assurance (Exp)</label>
+                                <input 
+                                    type="date"
+                                    required
+                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                                    value={newVehicle.insuranceExpiry}
+                                    onChange={(e) => setNewVehicle({...newVehicle, insuranceExpiry: e.target.value})}
+                                />
+                            </div>
+                        </div>
                     </div>
                     <button 
                         type="submit" 
@@ -208,17 +250,24 @@ export default function FleetPage() {
     );
 }
 
-function VehicleCard({ vehicle }: any) {
-    // Mocking data for missing fields in schema
-    const currentMileage = 12500; // Placeholder
-    const oilLimit = 15000; // Placeholder
-    const oilProgress = Math.min(100, (currentMileage / oilLimit) * 100);
-    const needsOil = currentMileage >= (oilLimit - 500);
-    const insuranceExpiry = vehicle.created_at; // Placeholder - using created_at for insurance mock
+function VehicleCard({ vehicle }: { vehicle: any }) {
+    const isMaintenanceNeeded = vehicle.status === 'in_maintenance';
+    
+    // Calculate maintenance progress based on real mileage
+    const mileage = vehicle.current_mileage || 0;
+    const lastOilChange = vehicle.last_oil_change_mileage || 0;
+    const interval = vehicle.oil_change_interval || 5000;
+    const kmSinceOilChange = Math.max(0, mileage - lastOilChange);
+    const oilProgress = Math.min(Math.round((kmSinceOilChange / interval) * 100), 100);
+    const needsOil = oilProgress >= 90;
+    
+    // Insurance delay check
+    const isInsuranceExpiring = vehicle.insurance_expiry_date ? new Date(vehicle.insurance_expiry_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : false;
+    const isInsuranceOverdue = vehicle.insurance_expiry_date ? new Date(vehicle.insurance_expiry_date) < new Date() : false;
 
     return (
         <div className="bg-white dark:bg-zinc-900 p-8 rounded-[3rem] border border-gray-100 dark:border-zinc-800 hover:border-primary/30 transition-all group relative overflow-hidden">
-            {needsOil && <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-3xl" />}
+            {(needsOil || isInsuranceOverdue) && <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 blur-3xl" />}
             
             <div className="flex items-start justify-between mb-8">
                 <div className="flex items-center gap-4">
@@ -233,7 +282,7 @@ function VehicleCard({ vehicle }: any) {
                         <p className="text-[10px] font-bold text-primary uppercase tracking-widest mt-1">{vehicle.registration_number}</p>
                     </div>
                 </div>
-                {needsOil && (
+                {(needsOil || isInsuranceOverdue) && (
                     <div className="bg-red-500 p-2 rounded-xl animate-pulse text-white shadow-lg shadow-red-500/20">
                         <AlertTriangle className="w-4 h-4" />
                     </div>
@@ -244,7 +293,7 @@ function VehicleCard({ vehicle }: any) {
                 <div>
                     <div className="flex justify-between items-end mb-2">
                         <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Entretien (Vidange)</span>
-                        <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase">{currentMileage} / {oilLimit} KM</span>
+                        <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase">{oilProgress}%</span>
                     </div>
                     <div className="h-2 bg-gray-50 dark:bg-zinc-800 rounded-full overflow-hidden">
                         <div 
@@ -263,7 +312,7 @@ function VehicleCard({ vehicle }: any) {
                             <Gauge className="w-3 h-3" />
                             Kilométrage
                         </p>
-                        <p className="text-xs font-black text-gray-900 dark:text-white uppercase italic">{currentMileage} KM</p>
+                        <p className="text-xs font-black text-gray-900 dark:text-white uppercase italic">{mileage.toLocaleString()} KM</p>
                     </div>
                     <div className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl">
                         <p className="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 flex items-center gap-1">
@@ -272,9 +321,9 @@ function VehicleCard({ vehicle }: any) {
                         </p>
                         <p className={cn(
                             "text-xs font-black uppercase italic",
-                            new Date(insuranceExpiry) < new Date() ? "text-red-500" : "text-gray-900 dark:text-white"
+                            isInsuranceOverdue ? "text-red-500" : isInsuranceExpiring ? "text-amber-500" : "text-gray-900 dark:text-white"
                         )}>
-                            {new Date(insuranceExpiry).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' })}
+                            {vehicle.insurance_expiry_date ? new Date(vehicle.insurance_expiry_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : 'NON RÉGLÉ'}
                         </p>
                     </div>
                 </div>
