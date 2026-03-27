@@ -14,13 +14,16 @@ import {
     Ban,
     UserPlus,
     Trash2,
-    X
+    X,
+    Loader2
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/Modal";
+import { adjustWallet, updateSystemRole } from "@/app/actions/admin";
+import { Banknote, TrendingUp, TrendingDown, LayoutDashboard } from "lucide-react";
 
 type Profile = {
     id: string;
@@ -39,6 +42,10 @@ export default function UsersPage() {
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<Profile | null>(null);
     const [newUser, setNewUser] = useState({ full_name: "", email: "", role: "vendeur", city: "" });
+    const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
+    const [walletTargetUser, setWalletTargetUser] = useState<Profile | null>(null);
+    const [walletAmount, setWalletAmount] = useState("");
+    const [isProcessing, setIsProcessing] = useState(false);
     const supabase = createClient();
 
     useEffect(() => {
@@ -111,24 +118,42 @@ export default function UsersPage() {
     async function handleUpdateUser(e: React.FormEvent) {
         e.preventDefault();
         if (!editingUser) return;
+        setIsProcessing(true);
+        try {
+            await updateSystemRole(editingUser.id, editingUser.role);
+            
+            const { error } = await supabase
+                .from('profiles')
+                .update({
+                    full_name: editingUser.full_name,
+                    city: editingUser.city,
+                    status: editingUser.status
+                })
+                .eq('id', editingUser.id);
 
-        const { error } = await supabase
-            .from('profiles')
-            .update({
-                full_name: editingUser.full_name,
-                role: editingUser.role,
-                city: editingUser.city,
-                status: editingUser.status
-            })
-            .eq('id', editingUser.id);
-
-        if (error) {
-            showToast("Erreur lors de la mise à jour", "error");
-        } else {
+            if (error) throw error;
             showToast("Profil utilisateur mis à jour", "success");
             setEditingUser(null);
             fetchUsers();
+        } catch (error: any) {
+            showToast("Erreur : " + error.message, "error");
         }
+        setIsProcessing(false);
+    }
+
+    async function handleAdjustWallet(isAddition: boolean) {
+        if (!walletTargetUser || !walletAmount) return;
+        setIsProcessing(true);
+        try {
+            await adjustWallet(walletTargetUser.id, Number(walletAmount), isAddition);
+            showToast(`Portefeuille ${isAddition ? 'crédité' : 'débité'} avec succès`, "success");
+            setIsWalletModalOpen(false);
+            setWalletAmount("");
+            fetchUsers();
+        } catch (error: any) {
+            showToast("Erreur : " + error.message, "error");
+        }
+        setIsProcessing(false);
     }
 
     const filteredUsers = users.filter(u => 
@@ -243,7 +268,17 @@ export default function UsersPage() {
                                </span>
                            </div>
                            <div className="flex items-center gap-2 ml-4">
-                            <div className="flex items-center gap-2 ml-4">
+                               <button 
+                                   onClick={(e) => {
+                                       e.stopPropagation();
+                                       setWalletTargetUser(user);
+                                       setIsWalletModalOpen(true);
+                                   }}
+                                   className="p-3 bg-primary/10 text-primary rounded-2xl hover:bg-primary hover:text-white transition-all"
+                                   title="Ajuster le solde"
+                               >
+                                   <Banknote size={18} />
+                               </button>
                                <button 
                                    onClick={(e) => {
                                        e.stopPropagation();
@@ -277,7 +312,6 @@ export default function UsersPage() {
                                >
                                    <MoreVertical size={18} />
                                </button>
-                            </div>
                            </div>
                        </div>
                    </div>
@@ -399,11 +433,66 @@ export default function UsersPage() {
                         </div>
                         <button 
                             type="submit"
-                            className="w-full py-5 bg-primary text-white rounded-[2rem] text-xs font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-xl shadow-primary/10 mt-4"
+                            disabled={isProcessing}
+                            className="w-full py-5 bg-primary text-white rounded-[2rem] text-xs font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-xl shadow-primary/10 mt-4 disabled:opacity-50"
                         >
-                            Sauvegarder les modifications
+                            {isProcessing ? <Loader2 className="w-5 h-5 mx-auto animate-spin" /> : "Sauvegarder les modifications"}
                         </button>
                     </form>
+                )}
+            </Modal>
+
+            {/* Wallet Adjustment Modal */}
+            <Modal
+                isOpen={isWalletModalOpen}
+                onClose={() => setIsWalletModalOpen(false)}
+                title="Gestion du Portefeuille"
+            >
+                {walletTargetUser && (
+                    <div className="space-y-8 py-4">
+                        <div className="bg-gray-50 dark:bg-zinc-800/50 p-6 rounded-[2rem] border border-gray-100 dark:border-zinc-800">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Utilisateur</p>
+                            <p className="text-sm font-black text-gray-900 dark:text-white uppercase italic">{walletTargetUser.full_name}</p>
+                            <p className="text-[10px] font-bold text-primary mt-1 uppercase tracking-widest italic">{walletTargetUser.role}</p>
+                        </div>
+
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Montant de l'opération (FCFA)</label>
+                            <div className="relative group">
+                                <Banknote className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={20} />
+                                <input 
+                                    type="number"
+                                    placeholder="Ex: 5000"
+                                    className="w-full pl-16 pr-6 py-5 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-3xl text-xl font-black outline-none focus:border-primary transition-all"
+                                    value={walletAmount}
+                                    onChange={(e) => setWalletAmount(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <button 
+                                onClick={() => handleAdjustWallet(true)}
+                                disabled={isProcessing || !walletAmount}
+                                className="flex flex-col items-center justify-center gap-3 p-6 bg-emerald-50 text-emerald-600 rounded-[2.5rem] border border-emerald-100 hover:bg-emerald-600 hover:text-white transition-all disabled:opacity-50 group"
+                            >
+                                <TrendingUp size={24} className="group-hover:scale-110 transition-transform" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Créditer (+)</span>
+                            </button>
+                            <button 
+                                onClick={() => handleAdjustWallet(false)}
+                                disabled={isProcessing || !walletAmount}
+                                className="flex flex-col items-center justify-center gap-3 p-6 bg-red-50 text-red-600 rounded-[2.5rem] border border-red-100 hover:bg-red-600 hover:text-white transition-all disabled:opacity-50 group"
+                            >
+                                <TrendingDown size={24} className="group-hover:scale-110 transition-transform" />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Débiter (-)</span>
+                            </button>
+                        </div>
+
+                        <p className="text-[9px] font-bold text-gray-400 text-center uppercase tracking-widest leading-relaxed px-4">
+                            Toute opération manuelle est tracée dans l'historique global du système.
+                        </p>
+                    </div>
                 )}
             </Modal>
         </div>
