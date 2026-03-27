@@ -149,7 +149,7 @@ export default async function Home() {
             {/* Step 2 */}
             <div className="group space-y-8 lg:mt-16">
               <div className="aspect-[4/5] rounded-[2.5rem] overflow-hidden relative shadow-2xl">
-                <img src="/images/hero.png" alt="Publier" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <img src="https://www.kaweru.com/wp-content/uploads/2025/12/Cotonou.jpg" alt="Publier" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent"></div>
                 <div className="absolute bottom-8 left-8">
                   <span className="text-6xl font-black text-primary/30 italic">02</span>
