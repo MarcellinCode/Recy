@@ -13,7 +13,7 @@ export async function createTender(data: {
   end_date: string;
   budget_estimate: number;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Non authentifié" };
 
@@ -38,7 +38,7 @@ export async function submitBid(data: {
   proposal_text: string;
   trucks_count: number;
 }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Non authentifié" };
 
@@ -58,7 +58,7 @@ export async function submitBid(data: {
  * Attribuer un marché (Mairie)
  */
 export async function awardTender(tenderId: string, bidId: string, organisationId: string, zoneId: string) {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   // 1. Accepter le bid
   await supabase.from('tender_bids').update({ status: 'accepted' }).eq('id', bidId);

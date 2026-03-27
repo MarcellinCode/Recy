@@ -7,7 +7,7 @@ import { revalidatePath } from "next/cache";
  * Recharge simulée du Wallet (Top-up)
  */
 export async function topUpWallet(amount: number) {
-  const supabase = createClient();
+  const supabase = await createClient();
   
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Non authentifié" };

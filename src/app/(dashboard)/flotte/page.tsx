@@ -38,8 +38,8 @@ export default function FleetPage() {
             if (data) {
                 setVehicles(data);
                 const total = data.length;
-                const maintenance = data.filter(v => v.status === 'maintenance').length;
-                const alert = data.filter(v => {
+                const maintenance = data.filter((v: any) => v.status === 'maintenance').length;
+                const alert = data.filter((v: any) => {
                     const oilLimit = v.next_oil_change_mileage || (v.last_oil_change_mileage + 5000);
                     return v.current_mileage >= (oilLimit - 500); // Alert 500km before
                 }).length;
