@@ -14,7 +14,12 @@ import {
     Activity,
     Trash2,
     AlertOctagon,
-    Megaphone
+    Megaphone,
+    Gavel,
+    ShieldAlert,
+    BarChart3,
+    FileDown,
+    Truck
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -23,6 +28,7 @@ import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/Modal";
 import dynamic from "next/dynamic";
+import { createTender, awardTender } from "@/app/actions/tenders";
 
 const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
     ssr: false,
@@ -31,13 +37,17 @@ const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
 
 export default function MairieManagementPage() {
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'overview' | 'tenders' | 'sovereignty' | 'fleet'>('overview');
     const [zones, setZones] = useState<any[]>([]);
     const [pendingConcessions, setPendingConcessions] = useState<any[]>([]);
     const [wastes, setWastes] = useState<any[]>([]);
+    const [tenders, setTenders] = useState<any[]>([]);
     const [isAddZoneModalOpen, setIsAddZoneModalOpen] = useState(false);
+    const [isAddTenderModalOpen, setIsAddTenderModalOpen] = useState(false);
     const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
     const [editingZone, setEditingZone] = useState<any | null>(null);
     const [newZone, setNewZone] = useState({ name: "", city: "Abidjan", status: "available" });
+    const [newTender, setNewTender] = useState({ zone_id: "", title: "", description: "", end_date: "", budget_estimate: 0 });
     const [announcement, setAnnouncement] = useState({ title: "", message: "", type: "info" });
     const supabase = createClient();
 
@@ -60,62 +70,44 @@ export default function MairieManagementPage() {
             const { data: wastesData } = await supabase
                 .from('wastes')
                 .select('id, status, created_at, estimated_weight');
+
+            const { data: tendersData } = await supabase
+                .from('tenders')
+                .select('*, tender_bids(*, profiles(full_name))');
             
             setZones(zonesData || []);
             setPendingConcessions(concessionsData || []);
             setWastes(wastesData || []);
+            setTenders(tendersData || []);
         } catch (err) {
             console.error(err);
         }
         setLoading(false);
     }
 
-    async function handleCreateZone(e: React.FormEvent) {
+    const handleCreateTender = async (e: React.FormEvent) => {
         e.preventDefault();
-        const { error } = await supabase.from('zones').insert([newZone]);
-        if (error) {
-            showToast("Erreur lors de la création", "error");
+        const res = await createTender(newTender);
+        if (res.success) {
+            showToast("Appel d'offres publié", "success");
+            setIsAddTenderModalOpen(false);
+            fetchMairieData();
         } else {
-            showToast("Zone de collecte créée avec succès", "success");
-            setIsAddZoneModalOpen(false);
-            setNewZone({ name: "", city: "Abidjan", status: "available" });
-            fetchMairieData();
+            showToast(res.error || "Erreur", "error");
         }
-    }
+    };
 
-    async function handleUpdateZone(e: React.FormEvent) {
-        e.preventDefault();
-        if (!editingZone) return;
-
-        const { error } = await supabase
-            .from('zones')
-            .update({
-                name: editingZone.name,
-                city: editingZone.city,
-                status: editingZone.status
-            })
-            .eq('id', editingZone.id);
-
-        if (error) {
-            showToast("Erreur lors de la mise à jour", "error");
+    const handleAwardTender = async (tenderId: string, bidId: string, orgId: string, zoneId: string) => {
+        const res = await awardTender(tenderId, bidId, orgId, zoneId);
+        if (res.success) {
+            showToast("Marché attribué avec succès", "success");
+            fetchMairieData();
         } else {
-            showToast("Zone mise à jour avec succès", "success");
-            setEditingZone(null);
-            fetchMairieData();
+            showToast("Erreur lors de l'attribution", "error");
         }
-    }
+    };
 
-    async function deleteZone(id: string) {
-        if (!confirm("Supprimer cette zone ? Cela peut affecter les concessions liées.")) return;
-        const { error } = await supabase.from('zones').delete().eq('id', id);
-        if (error) showToast("Erreur", "error");
-        else {
-            showToast("Zone supprimée avec succès", "success");
-            fetchMairieData();
-        }
-    }
-
-    async function handleConcessionAction(id: string, status: 'active' | 'rejected') {
+     async function handleConcessionAction(id: string, status: 'active' | 'rejected') {
         const { error } = await supabase
             .from('concessions')
             .update({ status })
@@ -129,20 +121,10 @@ export default function MairieManagementPage() {
         }
     }
 
-    async function handleSendAnnouncement(e: React.FormEvent) {
-        e.preventDefault();
-        // Dans un système complet, ceci alimente la table `notifications` et déclenche un push (FCM/Supabase Edge Functions)
-        showToast("✓ Annonce globale envoyée aux citoyens de la commune", "success");
-        setIsAnnouncementModalOpen(false);
-        setAnnouncement({ title: "", message: "", type: "info" });
-    }
-
     // Statistiques GovTech
     const totalWastes = wastes.length;
     const collectedWastes = wastes.filter(w => w.status === 'collected').length;
     const collectionRate = totalWastes > 0 ? Math.round((collectedWastes / totalWastes) * 100) : 0;
-    
-    // SLA Sanction Tracker : Dépôts signalés depuis plus de 48h et non collectés
     const now = new Date().getTime();
     const slaBreaches = wastes.filter(w => w.status === 'published' && (now - new Date(w.created_at).getTime() > 48 * 3600 * 1000)).length;
 
@@ -154,343 +136,318 @@ export default function MairieManagementPage() {
                     <h1 className="text-3xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-1">
                         Mairie <span className="text-primary tracking-tighter">City OS</span>
                     </h1>
-                    <p className="text-gray-500 text-xs font-bold uppercase tracking-widest leading-relaxed text-balance mb-6">Supervision des zones territoriales et concessions de collecte</p>
+                    <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-6">Plateforme de Souveraineté Urbaine & Pilotage Territorial</p>
                     
-                    {/* Alerte SLA Automatisée */}
-                    {slaBreaches > 0 && (
-                        <div className="flex items-center gap-3 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 px-4 py-3 rounded-2xl border border-red-100 dark:border-red-900/50">
-                            <AlertOctagon size={16} className="animate-pulse" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">Alerte Gouvernance : {slaBreaches} dépôts en dépassement SLA (&gt;48h). Sanctions requises.</span>
-                        </div>
-                    )}
+                    {/* Navigation Tabs */}
+                    <nav className="flex gap-2 p-1 bg-gray-100 dark:bg-zinc-800/50 rounded-2xl w-fit">
+                        {[
+                            { id: 'overview', label: 'Vue d\'ensemble', icon: Activity },
+                            { id: 'tenders', label: 'Appels d\'Offres', icon: Gavel },
+                            { id: 'fleet', label: 'Gestion Flotte', icon: Truck },
+                            { id: 'sovereignty', label: 'Souveraineté', icon: ShieldAlert },
+                        ].map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id as any)}
+                                className={cn(
+                                    "px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+                                    activeTab === tab.id 
+                                        ? "bg-white dark:bg-zinc-900 text-primary shadow-sm" 
+                                        : "text-gray-400 hover:text-gray-600"
+                                )}
+                            >
+                                <tab.icon size={12} />
+                                {tab.label}
+                            </button>
+                        ))}
+                    </nav>
                 </div>
                 <div className="flex gap-4">
-                    <button 
-                        onClick={() => setIsAnnouncementModalOpen(true)}
-                        className="flex items-center gap-2 px-8 py-4 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white border border-gray-100 dark:border-zinc-800 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-primary transition-all shadow-sm"
-                    >
-                        <Megaphone size={16} className="text-blue-500" />
-                        Annonce Citoyenne
-                    </button>
-                    <button 
-                        onClick={() => setIsAddZoneModalOpen(true)}
-                        className="flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-primary/20"
-                    >
-                        <Plus size={16} />
-                        Créer une Zone
-                    </button>
+                    {activeTab === 'tenders' ? (
+                        <button 
+                            onClick={() => setIsAddTenderModalOpen(true)}
+                            className="flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-primary/20"
+                        >
+                            <Plus size={16} />
+                            Lancer une Mise en Concurrence
+                        </button>
+                    ) : activeTab === 'overview' ? (
+                         <button 
+                            onClick={() => setIsAddZoneModalOpen(true)}
+                            className="flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-primary/20"
+                        >
+                            <Plus size={16} />
+                            Nouvelle Zone
+                        </button>
+                    ) : (
+                        <button 
+                            onClick={() => setIsAnnouncementModalOpen(true)}
+                            className="flex items-center gap-2 px-8 py-4 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white border border-gray-100 dark:border-zinc-800 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-primary transition-all shadow-sm"
+                        >
+                            <Megaphone size={16} className="text-blue-500" />
+                            Alerte Citoyenne
+                        </button>
+                    )}
                 </div>
             </header>
 
-            {/* GovTech Analytics Row */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                 <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm">
-                     <div className="flex justify-between items-start mb-4">
-                        <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center">
-                            <Activity className="w-5 h-5 text-emerald-500" />
-                        </div>
-                     </div>
-                     <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Taux de Salubrité</p>
-                     <p className="text-3xl font-black italic tracking-tighter dark:text-white">{collectionRate}%</p>
-                 </div>
-                 <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm">
-                     <div className="flex justify-between items-start mb-4">
-                         <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center">
-                             <Trash2 className="w-5 h-5 text-primary" />
-                         </div>
-                     </div>
-                     <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Total Signalements</p>
-                     <p className="text-3xl font-black italic tracking-tighter dark:text-white">{totalWastes}</p>
-                 </div>
-                 <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm">
-                     <div className="flex justify-between items-start mb-4">
-                         <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center">
-                             <CheckCircle2 className="w-5 h-5 text-blue-500" />
-                         </div>
-                     </div>
-                     <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Dépôts Nettoyés</p>
-                     <p className="text-3xl font-black italic tracking-tighter dark:text-white">{collectedWastes}</p>
-                 </div>
-                 <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm border-b-4 border-b-red-500">
-                     <div className="flex justify-between items-start mb-4">
-                         <div className="w-10 h-10 rounded-xl bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
-                             <AlertOctagon className="w-5 h-5 text-red-500" />
-                         </div>
-                     </div>
-                     <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Dépassements SLA</p>
-                     <p className="text-3xl font-black italic tracking-tighter text-red-500">{slaBreaches}</p>
-                 </div>
-            </div>
-
-            {/* Interactive Map Area */}
-            <div className="w-full shadow-2xl shadow-blue-900/5 rounded-[3rem] relative z-0">
-                <MapComponent isMairie={true} />
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                {/* Zones Overview */}
-                <div className="lg:col-span-2 space-y-6">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter flex items-center gap-2">
-                            <MapPin className="text-primary" size={20} />
-                            Zones de Collecte
-                        </h2>
-                        <div className="flex gap-2">
-                             <div className="relative">
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
-                                <input type="text" placeholder="Filtrer..." className="pl-10 pr-4 py-2 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-xl text-[10px] outline-none font-bold uppercase" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {loading ? (
-                            <div className="col-span-full py-10 text-center opacity-30">Chargement...</div>
-                        ) : zones.length > 0 ? zones.map((zone) => (
-                            <motion.div 
-                                key={zone.id}
-                                initial={{ opacity: 0, scale: 0.98 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="bg-white dark:bg-zinc-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm group hover:border-primary/30 transition-all"
-                            >
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="px-3 py-1 bg-gray-50 dark:bg-zinc-800 rounded-full text-[9px] font-black text-gray-400 uppercase tracking-widest">
-                                        ID: {zone.id.slice(0, 8)}
-                                    </div>
-                                    <div className="flex gap-1">
-                                        <button 
-                                            onClick={() => setEditingZone(zone)}
-                                            className="p-1.5 text-gray-400 hover:text-primary transition-colors"
-                                            title="Modifier la zone"
-                                        >
-                                            <Filter size={14} />
-                                        </button>
-                                        <button 
-                                            onClick={() => deleteZone(zone.id)}
-                                            className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
-                                            title="Supprimer la zone"
-                                        >
-                                            <XCircle size={14} />
-                                        </button>
-                                         <span className={cn(
-                                            "px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ml-2",
-                                            zone.status === 'available' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
-                                        )}>
-                                            {zone.status === 'available' ? 'Disponible' : 'Occupée'}
-                                        </span>
-                                    </div>
-                                </div>
-                                <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-1">{zone.name}</h3>
-                                <p className="text-[10px] font-bold text-gray-400 uppercase mb-6">{zone.city}</p>
-                                
-                                <div className="p-4 bg-gray-50/50 dark:bg-zinc-800/50 rounded-2xl border border-gray-100 dark:border-zinc-800/50 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <Building2 size={14} className="text-primary" />
-                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Partenaire</span>
-                                    </div>
-                                    <span className="text-[10px] font-black text-gray-900 dark:text-white uppercase">
-                                        {zone.concessions?.find((c: any) => c.status === 'active')?.profiles?.full_name || 'Aucun'}
-                                    </span>
-                                </div>
-                            </motion.div>
-                        )) : (
-                            <div className="col-span-full py-20 text-center opacity-30 italic bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-100">
-                                Aucune zone enregistrée
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Pending Concessions */}
-                <div className="space-y-6">
-                    <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter flex items-center gap-2">
-                        <ShieldCheck className="text-primary" size={20} />
-                        Dossiers en Attente
-                    </h2>
-                    <div className="space-y-4">
-                        {pendingConcessions.length > 0 ? pendingConcessions.map((con) => (
-                            <motion.div 
-                                key={con.id}
-                                layout
-                                className="bg-white dark:bg-zinc-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm"
-                            >
-                                <div className="flex items-center gap-3 mb-4">
-                                     <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center font-black">
-                                        {con.profiles?.full_name?.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase leading-none mb-1">{con.profiles?.full_name}</h4>
-                                        <p className="text-[9px] font-bold text-gray-400 uppercase italic">Demande de concession</p>
-                                    </div>
-                                </div>
-                                <div className="mb-6 space-y-2">
-                                    <div className="flex items-center justify-between text-[10px]">
-                                        <span className="font-bold text-gray-400 uppercase uppercase">Zone Visée</span>
-                                        <span className="font-black text-primary uppercase italic">{con.zones?.name || 'ZONE INCONNUE'}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between text-[10px]">
-                                        <span className="font-bold text-gray-400 uppercase">Document</span>
-                                        <button className="text-primary hover:underline font-black uppercase">Voir attestation.pdf</button>
-                                    </div>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button 
-                                        onClick={() => handleConcessionAction(con.id, 'active')}
-                                        className="flex-1 py-3 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2"
-                                    >
-                                        <CheckCircle2 size={12} />
-                                        Approuver
-                                    </button>
-                                    <button 
-                                        onClick={() => handleConcessionAction(con.id, 'rejected')}
-                                        className="flex-1 py-3 bg-red-50 text-red-500 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2"
-                                    >
-                                        <XCircle size={12} />
-                                        Refuser
-                                    </button>
-                                </div>
-                            </motion.div>
-                        )) : (
-                            <div className="p-10 text-center opacity-30 italic bg-gray-50 rounded-[2.5rem] border border-gray-100">
-                                Aucun dossier à valider
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Create Zone Modal */}
-            <Modal
-                isOpen={isAddZoneModalOpen}
-                onClose={() => setIsAddZoneModalOpen(false)}
-                title="Créer une Zone de Collecte"
-            >
-                <form onSubmit={handleCreateZone} className="space-y-6">
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de la Zone</label>
-                        <input 
-                            required
-                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase tracking-tight"
-                            placeholder="Ex: ZONE A - PLATEAU..."
-                            value={newZone.name}
-                            onChange={(e) => setNewZone({...newZone, name: e.target.value})}
-                        />
-                    </div>
-                    
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville</label>
-                        <input 
-                            required
-                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all"
-                            placeholder="Abidjan"
-                            value={newZone.city}
-                            onChange={(e) => setNewZone({...newZone, city: e.target.value})}
-                        />
-                    </div>
-
-                    <button 
-                        type="submit"
-                        className="w-full py-5 bg-gray-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-900/10 mt-4"
+            <AnimatePresence mode="wait">
+                {activeTab === 'overview' && (
+                    <motion.div 
+                        key="overview"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="space-y-12"
                     >
-                        Publier la Zone au Catalogue
-                    </button>
-                </form>
-            </Modal>
-
-            {/* Edit Zone Modal */}
-            <Modal
-                isOpen={!!editingZone}
-                onClose={() => setEditingZone(null)}
-                title="Modifier la Zone de Collecte"
-            >
-                {editingZone && (
-                    <form onSubmit={handleUpdateZone} className="space-y-6">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de la Zone</label>
-                            <input 
-                                required
-                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase tracking-tight"
-                                value={editingZone.name}
-                                onChange={(e) => setEditingZone({...editingZone, name: e.target.value})}
-                            />
-                        </div>
-                        
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville</label>
-                                <input 
-                                    required
-                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase"
-                                    value={editingZone.city}
-                                    onChange={(e) => setEditingZone({...editingZone, city: e.target.value})}
-                                />
+                        {/* GovTech Analytics Row */}
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                            <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2">Salubrité Commune</p>
+                                <p className="text-3xl font-black italic tracking-tighter dark:text-white">{collectionRate}%</p>
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Statut</label>
-                                <select 
-                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer font-black"
-                                    value={editingZone.status}
-                                    onChange={(e) => setEditingZone({...editingZone, status: e.target.value})}
-                                >
-                                    <option value="available">Disponible</option>
-                                    <option value="occupied">Occupée</option>
-                                </select>
+                            <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2">Signalements Totaux</p>
+                                <p className="text-3xl font-black italic tracking-tighter dark:text-white">{totalWastes}</p>
+                            </div>
+                            <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm border-r-4 border-r-amber-500">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2">Zones en Concession</p>
+                                <p className="text-3xl font-black italic tracking-tighter dark:text-white">{zones.filter(z => z.status === 'occupied').length}</p>
+                            </div>
+                            <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm border-b-4 border-b-red-500 text-red-500">
+                                <p className="text-[9px] font-black uppercase tracking-widest text-red-300 mb-2">Dépassements SLA (48h)</p>
+                                <p className="text-3xl font-black italic tracking-tighter">{slaBreaches}</p>
                             </div>
                         </div>
 
-                        <button 
-                            type="submit"
-                            className="w-full py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-primary/90 transition-all shadow-xl shadow-primary/10 mt-4"
-                        >
-                            Enregistrer les modifications
-                        </button>
-                    </form>
+                        <div className="w-full shadow-2xl shadow-blue-900/5 rounded-[3rem] overflow-hidden">
+                            <MapComponent isMairie={true} />
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 text-zinc-900 dark:text-white">
+                            <div className="lg:col-span-2 space-y-6">
+                                <h2 className="text-xl font-black uppercase italic tracking-tighter flex items-center gap-2">Zones du Territoire</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {zones.map((zone) => (
+                                        <div key={zone.id} className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-gray-100 dark:border-zinc-800 group hover:border-primary/50 transition-all">
+                                            <h3 className="font-black italic uppercase text-lg">{zone.name}</h3>
+                                            <p className="text-[10px] text-zinc-400 uppercase font-bold mb-4">{zone.city}</p>
+                                            <div className="flex justify-between items-center text-[10px] font-black">
+                                                <span className="text-zinc-400">PARTENAIRE :</span>
+                                                <span className="text-primary italic">{zone.concessions?.[0]?.profiles?.full_name || "MUNICIPAL"}</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="space-y-6">
+                                <h2 className="text-xl font-black uppercase italic tracking-tighter flex items-center gap-2">Approvals</h2>
+                                <div className="space-y-4">
+                                    {pendingConcessions.map((con) => (
+                                        <div key={con.id} className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-gray-100 dark:border-zinc-800">
+                                            <p className="text-[10px] font-black text-gray-500 uppercase mb-2">{con.profiles?.full_name}</p>
+                                            <p className="text-[9px] font-bold text-zinc-400 uppercase mb-4">ZONE: {con.zones?.name}</p>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => handleConcessionAction(con.id, 'active')} className="flex-1 py-3 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase">Accepter</button>
+                                                <button onClick={() => handleConcessionAction(con.id, 'rejected')} className="flex-1 py-3 bg-red-50 text-red-500 rounded-xl text-[9px] font-black uppercase">Refuser</button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {pendingConcessions.length === 0 && <p className="text-[10px] text-zinc-400 uppercase font-black text-center py-10">Aucun dossier en attente</p>}
+                                </div>
+                            </div>
+                        </div>
+                    </motion.div>
                 )}
-            </Modal>
 
-            {/* Announcement Modal */}
-            <Modal
-                isOpen={isAnnouncementModalOpen}
-                onClose={() => setIsAnnouncementModalOpen(false)}
-                title="Communication Citoyenne"
-            >
-                <form onSubmit={handleSendAnnouncement} className="space-y-6">
-                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl mb-4">
-                        <p className="text-[10px] text-blue-600 dark:text-blue-400 font-bold leading-relaxed">
-                            Cette annonce sera poussée sous forme de notification à tous les foyers enregistrés dans la commune. Utilisez-la pour les urgences sanitaires ou les changements importants de collecte.
-                        </p>
-                    </div>
+                {activeTab === 'tenders' && (
+                    <motion.div 
+                        key="tenders"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="space-y-8"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {tenders.map((tender) => (
+                                <div key={tender.id} className="bg-white dark:bg-zinc-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-zinc-800 shadow-xl overflow-hidden relative">
+                                    <div className="flex justify-between items-start mb-6">
+                                        <span className={cn(
+                                            "px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest",
+                                            tender.status === 'open' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-gray-50 text-gray-400 border border-gray-100"
+                                        )}>
+                                            {tender.status}
+                                        </span>
+                                        <span className="text-[10px] font-black text-primary">Budget: {tender.budget_estimate?.toLocaleString()} CFA</span>
+                                    </div>
+                                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-2">{tender.title}</h3>
+                                    <p className="text-[10px] text-zinc-400 font-bold uppercase mb-8 line-clamp-2">{tender.description}</p>
+                                    
+                                    <div className="space-y-4">
+                                        <div className="flex justify-between items-center border-b border-zinc-100 dark:border-zinc-800 pb-2">
+                                            <h4 className="text-[11px] font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 italic">Soumissions ({tender.tender_bids?.length || 0})</h4>
+                                            <BarChart3 size={16} className="text-primary" />
+                                        </div>
+                                        <div className="space-y-3">
+                                            {tender.tender_bids?.map((bid: any) => (
+                                                <div key={bid.id} className="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-2xl border border-gray-100 dark:border-zinc-800 flex items-center justify-between group transition-all hover:bg-white dark:hover:bg-zinc-800">
+                                                    <div>
+                                                        <p className="text-[10px] font-black uppercase text-zinc-900 dark:text-white leading-none mb-1">{bid.profiles?.full_name}</p>
+                                                        <p className="text-[10px] font-bold text-emerald-500 uppercase">{bid.bid_amount.toLocaleString()} CFA</p>
+                                                    </div>
+                                                    {tender.status === 'open' ? (
+                                                        <button 
+                                                            onClick={() => handleAwardTender(tender.id, bid.id, bid.organisation_id, tender.zone_id)}
+                                                            className="px-4 py-2 bg-primary text-white rounded-xl text-[8px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all font-black shadow-lg shadow-primary/20"
+                                                        >
+                                                            Attribuer
+                                                        </button>
+                                                    ) : bid.status === 'accepted' && (
+                                                        <CheckCircle2 size={16} className="text-emerald-500" />
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {tender.tender_bids?.length === 0 && <p className="text-[10px] text-zinc-400 uppercase font-black text-center py-4 italic">En attente de soumissions...</p>}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
 
+                {activeTab === 'sovereignty' && (
+                    <motion.div 
+                        key="sovereignty"
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        className="grid grid-cols-1 md:grid-cols-2 gap-10"
+                    >
+                        <div className="bg-gradient-to-br from-zinc-900 to-black p-12 rounded-[3.5rem] text-white border border-white/5 relative overflow-hidden group shadow-2xl">
+                           <ShieldAlert className="absolute -bottom-10 -right-10 w-64 h-64 text-white/5 group-hover:text-primary/10 transition-all duration-700" />
+                           <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4">Police Verte</h3>
+                           <p className="text-zinc-400 text-sm font-bold leading-relaxed mb-8 max-w-md uppercase tracking-tight">Module de souveraineté territoriale : Verbalisation directe des pollueurs et contrôle des dépôts sauvages.</p>
+                           <button className="px-10 py-5 bg-white text-black rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-xl">Accéder au Centre de Sanction</button>
+                        </div>
+                        <div className="bg-white dark:bg-zinc-900 p-12 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 flex flex-col justify-between shadow-sm">
+                            <div>
+                                <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4 text-zinc-900 dark:text-white">Régie Financière</h3>
+                                <p className="text-zinc-400 text-sm font-bold leading-relaxed mb-8 uppercase tracking-tight">Collecte automatisée des taxes de salubrité urbaine et gestion des revenus municipaux.</p>
+                            </div>
+                            <div className="flex gap-4">
+                                <button className="flex-1 px-8 py-5 border-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-zinc-900 hover:text-white transition-all">Audit Fiscal</button>
+                                <button className="flex-1 px-8 py-5 bg-zinc-900 dark:bg-white dark:text-black text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                                    <FileDown size={14} />
+                                    Export Rapport
+                                </button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+
+                {activeTab === 'fleet' && (
+                    <motion.div 
+                        key="fleet"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="p-20 text-center bg-gray-50 dark:bg-zinc-900/50 rounded-[4rem] border-4 border-dashed border-gray-100 dark:border-zinc-800"
+                    >
+                        <Truck size={48} className="mx-auto mb-6 text-zinc-300" />
+                        <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-2 text-zinc-900 dark:text-zinc-100">Flotte Municipale Pro</h3>
+                        <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest max-w-sm mx-auto">Activez le pack "Execution Mode" pour gérer vos propres agents de voirie avec Smart Routing IA.</p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* Modals */}
+            <Modal isOpen={isAddTenderModalOpen} onClose={() => setIsAddTenderModalOpen(false)} title="Lancer une Mise en Concurrence">
+                <form onSubmit={handleCreateTender} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Titre de l'alerte</label>
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Zone Stratégique</label>
+                        <select 
+                            required
+                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                            value={newTender.zone_id}
+                            onChange={(e) => setNewTender({...newTender, zone_id: e.target.value})}
+                        >
+                            <option value="">Sélectionner une zone...</option>
+                            {zones.filter(z => z.status === 'available').map(z => (
+                                <option key={z.id} value={z.id}>{z.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Titre du Marché</label>
                         <input 
                             required
-                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase tracking-tight"
-                            placeholder="EX: CAMPAGNE DE SALUBRITE CE WEEKEND"
-                            value={announcement.title}
-                            onChange={(e) => setAnnouncement({...announcement, title: e.target.value})}
+                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                            placeholder="Ex: Collecte Déchets Plastiques 2024"
+                            value={newTender.title}
+                            onChange={(e) => setNewTender({...newTender, title: e.target.value})}
                         />
                     </div>
-                    
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Message</label>
+                     <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Description des besoins</label>
                         <textarea 
                             required
-                            rows={4}
-                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-medium resize-none"
-                            placeholder="Détails de l'information à transmettre aux citoyens..."
-                            value={announcement.message}
-                            onChange={(e) => setAnnouncement({...announcement, message: e.target.value})}
+                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-medium min-h-[100px]"
+                            placeholder="Détails techniques, fréquences de passage..."
+                            value={newTender.description}
+                            onChange={(e) => setNewTender({...newTender, description: e.target.value})}
                         />
                     </div>
-
-                    <button 
-                        type="submit"
-                        className="w-full py-5 bg-blue-500 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-blue-600 transition-all shadow-xl shadow-blue-500/20 mt-4"
-                    >
-                        Diffuser l'Alerte Globale
-                    </button>
+                    <div className="grid grid-cols-2 gap-4">
+                         <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Budget Approuvé</label>
+                            <input 
+                                type="number"
+                                required
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                                placeholder="CFA"
+                                value={newTender.budget_estimate}
+                                onChange={(e) => setNewTender({...newTender, budget_estimate: parseInt(e.target.value)})}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Clôture des offres</label>
+                            <input 
+                                type="date"
+                                required
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                                value={newTender.end_date}
+                                onChange={(e) => setNewTender({...newTender, end_date: e.target.value})}
+                            />
+                        </div>
+                    </div>
+                    <button type="submit" className="w-full py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20">Diffuser l'Appel d'Offres</button>
                 </form>
+            </Modal>
+
+            <Modal isOpen={isAddZoneModalOpen} onClose={() => setIsAddZoneModalOpen(false)} title="Définir une Zone de Collecte">
+                 <form onSubmit={async (e) => {
+                     e.preventDefault();
+                     const { error } = await supabase.from('zones').insert([newZone]);
+                     if (error) showToast("Erreur", "error");
+                     else { showToast("Zone créée", "success"); fetchMairieData(); setIsAddZoneModalOpen(false); }
+                 }} className="space-y-6">
+                    <input 
+                        required
+                        className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                        placeholder="Nom de la zone"
+                        value={newZone.name}
+                        onChange={(e) => setNewZone({...newZone, name: e.target.value})}
+                    />
+                    <input 
+                        required
+                        className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                        placeholder="Ville"
+                        value={newZone.city}
+                        onChange={(e) => setNewZone({...newZone, city: e.target.value})}
+                    />
+                    <button type="submit" className="w-full py-5 bg-black text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest">Enregistrer la Zone</button>
+                 </form>
             </Modal>
         </div>
     );

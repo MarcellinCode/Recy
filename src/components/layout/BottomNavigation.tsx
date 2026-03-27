@@ -37,14 +37,12 @@ const NAV_CONFIG: Record<string, NavLink[]> = {
     ],
     entreprise: [
         { href: "/dashboard",           label: "Hub",      icon: Home },
-        { href: "/admin/organisation",  label: "Flotte",   icon: Truck },
         { href: "/appels-offres",       label: "B2B",      icon: BarChart3 },
         { href: "/chat",                label: "Messages", icon: MessageSquare },
         { href: "/profil",              label: "Profil",   icon: UserCircle },
     ],
     organisation_admin: [
         { href: "/dashboard",           label: "Hub",      icon: Home },
-        { href: "/admin/organisation",  label: "Flotte",   icon: Truck },
         { href: "/appels-offres",       label: "B2B",      icon: BarChart3 },
         { href: "/chat",                label: "Messages", icon: MessageSquare },
         { href: "/profil",              label: "Profil",   icon: UserCircle },

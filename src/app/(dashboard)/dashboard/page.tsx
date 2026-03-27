@@ -127,15 +127,6 @@ export default function DashboardPage() {
                 color: "bg-zinc-800" 
             }
         ] : []),
-        ...(profile?.role === 'organisation_admin' ? [
-            { 
-                title: "Flotte & Subs", 
-                description: "Gestion agents et revenus", 
-                icon: Truck, 
-                href: "/admin/organisation", 
-                color: "bg-indigo-600" 
-            }
-        ] : []),
         ...(profile?.role === 'agent_collecteur' ? [
             { 
                 title: "Ma Mission", 

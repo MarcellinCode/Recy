@@ -20,6 +20,23 @@ export const userService = {
   },
 
   /**
+   * Met à jour le profil de l'utilisateur
+   */
+  async updateProfile(updates: any) {
+    const supabase = createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Non connecté");
+
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', user.id);
+
+    if (error) throw error;
+    return true;
+  },
+
+  /**
    * Déconnexion
    */
   async signOut() {

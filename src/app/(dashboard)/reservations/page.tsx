@@ -187,6 +187,11 @@ function ReservationCard({ reservation, role, onFinalized }: { reservation: Rese
         }
     };
 
+    const handleNavigate = () => {
+        const url = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(reservation.location)}`;
+        window.open(url, '_blank');
+    };
+
     return (
         <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border-2 border-zinc-50 dark:border-zinc-800 p-6 sm:p-8 flex flex-col sm:flex-row gap-6 hover:border-primary/20 dark:hover:border-primary/20 transition-all group">
             {/* Info Section */}
@@ -232,7 +237,10 @@ function ReservationCard({ reservation, role, onFinalized }: { reservation: Rese
                 </Link>
                 {role === "collectes" && (
                     <>
-                        <button className="flex-1 sm:w-full h-14 bg-primary text-white rounded-2xl flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20">
+                        <button 
+                            onClick={handleNavigate}
+                            className="flex-1 sm:w-full h-14 bg-primary text-white rounded-2xl flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"
+                        >
                             <Navigation className="w-5 h-5" />
                             <span className="text-[10px] font-black uppercase tracking-widest sm:hidden lg:inline">Trajet</span>
                         </button>

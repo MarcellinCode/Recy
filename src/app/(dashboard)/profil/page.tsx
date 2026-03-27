@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserCircle, Settings, LogOut, Shield, Bell, HelpCircle, ChevronRight, Loader2, Mail, MapPin, Leaf, Zap } from "lucide-react";
+import { UserCircle, Settings, LogOut, Shield, Bell, HelpCircle, ChevronRight, Loader2, Mail, MapPin, Leaf, Zap, Truck } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { navigateSafe } from "@/utils/navigation";
@@ -44,7 +44,10 @@ export default function ProfilePage() {
         { icon: <Bell className="w-5 h-5 text-amber-500" />, label: "Notifications", route: ROUTES.NOTIFICATIONS },
     ];
 
-    const collectorMenuItems = (profile?.role === 'collecteur' || profile?.role === 'entreprise') ? [
+    const collectorMenuItems = (profile?.role === 'collecteur' || profile?.role === 'entreprise' || profile?.role === 'organisation_admin') ? [
+        ...(profile?.role === 'organisation_admin' ? [
+            { icon: <Truck className="w-5 h-5 text-indigo-500" />, label: "Gestion de la Flotte & Organisation", route: "/admin/organisation" },
+        ] : []),
         { icon: <Zap className="w-5 h-5 text-amber-500" />, label: "Forfaits & Abonnements", route: ROUTES.ABONNEMENTS },
     ] : [];
 

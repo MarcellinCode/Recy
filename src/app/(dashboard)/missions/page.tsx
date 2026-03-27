@@ -14,11 +14,14 @@ import {
     Map as MapIcon,
     Zap,
     AlertTriangle,
-    ShieldCheck
+    ShieldCheck,
+    Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { showToast } from "@/components/ui/toast";
+import { confirmCollection } from "@/app/actions/collection";
 
 export default function AgentMissionsPage() {
     const supabase = createClient();
@@ -65,6 +68,29 @@ export default function AgentMissionsPage() {
         };
         fetchMissions();
     }, []);
+    
+    const handleCollect = async (missionId: string, type: string) => {
+        if (type !== 'marketplace') {
+            showToast("Seuls les lots du marché peuvent être collectés manuellement depuis le Web pour le moment.", "info");
+            return;
+        }
+
+        try {
+            const mission = missions.find(m => m.id === missionId);
+            const weight = mission?.wasteData?.estimated_weight || 0;
+            
+            const result = await confirmCollection(missionId, weight);
+
+            if (!result.success) throw new Error(result.error);
+
+            showToast("Lot collecté et paiement effectué !", "success");
+            setMissions(prev => prev.filter(m => m.id !== missionId));
+            setStats(prev => ({ ...prev, total: prev.total - 1 }));
+        } catch (err: any) {
+            console.error("Collection error:", err);
+            showToast("Erreur lors de la collecte : " + err.message, "error");
+        }
+    };
 
     return (
         <div className="max-w-md mx-auto px-4 py-8 space-y-8 mb-24">
@@ -108,7 +134,12 @@ export default function AgentMissionsPage() {
 
                 <div className="space-y-4">
                     {missions.map((mission, idx) => (
-                        <MissionCard key={mission.id} mission={mission} index={idx} />
+                        <MissionCard 
+                            key={mission.id} 
+                            mission={mission} 
+                            index={idx} 
+                            onCollect={handleCollect}
+                        />
                     ))}
                     {missions.length === 0 && !loading && (
                         <div className="text-center py-20 opacity-30">
@@ -122,8 +153,15 @@ export default function AgentMissionsPage() {
     );
 }
 
-function MissionCard({ mission, index }: any) {
+function MissionCard({ mission, index, onCollect }: any) {
     const isMarketplace = mission.type === 'marketplace';
+    const [isCollecting, setIsCollecting] = useState(false);
+
+    const handleAction = async () => {
+        setIsCollecting(true);
+        await onCollect(mission.id, mission.type);
+        setIsCollecting(false);
+    };
 
     return (
         <motion.div 
@@ -164,8 +202,12 @@ function MissionCard({ mission, index }: any) {
             </div>
 
             <div className="flex gap-2">
-                <button className="flex-[2] py-4 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white text-[9px] font-black uppercase tracking-widest rounded-2xl hover:scale-105 transition-all active:scale-95">
-                    Collecter
+                <button 
+                    onClick={handleAction}
+                    disabled={isCollecting}
+                    className="flex-[2] py-4 bg-zinc-900 dark:bg-white dark:text-zinc-900 text-white text-[9px] font-black uppercase tracking-widest rounded-2xl hover:scale-105 transition-all active:scale-95 disabled:opacity-50"
+                >
+                    {isCollecting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Collecter'}
                 </button>
                 <button className="flex-1 py-4 bg-gray-50 dark:bg-zinc-800 text-zinc-400 rounded-2xl flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all">
                     <AlertTriangle className="w-4 h-4" />

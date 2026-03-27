@@ -24,6 +24,7 @@ export const ROUTES = {
   
   NOTIFICATIONS: '/notifications',
   ESPACE: '/espace',
+  FLOTTE: '/flotte',
 } as const;
 
 export type AppRoute = Extract<typeof ROUTES[keyof typeof ROUTES], string> | (string & {});

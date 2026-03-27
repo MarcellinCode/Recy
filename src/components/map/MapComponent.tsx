@@ -99,7 +99,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                 .not('longitude', 'is', null);
 
             const { data: trackingData } = await supabase
-                .from('tracking_logs')
+                .from('agent_live_positions')
                 .select('*, profiles(full_name), vehicles(name, type)')
                 .order('timestamp', { ascending: false })
                 .limit(100);
@@ -121,7 +121,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
         fetchData();
 
         const channel = supabase.channel('tracking_changes')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tracking_logs' }, fetchData)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'agent_live_positions' }, fetchData)
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
