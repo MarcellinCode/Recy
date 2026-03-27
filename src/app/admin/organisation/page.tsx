@@ -95,7 +95,12 @@ export default function OrganizationDashboard() {
         e.preventDefault();
         if (!selectedTender) return;
         
-        const res = await submitBid(selectedTender.id, bidAmount);
+        const res = await submitBid({
+            tender_id: selectedTender.id,
+            bid_amount: bidAmount,
+            proposal_text: `Offre pour ${selectedTender.title}`,
+            trucks_count: 1
+        });
         if (res.success) {
             showToast("Soumission envoyée avec succès", "success");
             setIsBidModalOpen(false);
