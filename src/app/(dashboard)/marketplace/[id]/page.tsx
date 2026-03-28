@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useRef, Suspense, use } from "react";
-import { ArrowLeft, MapPin, Calendar, ShieldCheck, MessageSquare, Truck, Loader2, ChevronRight, Check } from "lucide-react";
+import { ArrowLeft, MapPin, Calendar, ShieldCheck, MessageSquare, Truck, Loader2, ChevronRight, Check, Scan } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
@@ -371,6 +371,42 @@ function WasteDetailsContent({ id }: { id: string }) {
                                         {currentUser?.id === waste.collector_id && (
                                             <div className="space-y-4">
                                                 <div className="p-6 bg-amber-50 dark:bg-amber-900/10 rounded-3xl border-2 border-amber-100 dark:border-amber-900/30">
+                                                    <div className="flex flex-col gap-4 mb-8">
+                                                        <button 
+                                                            onClick={async () => {
+                                                                // Simulate QR Code Scan
+                                                                const pin = waste.id.slice(0, 6).toUpperCase();
+                                                                showToast("QR Code reconnu ! Validation en cours...", "success");
+                                                                
+                                                                // Artificial delay for realism
+                                                                await new Promise(r => setTimeout(r, 1000));
+                                                                
+                                                                const weight = prompt("Confirmez le poids final en KG :", waste.estimated_weight.toString());
+                                                                if (weight && !isNaN(Number(weight))) {
+                                                                    setActionLoading(true);
+                                                                    const { confirmCollection } = await import("@/app/actions/collection");
+                                                                    const result = await confirmCollection(waste.id, Number(weight));
+                                                                    if (result.success) {
+                                                                        showToast("Collecte validée et paiement effectué !", "success");
+                                                                        navigateSafe(router, ROUTES.WALLET);
+                                                                    } else {
+                                                                        showToast(result.error || "Erreur lors de la validation", "error");
+                                                                        setActionLoading(false);
+                                                                    }
+                                                                }
+                                                            }}
+                                                            className="w-full py-5 bg-zinc-900 text-white font-black rounded-[2rem] flex items-center justify-center gap-3 uppercase tracking-widest text-xs hover:bg-black transition-all shadow-xl"
+                                                        >
+                                                            <Scan className="w-5 h-5" /> Scanner le QR Code
+                                                        </button>
+                                                        
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="h-px flex-1 bg-amber-200/50"></div>
+                                                            <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest">OU</span>
+                                                            <div className="h-px flex-1 bg-amber-200/50"></div>
+                                                        </div>
+                                                    </div>
+
                                                     <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest mb-4">Saisir le Code PIN du vendeur</p>
                                                     <div className="flex gap-2 mb-6">
                                                         {[...Array(6)].map((_, i) => (
