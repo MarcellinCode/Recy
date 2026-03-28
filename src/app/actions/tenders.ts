@@ -1,5 +1,5 @@
 "use server";
-
+ 
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 
@@ -17,6 +17,12 @@ export async function createTender(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Non authentifié" };
 
+  // Vérification de l'abonnement
+  const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
+  if (!profile || profile.subscription_tier !== 'mairie') {
+    return { success: false, error: "Abonnement Mairie Elite requis pour lancer des appels d'offres." };
+  }
+
   const { error } = await supabase.from('tenders').insert({
     mairie_id: user.id,
     ...data,
@@ -26,6 +32,7 @@ export async function createTender(data: {
   if (error) return { success: false, error: error.message };
   
   revalidatePath('/admin/mairie');
+  revalidatePath('/appels-offres');
   return { success: true };
 }
 
@@ -42,6 +49,12 @@ export async function submitBid(data: {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Non authentifié" };
 
+  // Vérification de l'abonnement
+  const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
+  if (!profile || (profile.subscription_tier !== 'organisation' && profile.subscription_tier !== 'mairie')) {
+    return { success: false, error: "Abonnement Organisation requis pour soumettre des offres." };
+  }
+
   const { error } = await supabase.from('tender_bids').insert({
     organisation_id: user.id,
     ...data,
@@ -50,7 +63,8 @@ export async function submitBid(data: {
 
   if (error) return { success: false, error: error.message };
   
-  revalidatePath('/admin/organisation');
+  revalidatePath('/organisation');
+  revalidatePath(`/appels-offres/${data.tender_id}`);
   return { success: true };
 }
 
@@ -59,6 +73,14 @@ export async function submitBid(data: {
  */
 export async function awardTender(tenderId: string, bidId: string, organisationId: string, zoneId: string) {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: "Non authentifié" };
+
+  // Vérification de l'abonnement
+  const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
+  if (!profile || profile.subscription_tier !== 'mairie') {
+    return { success: false, error: "Action réservée aux Mairies Elite." };
+  }
   
   // 1. Accepter le bid
   await supabase.from('tender_bids').update({ status: 'accepted' }).eq('id', bidId);
@@ -68,17 +90,18 @@ export async function awardTender(tenderId: string, bidId: string, organisationI
   
   // 3. Fermer le tender
   await supabase.from('tenders').update({ status: 'awarded' }).eq('id', tenderId);
-
+ 
   // 4. Créer la concession officielle
   await supabase.from('concessions').insert({
     organisation_id: organisationId,
     zone_id: zoneId,
     status: 'active'
   });
-
+ 
   // 5. Mettre à jour la zone
   await supabase.from('zones').update({ status: 'occupied' }).eq('id', zoneId);
-
+ 
   revalidatePath('/admin/mairie');
+  revalidatePath('/organisation');
   return { success: true };
 }

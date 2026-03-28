@@ -1,33 +1,41 @@
-"use client";
-
-import { createClient } from "@/lib/supabase";
+"use server";
+ 
+import { createClient } from "@/lib/supabase-server";
+import { revalidatePath } from "next/cache";
 
 /**
  * ACTIONS POUR LES ORGANISATIONS (B2B)
  */
 
 export async function inviteAgent(email: string, fullName: string) {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Non connecté" };
 
+    // Vérification de l'abonnement
+    const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
+    if (!profile || (profile.subscription_tier !== 'organisation' && profile.subscription_tier !== 'mairie')) {
+        return { success: false, error: "Accès refusé : Abonnement Organisation requis pour recruter des agents." };
+    }
+
     // Simulation d'invitation (en production, cela enverrait un email via Resend/Supabase Auth)
-    // On crée directement un profil en attente ou on prépare l'ID
     const { data, error } = await supabase
         .from('profiles')
         .insert([{
             full_name: fullName,
             role: 'agent_collecteur',
-            organization_id: user.id, // L'organisation est le user actuel
+            organization_id: user.id,
             city: 'À définir'
         }]);
 
     if (error) return { success: false, error: error.message };
+    
+    revalidatePath('/organisation');
     return { success: true };
 }
 
 export async function getOrganizationContext() {
-    const supabase = createClient();
+    const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Non connecté" };
 
@@ -48,7 +56,7 @@ export async function getOrganizationContext() {
     const { data: concessions } = await supabase
         .from('concessions')
         .select('*, zones(*)')
-        .eq('organisation_id', user.id)
+        .eq('organization_id', user.id)
         .eq('status', 'active');
 
     return {
@@ -60,13 +68,24 @@ export async function getOrganizationContext() {
 }
 
 export async function assignAgentToZone(agentId: string, zoneId: string) {
-    const supabase = createClient();
-    // On pourrait ajouter une table de liaison ou un champ sur le profil de l'agent
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Non connecté" };
+
+    // Vérification de l'abonnement
+    const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
+    if (!profile || (profile.subscription_tier !== 'organisation' && profile.subscription_tier !== 'mairie')) {
+        return { success: false, error: "Accès refusé : Abonnement requis pour la gestion tactique." };
+    }
+
     const { error } = await supabase
         .from('profiles')
-        .update({ city: `Zone ${zoneId}` }) // Simulation simplifiée
-        .eq('id', agentId);
+        .update({ city: `Zone ${zoneId}` }) 
+        .eq('id', agentId)
+        .eq('organization_id', user.id); // Sécurité: l'agent doit appartenir à l'organisation
 
     if (error) return { success: false, error: error.message };
+    
+    revalidatePath('/organisation');
     return { success: true };
 }

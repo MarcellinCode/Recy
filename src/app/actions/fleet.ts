@@ -1,6 +1,7 @@
 "use server";
-
+ 
 import { createClient } from "@/lib/supabase-server";
+import { revalidatePath } from "next/cache";
 
 export async function getVehicles() {
     const supabase = await createClient();
@@ -22,6 +23,12 @@ export async function addVehicle(name: string, type: string, regNumber: string, 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Non authentifié" };
 
+    // Vérification de l'abonnement
+    const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
+    if (!profile || (profile.subscription_tier !== 'organisation' && profile.subscription_tier !== 'mairie')) {
+        return { success: false, error: "Abonnement Organisation ou Mairie requis pour gérer la flotte." };
+    }
+
     const { data, error } = await supabase.from("vehicles").insert({
         organization_id: user.id,
         name,
@@ -35,6 +42,9 @@ export async function addVehicle(name: string, type: string, regNumber: string, 
     }).select().single();
 
     if (error) return { success: false, error: error.message };
+    
+    revalidatePath('/organisation');
+    revalidatePath('/admin/mairie');
     return { success: true, vehicle: data };
 }
 
@@ -46,6 +56,15 @@ export async function getMaintenanceLogs(vehicleId: string) {
 
 export async function addMaintenanceLog(vehicleId: string, type: string, description: string, cost: number) {
     const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Non connecté" };
+
+    // Vérification de l'abonnement (Elite Requis pour maintenance avancée / Carnet)
+    const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
+    if (!profile || profile.subscription_tier !== 'mairie') {
+        return { success: false, error: "Plan Mairie Elite requis pour enregistrer des maintenances." };
+    }
+
     const { error } = await supabase.from("maintenance_logs").insert({
         vehicle_id: vehicleId,
         maintenance_type: type,
@@ -60,5 +79,6 @@ export async function addMaintenanceLog(vehicleId: string, type: string, descrip
         last_maintenance_date: new Date().toISOString()
     }).eq("id", vehicleId);
 
+    revalidatePath('/admin/mairie');
     return { success: true };
 }

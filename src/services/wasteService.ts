@@ -22,12 +22,30 @@ export const wasteService = {
   async reserveWaste(id: string, collectorId: string) {
     const supabase = createClient();
     
-    // 1. Update status
+    // 1. Vérifier le profil du collecteur et son quota
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('subscription_tier')
+      .eq('id', collectorId)
+      .single();
+
+    if (profileError) throw profileError;
+
+    // Si l'utilisateur est en plan gratuit "free", on vérifie son quota mensuel (3 max)
+    if (!profile.subscription_tier || profile.subscription_tier === 'free') {
+      const count = await this.getMonthlyReservationCount(collectorId);
+      if (count >= 3) {
+        throw new Error("Quota atteint : Le plan gratuit limite à 3 réservations par mois. Passez au plan Premium pour des réservations illimitées !");
+      }
+    }
+    
+    // 2. Mettre à jour le statut du lot
     const { data, error: reserveError } = await supabase
       .from('wastes')
       .update({
         status: 'reserved',
-        collector_id: collectorId
+        collector_id: collectorId,
+        reserved_at: new Date().toISOString()
       })
       .eq('id', id)
       .select()
@@ -35,7 +53,7 @@ export const wasteService = {
 
     if (reserveError) throw reserveError;
 
-    // 2. Create notifications (logic should ideally be in a DB trigger, but kept here for now as per original code)
+    // 3. Créer les notifications
     if (data) {
         await supabase.from('notifications').insert([
             {
@@ -54,5 +72,27 @@ export const wasteService = {
     }
 
     return data;
+  },
+
+  /**
+   * Retourne le nombre de réservations effectuées ce mois-ci par un collecteur
+   */
+  async getMonthlyReservationCount(collectorId: string): Promise<number> {
+    const supabase = createClient();
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+
+    const { count, error } = await supabase
+      .from('wastes')
+      .select('*', { count: 'exact', head: true })
+      .eq('collector_id', collectorId)
+      .gte('reserved_at', startOfMonth.toISOString());
+
+    if (error) {
+      console.error("Error fetching reservation count:", error);
+      return 0;
+    }
+    return count || 0;
   }
 };

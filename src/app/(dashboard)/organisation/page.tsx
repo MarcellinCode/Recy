@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
+import { Lock, Settings, ShieldCheck } from "lucide-react";
 
 const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
     ssr: false,
@@ -182,6 +183,28 @@ export default function OrganizationDashboard() {
                 </button>
             </header>
 
+            {profile?.subscription_tier !== 'organisation' && activeTab !== 'opportunities' && (
+                <div className="relative">
+                    <div className="absolute inset-0 z-50 backdrop-blur-md bg-white/30 dark:bg-zinc-900/30 rounded-[3rem] flex items-center justify-center p-8">
+                        <div className="bg-white dark:bg-zinc-900 p-12 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 shadow-2xl text-center max-w-xl">
+                            <div className="w-20 h-20 bg-primary/10 rounded-3xl flex items-center justify-center text-primary mx-auto mb-8">
+                                <Lock size={40} />
+                            </div>
+                            <h2 className="text-3xl font-black uppercase italic tracking-tighter mb-4 dark:text-white">Accès Tactique Verrouillé</h2>
+                            <p className="text-zinc-500 font-bold text-xs uppercase tracking-widest mb-10 leading-loose">
+                                Votre organisation doit souscrire à l'abonnement **"Platform Standard" (20 000 F / mois)** pour activer la gestion de flotte, le suivi des agents et le pilotage des concessions.
+                            </p>
+                            <button 
+                                onClick={() => window.location.href = '/abonnements'}
+                                className="px-12 py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all"
+                            >
+                                Activer les Outils Pro
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <AnimatePresence mode="wait">
                 {activeTab === 'fleet' && (
                     <motion.div 
@@ -227,10 +250,11 @@ export default function OrganizationDashboard() {
                                 <h2 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white">Portefeuille Clients</h2>
                                 <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] p-8 space-y-8 shadow-sm">
                                     <div className="space-y-4">
-                                        <PlanSummary name="Standard Hebdo" count={124} price="5,000" color="bg-emerald-500" />
-                                        <PlanSummary name="Premium Business" count={42} price="15,000" color="bg-blue-500" />
+                                        <PlanSummary name="Foyer (Société)" count={0} price="2,000" color="bg-emerald-500" />
+                                        <PlanSummary name="Entreprise" count={0} price="6,000" color="bg-blue-500" />
+                                        <PlanSummary name="Industrie" count={0} price="15,000" color="bg-amber-500" />
                                     </div>
-                                    <button className="w-full py-4 border-2 border-zinc-900 dark:border-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-zinc-900 hover:text-white transition-all">Gérer les Plans</button>
+                                    <button className="w-full py-4 border-2 border-zinc-900 dark:border-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-zinc-900 hover:text-white transition-all">Gérer les Tarifs Zone</button>
                                 </div>
                             </div>
                         </div>

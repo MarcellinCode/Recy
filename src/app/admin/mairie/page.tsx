@@ -49,6 +49,7 @@ export default function MairieManagementPage() {
     const [newZone, setNewZone] = useState({ name: "", city: "Abidjan", status: "available" });
     const [newTender, setNewTender] = useState({ zone_id: "", title: "", description: "", end_date: "", budget_estimate: 0 });
     const [announcement, setAnnouncement] = useState({ title: "", message: "", type: "info" });
+    const [profile, setProfile] = useState<any>(null);
     const supabase = createClient();
 
     useEffect(() => {
@@ -58,6 +59,16 @@ export default function MairieManagementPage() {
     async function fetchMairieData() {
         setLoading(true);
         try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profileData } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+                setProfile(profileData);
+            }
+
             const { data: zonesData } = await supabase
                 .from('zones')
                 .select('*, concessions(status, profiles(full_name))');
@@ -158,6 +169,7 @@ export default function MairieManagementPage() {
                             >
                                 <tab.icon size={12} />
                                 {tab.label}
+                                {tab.id === 'fleet' && profile?.subscription_tier !== 'mairie' && <Lock size={8} className="text-primary ml-1" />}
                             </button>
                         ))}
                     </nav>
@@ -352,11 +364,48 @@ export default function MairieManagementPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="p-20 text-center bg-gray-50 dark:bg-zinc-900/50 rounded-[4rem] border-4 border-dashed border-gray-100 dark:border-zinc-800"
+                        className="space-y-12"
                     >
-                        <Truck size={48} className="mx-auto mb-6 text-zinc-300" />
-                        <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-2 text-zinc-900 dark:text-zinc-100">Flotte Municipale Pro</h3>
-                        <p className="text-zinc-400 text-xs font-bold uppercase tracking-widest max-w-sm mx-auto">Activez le pack "Execution Mode" pour gérer vos propres agents de voirie avec Smart Routing IA.</p>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                            <div className="bg-white dark:bg-zinc-900 p-12 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm relative overflow-hidden group">
+                                <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4 text-zinc-900 dark:text-white">Carnet d'Entretien</h3>
+                                <p className="text-zinc-500 text-xs font-bold uppercase tracking-tight mb-8">Suivi rigoureux de la maintenance curative et préventive de la flotte municipale.</p>
+                                <div className="space-y-3">
+                                    <div className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                        <span>Camion-Benn #04</span>
+                                        <span className="text-amber-500">Vidange requise</span>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                        <span>Compacteur #01</span>
+                                        <span className="text-emerald-500">Opérationnel</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gradient-to-br from-primary to-primary-focus p-12 rounded-[3.5rem] text-white shadow-2xl flex flex-col justify-between">
+                                <div>
+                                    <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4">Gestion de Parc</h3>
+                                    <p className="opacity-70 text-xs font-bold uppercase tracking-tight mb-8 leading-loose">Optimisez l'allocation de vos Ressources Mobiles et la rotation des agents de voirie.</p>
+                                </div>
+                                <button className="w-full py-5 bg-white text-primary rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl">Ajouter un Véhicule</button>
+                            </div>
+                        </div>
+
+                        {profile?.subscription_tier !== 'mairie' && (
+                            <div className="p-20 text-center bg-gray-50 dark:bg-zinc-900/50 rounded-[4rem] border-4 border-dashed border-gray-100 dark:border-zinc-800">
+                                <Lock size={48} className="mx-auto mb-6 text-primary" />
+                                <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-2 text-zinc-900 dark:text-zinc-100">Pack Elite Requis</h3>
+                                <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-[0.2em] max-w-sm mx-auto mb-10 leading-loose">
+                                    Activez l'abonnement **"Mairie Elite" (200 000 F / mois)** pour accéder aux outils de gestion de flotte et souveraineté territoriale.
+                                </p>
+                                <button
+                                    onClick={() => window.location.href = '/abonnements'}
+                                    className="px-10 py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest"
+                                >
+                                    Souscrire au Pack Elite
+                                </button>
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>

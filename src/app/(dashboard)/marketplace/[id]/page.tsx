@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { RatingModal } from "@/components/ui/RatingModal";
 import { showToast } from "@/components/ui/toast";
+import { wasteService } from "@/services/wasteService";
 
 interface SwipeToReserveProps {
     onReserve: () => void;
@@ -166,10 +167,22 @@ function WasteDetailsContent({ id }: { id: string }) {
     const [fakeDuration] = useState(() => Math.floor(Math.random() * 15 + 5));
     const [showConfetti, setShowConfetti] = useState(false);
 
+    const [userTier, setUserTier] = useState<string | null>(null);
+    const [reservationCount, setReservationCount] = useState<number>(0);
+
     useEffect(() => {
         const fetchUser = async () => {
             const { data: { user } } = await supabase.auth.getUser();
-            setCurrentUser(user);
+            if (user) {
+                setCurrentUser(user);
+                const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
+                setUserTier(profile?.subscription_tier || 'free');
+                
+                if (profile?.subscription_tier === 'free' || !profile?.subscription_tier) {
+                    const count = await wasteService.getMonthlyReservationCount(user.id);
+                    setReservationCount(count);
+                }
+            }
         };
         fetchUser();
     }, [supabase]);
@@ -318,6 +331,20 @@ function WasteDetailsContent({ id }: { id: string }) {
                                                 <span className="text-[9px] font-black text-primary uppercase tracking-[0.2em] bg-primary/10 px-2 py-1 rounded">Trajet Optimal</span>
                                             </div>
                                         </div>
+
+                                        {userTier === 'free' && (
+                                            <div className="flex items-center justify-between p-3 bg-amber-50 dark:bg-amber-950/20 rounded-xl border border-amber-100 dark:border-amber-900/30 mb-2">
+                                                <div className="flex items-center gap-2">
+                                                    <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />
+                                                    <span className="text-[10px] font-black text-amber-900 dark:text-amber-400 uppercase tracking-widest">
+                                                        Quota : {reservationCount}/3 réservations
+                                                    </span>
+                                                </div>
+                                                <Link href="/abonnements" className="text-[9px] font-black text-amber-600 hover:underline uppercase tracking-widest">
+                                                    Illimité →
+                                                </Link>
+                                            </div>
+                                        )}
 
                                         <SwipeToReserve
                                             onReserve={handleReserve}
