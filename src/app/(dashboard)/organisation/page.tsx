@@ -60,8 +60,8 @@ export default function OrganizationDashboard() {
         
         if (res.success) {
             setProfile(res.profile);
-            setAgents(res.agents);
-            setConcessions(res.concessions);
+            setAgents(res.agents || []);
+            setConcessions(res.concessions || []);
             
             // Vehicles
             const vRes = await getVehicles();
