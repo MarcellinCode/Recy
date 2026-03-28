@@ -59,9 +59,13 @@ export default function OrganizationDashboard() {
         const res = await getOrganizationContext();
         
         if (res.success) {
-            setProfile(res.profile);
-            setAgents(res.agents || []);
-            setConcessions(res.concessions || []);
+            const profile = res.profile;
+            const agents = res.agents || [];
+            const concessions = res.concessions || [];
+
+            setProfile(profile);
+            setAgents(agents);
+            setConcessions(concessions);
             
             // Vehicles
             const vRes = await getVehicles();
@@ -75,11 +79,11 @@ export default function OrganizationDashboard() {
             setTenders(tendersData || []);
 
             // Subscriptions for organization's zones
-            if (res.concessions.length > 0) {
+            if (concessions.length > 0) {
                 const { data: subsData } = await supabase
                     .from('household_subscriptions')
                     .select('*, profiles(*), subscription_plans(*, concessions(*))')
-                    .in('subscription_plans.concession_id', res.concessions.map((c: any) => c.id));
+                    .in('subscription_plans.concession_id', concessions.map((c: any) => c.id));
                 setSubscriptions(subsData || []);
             }
         }
