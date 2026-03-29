@@ -81,41 +81,56 @@ export default function ReservationsPage() {
     }
 
     return (
-        <div className="max-w-4xl mx-auto px-4 py-8 sm:py-12 min-h-screen pb-24">
-            <header className="mb-10">
-                <div className="flex items-center gap-4 mb-6">
-                    <Link href="/dashboard" className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-full transition-colors">
-                        <ArrowLeft className="w-6 h-6 dark:text-white" />
+        <div className="max-w-4xl mx-auto px-4 py-8 sm:py-16 min-h-screen pb-24">
+            <header className="mb-12 relative">
+                <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10" />
+                <div className="flex items-center gap-6 mb-8">
+                    <Link href="/dashboard" className="w-12 h-12 flex items-center justify-center bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl shadow-sm hover:shadow-md hover:-translate-x-1 transition-all">
+                        <ArrowLeft className="w-5 h-5 dark:text-white" />
                     </Link>
-                    <h1 className="text-3xl font-black uppercase italic tracking-tighter dark:text-white">
-                        Suivi des <span className="text-primary italic">Réservations</span>
-                    </h1>
+                    <div className="h-px flex-1 bg-gradient-to-r from-zinc-200 dark:from-zinc-800 to-transparent" />
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10">
+                    <div>
+                        <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter dark:text-white leading-[0.85]">
+                            Suivi des <br />
+                            <span className="text-primary italic text-3xl sm:text-5xl">Réservations</span>
+                        </h1>
+                    </div>
+                    
+                    <div className="flex items-center gap-4 bg-zinc-50 dark:bg-zinc-800/50 p-2 rounded-[1.5rem] border border-zinc-100 dark:border-zinc-800">
+                        <div className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-100 dark:border-zinc-800">
+                            <span className="text-[10px] font-black uppercase text-zinc-400 block leading-none mb-1">Total Actif</span>
+                            <span className="text-xl font-black italic dark:text-white leading-none">{reservations.length}</span>
+                        </div>
+                    </div>
                 </div>
 
                 {/* Tab Switcher */}
-                <div className="flex bg-zinc-100 dark:bg-zinc-900 p-1.5 rounded-[2rem] border border-zinc-200/50 dark:border-zinc-800 shadow-inner">
+                <div className="flex bg-white dark:bg-zinc-900 p-1.5 rounded-[2.2rem] border border-zinc-100 dark:border-zinc-800 shadow-xl shadow-zinc-200/20 dark:shadow-none relative z-10">
                     <button 
                         onClick={() => setCurrentTab("collectes")}
                         className={cn(
-                            "flex-1 flex items-center justify-center gap-3 py-3.5 rounded-[1.7rem] text-xs font-black uppercase tracking-widest transition-all",
+                            "flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest transition-all",
                             currentTab === "collectes" 
-                                ? "bg-white dark:bg-zinc-800 dark:text-white shadow-lg shadow-zinc-200/50 dark:shadow-none" 
+                                ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl" 
                                 : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                         )}
                     >
-                        <CalendarDays className="w-4 h-4" />
+                        <CalendarDays className={cn("w-4 h-4", currentTab === "collectes" ? "animate-bounce" : "")} />
                         Mes Collectes
                     </button>
                     <button 
                         onClick={() => setCurrentTab("ventes")}
                         className={cn(
-                            "flex-1 flex items-center justify-center gap-3 py-3.5 rounded-[1.7rem] text-xs font-black uppercase tracking-widest transition-all",
+                            "flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest transition-all",
                             currentTab === "ventes" 
-                                ? "bg-white dark:bg-zinc-800 dark:text-white shadow-lg shadow-zinc-200/50 dark:shadow-none" 
+                                ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl" 
                                 : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
                         )}
                     >
-                        <Package className="w-4 h-4" />
+                        <Package className={cn("w-4 h-4", currentTab === "ventes" ? "animate-bounce" : "")} />
                         Mes Ventes
                     </button>
                 </div>
@@ -140,20 +155,24 @@ export default function ReservationsPage() {
                 ) : (
                     <motion.div 
                         key="empty"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="flex flex-col items-center justify-center py-20 px-8 text-center"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex flex-col items-center justify-center py-20 sm:py-32 px-8 text-center bg-zinc-50/50 dark:bg-zinc-900/30 rounded-[3rem] border border-dashed border-zinc-200 dark:border-zinc-800"
                     >
-                        <div className="w-20 h-20 bg-zinc-50 dark:bg-zinc-900 rounded-[2rem] flex items-center justify-center mb-6">
-                            <Clock className="w-10 h-10 text-zinc-300 dark:text-zinc-700" />
+                        <div className="w-24 h-24 bg-white dark:bg-zinc-900 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-xl shadow-zinc-200/50 dark:shadow-none border border-zinc-100 dark:border-zinc-800 relative group">
+                            <div className="absolute inset-0 bg-primary/20 rounded-[2.5rem] blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <Clock className="w-10 h-10 text-zinc-300 dark:text-zinc-700 relative z-10 group-hover:text-primary transition-colors duration-500" />
                         </div>
-                        <h3 className="text-lg font-black uppercase italic tracking-tighter dark:text-white mb-2">Aucune réservation active</h3>
-                        <p className="text-xs text-zinc-500 max-w-xs font-medium">
+                        <h3 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white mb-3">
+                            Aucune <span className="text-primary">réservation</span> active
+                        </h3>
+                        <p className="text-sm text-zinc-500 max-w-sm font-medium leading-relaxed mb-10">
                             {currentTab === "collectes" 
-                                ? "Explorez le marché pour réserver votre premier lot de déchets." 
-                                : "Vos publications n'ont pas encore été réservées par un collecteur."}
+                                ? "Explorez le marché et réservez votre premier lot de déchets pour commencer à gagner." 
+                                : "Vos publications n'ont pas encore été réservées. Elles apparaîtront ici dès qu'un collecteur s'y intéressera."}
                         </p>
-                        <Link href={currentTab === "collectes" ? "/marketplace" : "/publier"} className="mt-8 px-8 py-4 bg-primary text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                        <Link href={currentTab === "collectes" ? "/marketplace" : "/publier"} className="px-10 py-5 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3">
+                            <Package className="w-4 h-4" />
                             {currentTab === "collectes" ? "Parcourir le Marché" : "Publier un Déchet"}
                         </Link>
                     </motion.div>
@@ -193,63 +212,96 @@ function ReservationCard({ reservation, role, onFinalized }: { reservation: Rese
     };
 
     return (
-        <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border-2 border-zinc-50 dark:border-zinc-800 p-6 sm:p-8 flex flex-col sm:flex-row gap-6 hover:border-primary/20 dark:hover:border-primary/20 transition-all group">
+        <motion.div 
+            whileHover={{ y: -4 }}
+            className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-zinc-100 dark:border-zinc-800 p-2 flex flex-col sm:flex-row shadow-sm hover:shadow-xl hover:border-primary/20 dark:hover:border-primary/20 transition-all duration-500 group overflow-hidden"
+        >
             {/* Info Section */}
-            <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-4">
-                    <span className="text-2xl">{reservation.waste_types.emoji}</span>
-                    <h3 className="text-xl font-black uppercase italic tracking-tighter dark:text-white truncate">
-                        {reservation.waste_types.name}
-                    </h3>
+            <div className="flex-1 p-6 sm:p-8">
+                <div className="flex items-start justify-between mb-6">
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 bg-zinc-50 dark:bg-zinc-800 rounded-2xl flex items-center justify-center text-3xl shadow-inner group-hover:scale-110 transition-transform duration-500">
+                            {reservation.waste_types.emoji}
+                        </div>
+                        <div>
+                            <h3 className="text-xl font-black uppercase italic tracking-tighter dark:text-white leading-none mb-1">
+                                {reservation.waste_types.name}
+                            </h3>
+                            <div className="flex items-center gap-2 text-zinc-400">
+                                <Clock className="w-3 h-3" />
+                                <span className="text-[9px] font-bold uppercase tracking-widest italic">
+                                    {new Date(reservation.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full border border-emerald-100 dark:border-emerald-500/20">
+                        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                        <span className="text-[9px] font-black uppercase tracking-[0.2em]">En Attente</span>
+                    </div>
                 </div>
-
-                <div className="space-y-2 mb-6">
-                    <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                        <User className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">
-                            {role === "collectes" ? `Vendeur: ${reservation.seller.full_name}` : `Collecteur: ${reservation.collector?.full_name}`}
-                        </span>
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
+                            <div className="w-7 h-7 rounded-full bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center border border-zinc-100 dark:border-zinc-800">
+                                <User className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">{role === "collectes" ? "Vendeur" : "Collecteur"}</span>
+                                <span className="text-[10px] font-black uppercase dark:text-zinc-200">
+                                    {role === "collectes" ? reservation.seller.full_name : (reservation.collector?.full_name || "En recherche...")}
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
+                            <div className="w-7 h-7 rounded-full bg-zinc-50 dark:bg-zinc-800 flex items-center justify-center border border-zinc-100 dark:border-zinc-800">
+                                <Weight className="w-3.5 h-3.5 font-bold" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Estimation</span>
+                                <span className="text-[10px] font-black uppercase dark:text-zinc-200">{reservation.estimated_weight} KG</span>
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
-                        <Weight className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">{reservation.estimated_weight}kg estimés</span>
+                    <div className="flex items-start gap-3 text-primary p-3 bg-zinc-50 dark:bg-zinc-800/50 rounded-2xl border border-dashed border-zinc-200 dark:border-zinc-700">
+                        <MapPin className="w-4 h-4 mt-0.5 shrink-0" />
+                        <div className="flex flex-col">
+                            <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Lieu de Collecte</span>
+                            <span className="text-[10px] font-black uppercase leading-tight line-clamp-2">{reservation.location}</span>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 text-primary">
-                        <MapPin className="w-3.5 h-3.5" />
-                        <span className="text-[10px] font-black uppercase tracking-widest truncate">{reservation.location}</span>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 rounded-full w-fit">
-                    <Clock className="w-3.5 h-3.5 animate-pulse" />
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em]">En attente de collecte</span>
                 </div>
             </div>
 
-            {/* Actions Section */}
-            <div className="flex flex-row sm:flex-col items-center justify-center gap-3">
+            {/* Actions Bar - Redesigned to be a sleek vertical bar on desktop and horizontal on mobile */}
+            <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 border-t sm:border-t-0 sm:border-l border-zinc-100 dark:border-zinc-800 flex sm:flex-col items-center justify-center gap-2 sm:w-24">
                 <Link 
                     href={`/chat?wasteId=${reservation.id}`}
-                    className="flex-1 sm:w-full h-14 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-zinc-200/50 dark:shadow-none"
+                    title="Ouvrir le chat"
+                    className="flex-1 sm:flex-none w-full aspect-square sm:w-16 sm:h-16 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[1.2rem] flex flex-col items-center justify-center gap-1 group/btn hover:border-primary/50 hover:shadow-lg transition-all"
                 >
-                    <MessageSquare className="w-5 h-5" />
-                    <span className="text-[10px] font-black uppercase tracking-widest sm:hidden lg:inline">Chat</span>
+                    <MessageSquare className="w-5 h-5 text-zinc-400 group-hover/btn:text-primary transition-colors" />
+                    <span className="text-[8px] font-black uppercase text-zinc-400 group-hover/btn:text-primary">Chat</span>
                 </Link>
+                
                 {role === "collectes" && (
                     <>
                         <button 
                             onClick={handleNavigate}
-                            className="flex-1 sm:w-full h-14 bg-primary text-white rounded-2xl flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"
+                            title="Lancer la navigation"
+                            className="flex-1 sm:flex-none w-full aspect-square sm:w-16 sm:h-16 bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-[1.2rem] flex flex-col items-center justify-center gap-1 group/btn hover:border-primary/50 hover:shadow-lg transition-all"
                         >
-                            <Navigation className="w-5 h-5" />
-                            <span className="text-[10px] font-black uppercase tracking-widest sm:hidden lg:inline">Trajet</span>
+                            <Navigation className="w-5 h-5 text-zinc-400 group-hover/btn:text-primary transition-colors" />
+                            <span className="text-[8px] font-black uppercase text-zinc-400 group-hover/btn:text-primary">Itinéraire</span>
                         </button>
                         <button 
                             onClick={() => setShowModal(true)}
-                            className="flex-1 sm:w-full h-14 bg-emerald-500 text-white rounded-2xl flex items-center justify-center gap-2 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-emerald-500/20"
+                            title="Soumettre la pesée finale"
+                            className="flex-1 sm:flex-none w-full aspect-square sm:w-16 sm:h-16 bg-primary text-white rounded-[1.2rem] flex flex-col items-center justify-center gap-1 hover:scale-110 active:scale-95 transition-all shadow-lg shadow-primary/20"
                         >
-                            <CheckCircle2 className="w-5 h-5" />
-                            <span className="text-[10px] font-black uppercase tracking-widest sm:hidden lg:inline">Finaliser</span>
+                            <CheckCircle2 className="w-5 h-5 animate-pulse" />
+                            <span className="text-[8px] font-black uppercase opacity-70">Valider</span>
                         </button>
                     </>
                 )}
@@ -301,6 +353,6 @@ function ReservationCard({ reservation, role, onFinalized }: { reservation: Rese
                     </div>
                 )}
             </AnimatePresence>
-        </div>
+        </motion.div>
     );
 }
