@@ -12,7 +12,10 @@ import {
     ArrowRight,
     Loader2,
     Leaf,
-    ShieldCheck
+    ShieldCheck,
+    X,
+    CheckCircle2,
+    Phone
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
@@ -28,29 +31,87 @@ export default function WalletPage() {
     const [transactions, setTransactions] = useState<any[]>([]);
     const [totalWeight, setTotalWeight] = useState(0);
 
-    useEffect(() => {
-        const fetchWalletData = async () => {
-            setLoading(true);
-            try {
-                const profile = await userService.getCurrentProfile();
-                if (!profile) {
-                    navigateSafe(router, ROUTES.CONNEXION);
-                    return;
-                }
+    // Modals
+    const [showDeposit, setShowDeposit] = useState(false);
+    const [showWithdraw, setShowWithdraw] = useState(false);
+    const [amount, setAmount] = useState('');
+    const [phone, setPhone] = useState('');
+    const [processing, setProcessing] = useState(false);
+    const [success, setSuccess] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-                const data = await walletService.getWalletData(profile.id);
-                setProfile(data.profile);
-                setTransactions(data.transactions);
-                setTotalWeight(data.totalWeight);
-            } catch (error) {
-                console.error(error);
-            } finally {
-                setLoading(false);
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const currentProfile = await userService.getCurrentProfile();
+            if (!currentProfile) {
+                navigateSafe(router, ROUTES.CONNEXION);
+                return;
             }
-        };
 
-        fetchWalletData();
+            const data = await walletService.getWalletData(currentProfile.id);
+            setProfile(data.profile);
+            setTransactions(data.transactions);
+            setTotalWeight(data.totalWeight);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
     }, [router]);
+
+    const handleDeposit = async () => {
+        const num = Number(amount);
+        if (!num || num <= 0) { setError('Montant invalide'); return; }
+        
+        setProcessing(true);
+        setError(null);
+        const res = await walletService.creditWallet(profile.id, num);
+        setProcessing(false);
+
+        if (res.success) {
+            setSuccess(`+${num.toLocaleString()} CFA reçus (Simulation)`);
+            setAmount('');
+            setTimeout(() => { setShowDeposit(false); setSuccess(null); fetchData(); }, 2000);
+        } else {
+            setError(res.error || 'Erreur inconnue');
+        }
+    };
+
+    const handleWithdraw = async () => {
+        const num = Number(amount);
+        if (!num || num <= 0) { setError('Montant invalide'); return; }
+        if (!phone || phone.length < 8) { setError('Numéro de téléphone invalide'); return; }
+        if (num > (profile?.wallet_balance || 0)) { setError('Solde insuffisant'); return; }
+        
+        setProcessing(true);
+        setError(null);
+        
+        // Débiter d'abord
+        const debitRes = await walletService.debitWallet(profile.id, num);
+        if (!debitRes.success) {
+            setProcessing(false);
+            setError(debitRes.error || 'Erreur lors du débit');
+            return;
+        }
+        
+        // Puis simuler le retrait
+        const res = await walletService.withdraw(profile.id, num, phone);
+        setProcessing(false);
+
+        if (res.success) {
+            setSuccess(`${num.toLocaleString()} CFA envoyés vers ${phone} (Simulation)`);
+            setAmount('');
+            setPhone('');
+            setTimeout(() => { setShowWithdraw(false); setSuccess(null); fetchData(); }, 2500);
+        } else {
+            setError(res.error || 'Erreur inconnue');
+        }
+    };
 
     if (loading) {
         return (
@@ -66,6 +127,10 @@ export default function WalletPage() {
             {/* Header section */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="w-6 h-[2px] bg-amber-500"></span>
+                        <p className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-500 italic">Mode Simulation</p>
+                    </div>
                     <h1 className="text-5xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic flex items-center gap-3">
                         <Wallet className="w-10 h-10 text-primary" />
                         Mon <span className="text-primary">Wallet</span>
@@ -75,11 +140,17 @@ export default function WalletPage() {
                     </p>
                 </div>
                 <div className="flex gap-3">
-                    <button className="flex items-center gap-2 px-6 py-3 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20">
+                    <button 
+                        onClick={() => { setShowDeposit(true); setError(null); setSuccess(null); }}
+                        className="flex items-center gap-2 px-6 py-3 bg-primary text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/20"
+                    >
                         <Plus className="w-4 h-4" />
                         Déposer
                     </button>
-                    <button className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-zinc-900 border-2 border-gray-100 dark:border-zinc-800 text-gray-900 dark:text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:border-primary transition-all shadow-sm">
+                    <button 
+                        onClick={() => { setShowWithdraw(true); setError(null); setSuccess(null); }}
+                        className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-zinc-900 border-2 border-gray-100 dark:border-zinc-800 text-gray-900 dark:text-white font-black text-[10px] uppercase tracking-widest rounded-2xl hover:border-primary transition-all shadow-sm"
+                    >
                         <CreditCard className="w-4 h-4 text-primary" />
                         Retirer
                     </button>
@@ -102,14 +173,14 @@ export default function WalletPage() {
                             </span>
                             <div className="flex items-baseline gap-2">
                                 <span className="text-7xl md:text-8xl font-black text-white tracking-tighter italic">
-                                    {profile?.wallet_balance?.toLocaleString('fr-FR')}
+                                    {profile?.wallet_balance?.toLocaleString('fr-FR') || '0'}
                                 </span>
                                 <span className="text-2xl font-black text-primary uppercase italic">CFA</span>
                             </div>
                             <div className="flex gap-4">
                                 <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10 flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                                    <span className="text-[10px] text-white font-bold uppercase tracking-widest">Compte vérifié</span>
+                                    <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                                    <span className="text-[10px] text-white font-bold uppercase tracking-widest">Simulation Active</span>
                                 </div>
                             </div>
                         </div>
@@ -170,9 +241,9 @@ export default function WalletPage() {
                                             tx.type === 'outcome' ? "text-red-600" : 
                                             "text-gray-900 dark:text-white"
                                         )}>
-                                            {tx.type === 'income' ? '+' : '-'}{tx.amount.toLocaleString('fr-FR')} <span className="text-[10px]">CFA</span>
+                                            {tx.type === 'income' ? '+' : '-'}{Math.abs(tx.amount).toLocaleString('fr-FR')} <span className="text-[10px]">CFA</span>
                                         </p>
-                                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Complété</span>
+                                        <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Simulation</span>
                                     </div>
                                 </div>
                             ))
@@ -200,7 +271,7 @@ export default function WalletPage() {
                                 {Math.round(totalWeight * 2.5)} <span className="text-lg">KG</span>
                             </p>
                             <p className="text-xs font-medium leading-relaxed opacity-90 italic">
-                                Vos efforts de recyclage ont permis d'éviter l'équivalent de {(totalWeight * 10).toFixed(0)} km en voiture. Continuez !
+                                Vos efforts de recyclage ont permis d'éviter l'équivalent de {(totalWeight * 10).toFixed(0)} km en voiture.
                             </p>
                             <div className="mt-8 pt-8 border-t border-white/20">
                                 <div className="flex items-center justify-between mb-2">
@@ -237,6 +308,135 @@ export default function WalletPage() {
                     </div>
                 </div>
             </div>
+
+            {/* ========== MODAL DÉPÔT (Simulation) ========== */}
+            {showDeposit && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-[3rem] p-10 max-w-md w-full shadow-2xl relative">
+                        <button onClick={() => setShowDeposit(false)} className="absolute top-6 right-6 p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition-all">
+                            <X className="w-5 h-5 text-gray-400" />
+                        </button>
+                        
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="w-5 h-[2px] bg-amber-500"></span>
+                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-500 italic">Simulation</p>
+                        </div>
+                        <h3 className="text-3xl font-black uppercase italic tracking-tighter dark:text-white mb-8">Recharger</h3>
+
+                        {success ? (
+                            <div className="flex flex-col items-center gap-4 py-8">
+                                <CheckCircle2 className="w-16 h-16 text-emerald-500" />
+                                <p className="text-sm font-bold text-emerald-600 text-center">{success}</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Montant (CFA)</label>
+                                        <input
+                                            type="number"
+                                            value={amount}
+                                            onChange={(e) => setAmount(e.target.value)}
+                                            placeholder="Ex: 5000"
+                                            className="w-full h-16 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-2xl px-6 text-2xl font-black text-gray-900 dark:text-white focus:border-primary focus:ring-0 outline-none transition-all"
+                                        />
+                                    </div>
+                                    
+                                    <div className="flex gap-2">
+                                        {[1000, 2000, 5000, 10000].map(v => (
+                                            <button 
+                                                key={v} 
+                                                onClick={() => setAmount(String(v))}
+                                                className="flex-1 py-3 bg-gray-100 dark:bg-zinc-800 rounded-xl text-xs font-black text-gray-600 dark:text-gray-300 hover:bg-primary hover:text-white transition-all"
+                                            >
+                                                {v.toLocaleString()}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {error && <p className="text-xs font-bold text-red-500 text-center">{error}</p>}
+                                </div>
+
+                                <button 
+                                    onClick={handleDeposit}
+                                    disabled={processing}
+                                    className="w-full mt-8 py-5 bg-primary text-white font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                >
+                                    {processing ? <><Loader2 className="w-4 h-4 animate-spin" /> Traitement...</> : <>Confirmer le Dépôt <ArrowRight className="w-4 h-4" /></>}
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            {/* ========== MODAL RETRAIT (Simulation) ========== */}
+            {showWithdraw && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-[3rem] p-10 max-w-md w-full shadow-2xl relative">
+                        <button onClick={() => setShowWithdraw(false)} className="absolute top-6 right-6 p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-xl transition-all">
+                            <X className="w-5 h-5 text-gray-400" />
+                        </button>
+                        
+                        <div className="flex items-center gap-2 mb-2">
+                            <span className="w-5 h-[2px] bg-amber-500"></span>
+                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-amber-500 italic">Simulation</p>
+                        </div>
+                        <h3 className="text-3xl font-black uppercase italic tracking-tighter dark:text-white mb-8">Retirer</h3>
+
+                        {success ? (
+                            <div className="flex flex-col items-center gap-4 py-8">
+                                <CheckCircle2 className="w-16 h-16 text-emerald-500" />
+                                <p className="text-sm font-bold text-emerald-600 text-center">{success}</p>
+                            </div>
+                        ) : (
+                            <>
+                                <div className="space-y-6">
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Montant (CFA)</label>
+                                        <input
+                                            type="number"
+                                            value={amount}
+                                            onChange={(e) => setAmount(e.target.value)}
+                                            placeholder="Ex: 3000"
+                                            className="w-full h-16 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-2xl px-6 text-2xl font-black text-gray-900 dark:text-white focus:border-primary focus:ring-0 outline-none transition-all"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Numéro Mobile Money</label>
+                                        <div className="relative">
+                                            <Phone className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                                            <input
+                                                type="tel"
+                                                value={phone}
+                                                onChange={(e) => setPhone(e.target.value)}
+                                                placeholder="+225 07 XX XX XX XX"
+                                                className="w-full h-16 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-2xl pl-14 pr-6 text-lg font-bold text-gray-900 dark:text-white focus:border-primary focus:ring-0 outline-none transition-all"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl border border-gray-200 dark:border-zinc-700">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Solde disponible</p>
+                                        <p className="text-xl font-black text-gray-900 dark:text-white italic">{(profile?.wallet_balance || 0).toLocaleString()} CFA</p>
+                                    </div>
+
+                                    {error && <p className="text-xs font-bold text-red-500 text-center">{error}</p>}
+                                </div>
+
+                                <button 
+                                    onClick={handleWithdraw}
+                                    disabled={processing}
+                                    className="w-full mt-8 py-5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:opacity-90 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                                >
+                                    {processing ? <><Loader2 className="w-4 h-4 animate-spin" /> Traitement...</> : <>Retirer vers Mobile Money <ArrowRight className="w-4 h-4" /></>}
+                                </button>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

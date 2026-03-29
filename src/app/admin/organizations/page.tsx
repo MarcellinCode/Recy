@@ -48,7 +48,7 @@ export default function OrganizationsPage() {
         const { data, error } = await supabase
             .from('profiles')
             .select('*')
-            .in('role', ['mairie', 'entreprise'])
+            .in('role', ['mairie', 'entreprise', 'organisation_admin'])
             .order('created_at', { ascending: false });
         
         if (error) {
@@ -302,7 +302,8 @@ export default function OrganizationsPage() {
                                 onChange={(e) => setNewOrg({...newOrg, role: e.target.value})}
                             >
                                 <option value="mairie">Mairie</option>
-                                <option value="entreprise">Entreprise</option>
+                                <option value="entreprise">Entreprise / Organisation</option>
+                                <option value="organisation_admin">Organisation (SME)</option>
                             </select>
                         </div>
                         <div className="space-y-2">
@@ -353,7 +354,8 @@ export default function OrganizationsPage() {
                                     onChange={(e) => setEditingOrg({...editingOrg, role: e.target.value})}
                                 >
                                     <option value="mairie">Mairie</option>
-                                    <option value="entreprise">Entreprise</option>
+                                    <option value="entreprise">Entreprise / Organisation</option>
+                                    <option value="organisation_admin">Organisation (SME)</option>
                                 </select>
                             </div>
                             <div className="space-y-2">
