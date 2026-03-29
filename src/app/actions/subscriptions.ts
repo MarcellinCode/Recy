@@ -86,6 +86,26 @@ export async function subscribeToPlatform(tier: string) {
     return { success: true };
 }
 
+export async function forceSimulateSubscription(tierString: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Non connecté" };
+
+    const { error } = await supabase
+        .from('profiles')
+        .update({ subscription_tier: tierString })
+        .eq('id', user.id);
+
+    if (error) return { success: false, error: error.message };
+
+    // Important: Revalidate target pages to clear the Next.js cache and remove locks
+    revalidatePath('/organisation');
+    revalidatePath('/dashboard');
+    revalidatePath('/abonnements');
+
+    return { success: true };
+}
+
 /**
  * Note: La validation des quotas de réservation est maintenant gérée 
  * directement dans wasteService.ts lors de l'appel à reserveWaste.

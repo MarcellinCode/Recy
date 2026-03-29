@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { showToast } from "@/components/ui/toast";
+import { forceSimulateSubscription } from "@/app/actions/subscriptions";
 
 export default function SubscriptionPage() {
     const supabase = createClient();
@@ -104,15 +105,15 @@ export default function SubscriptionPage() {
         // Simulation d'attente
         await new Promise(resolve => setTimeout(resolve, 2000));
         
-        // Mettre à jour la base de données pour débloquer les autres pages
+        // Mettre à jour la base de données via l'action serveur (qui revalide le cache)
         let newTier = 'citizen';
         if (plan.id === 'o1') newTier = 'organisation';
         else if (plan.id === 'm1') newTier = 'mairie';
         else if (plan.id === 'c1') newTier = 'collector';
         
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            await supabase.from('profiles').update({ subscription_tier: newTier }).eq('id', user.id);
+        const forceRes = await forceSimulateSubscription(newTier);
+        if (!forceRes.success) {
+            showToast("Erreur de simulation serveur.", "error");
         }
         
         setSubscription({
