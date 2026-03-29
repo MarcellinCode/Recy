@@ -114,7 +114,7 @@ export default function DashboardPage() {
                 title: "Mon Service", 
                 description: "Gestion abonnement & alertes", 
                 icon: ShieldCheck, 
-                href: "/abonnement", 
+                href: "/abonnements", 
                 color: "bg-emerald-600" 
             }
         ] : []),

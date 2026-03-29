@@ -51,7 +51,6 @@ export async function middleware(request: NextRequest) {
         '/profil',
         '/chat',
         '/notifications',
-        '/abonnement',
         '/abonnements',
         '/missions',
         '/reservations',
