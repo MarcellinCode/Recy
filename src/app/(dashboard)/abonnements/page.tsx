@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { 
     ShieldCheck, 
     Zap, 
@@ -229,16 +230,16 @@ export default function SubscriptionPage() {
                         </div>
 
                         <div className="grid grid-cols-2 gap-6">
-                            <button className="p-8 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] text-left hover:border-primary transition-all">
+                            <Link href="/reservations" className="block p-8 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] text-left hover:border-primary transition-all">
                                 <Calendar className="w-8 h-8 text-primary mb-4" />
                                 <h3 className="font-black uppercase text-xs tracking-widest dark:text-white">Planning</h3>
                                 <p className="text-[10px] text-zinc-500 mt-1 font-bold">Consulter les interventions</p>
-                            </button>
-                            <button className="p-8 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] text-left hover:border-red-500/50 transition-all">
+                            </Link>
+                            <Link href="/dashboard" className="block p-8 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] text-left hover:border-red-500/50 transition-all">
                                 <Trash2 className="w-8 h-8 text-red-500 mb-4" />
                                 <h3 className="font-black uppercase text-xs tracking-widest dark:text-white">Gérer</h3>
-                                <p className="text-[10px] text-zinc-500 mt-1 font-bold">Modifier l'abonnement</p>
-                            </button>
+                                <p className="text-[10px] text-zinc-500 mt-1 font-bold">Retour rapide au Dashboard</p>
+                            </Link>
                         </div>
                     </div>
 
@@ -247,10 +248,14 @@ export default function SubscriptionPage() {
                             <ShieldCheck className="w-20 h-20 text-emerald-500" />
                         </div>
                         <div>
-                            <h3 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white">Données Sécurisées</h3>
-                            <p className="text-xs font-medium text-zinc-500 max-w-xs mx-auto mt-2 leading-relaxed">
+                            <h3 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white mb-2">Données Sécurisées</h3>
+                            <p className="text-xs font-medium text-zinc-500 max-w-xs mx-auto mt-2 leading-relaxed mb-8">
                                 Toutes vos transactions et données d'impact sont certifiées conformes aux normes environnementales locales.
                             </p>
+                            
+                            <Link href="/dashboard" className="inline-flex items-center justify-center px-8 py-4 bg-gray-900 dark:bg-white text-white dark:text-gray-900 font-black text-[10px] uppercase tracking-[0.2em] rounded-2xl hover:bg-primary transition-all hover:text-white shadow-xl">
+                                Accéder au Tableau de Bord <ArrowRight className="w-4 h-4 ml-2" />
+                            </Link>
                         </div>
                     </div>
                 </div>
