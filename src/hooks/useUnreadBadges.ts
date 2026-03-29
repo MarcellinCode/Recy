@@ -46,7 +46,8 @@ export function useUnreadBadges() {
                         .from('messages')
                         .select('id', { count: 'exact', head: true })
                         .eq('receiver_id', user.id)
-                        .eq('is_read', false),
+                        .eq('is_read', false)
+                        .not('waste_id', 'is', null),
                     supabase
                         .from('notifications')
                         .select('id', { count: 'exact', head: true })

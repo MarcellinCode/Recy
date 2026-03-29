@@ -307,8 +307,7 @@ function ChatContainer() {
             const unreadIds = messages
                 .filter(msg => 
                     msg.receiver_id === currentUser.id && 
-                    !msg.is_read && 
-                    msg.waste_id === selectedConv.id
+                    !msg.is_read
                 )
                 .map(msg => msg.id);
 
