@@ -56,7 +56,9 @@ export default function SubscriptionPage() {
             setSubscription(sub);
 
             // 3. Define Plans based on Role
-            const userRole = profile?.role;
+            // Fallback: si le champ role n'est pas dans la table profiles, on le lit depuis user_metadata
+            const userRole = profile?.role || user.user_metadata?.role;
+            console.log('[Abonnement] Rôle détecté:', userRole, '| Profile role:', profile?.role, '| Metadata role:', user.user_metadata?.role);
             let plans = [];
 
             if (userRole === 'vendeur') {
