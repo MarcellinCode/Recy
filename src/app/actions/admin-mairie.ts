@@ -1,11 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
-// Client avec Service Role pour les actions administratives (bypass RLS & Auth restrictions)
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
-
+// Action serveur pour créer un compte Mairie via l'Admin
+// On initialise le client seulement au moment de l'appel pour éviter les erreurs au build
 export async function createMairieAccount(formData: {
     municipalityName: string;
     officialDepartment: string;
@@ -14,6 +10,19 @@ export async function createMairieAccount(formData: {
     phone: string;
     city: string;
 }) {
+    // Vérification des variables d'environnement sur le serveur
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !serviceRoleKey) {
+        return { 
+            success: false, 
+            error: "Configuration serveur manquante (SUPABASE_SERVICE_ROLE_KEY). Veuillez vérifier vos variables d'environnement Vercel." 
+        };
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
     try {
         // 1. Création de l'utilisateur dans Supabase Auth
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
@@ -29,8 +38,6 @@ export async function createMairieAccount(formData: {
         if (authError) throw authError;
 
         // 2. Création/Mise à jour du profil dans la table public.profiles
-        // Note: Le trigger d'inscription standard peut déjà avoir créé un profil de base, 
-        // mais nous forçons les paramètres Mairie ici.
         const { error: profileError } = await supabaseAdmin
             .from('profiles')
             .update({
