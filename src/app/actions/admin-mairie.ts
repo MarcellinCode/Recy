@@ -1,3 +1,5 @@
+"use server";
+
 import { createClient } from '@supabase/supabase-js'
 
 // Action serveur pour créer un compte Mairie via l'Admin
