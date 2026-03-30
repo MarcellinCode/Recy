@@ -26,32 +26,39 @@ export async function createMairieAccount(formData: {
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
 
     try {
-        // 1. Création de l'utilisateur dans Supabase Auth
+        // 1. Création de l'utilisateur dans Supabase Auth avec toutes les métadonnées
+        // Cela permet au trigger handle_new_user de fonctionner correctement dès le début
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: formData.email,
             password: formData.password,
             email_confirm: true,
             user_metadata: {
                 full_name: formData.municipalityName,
-                role: 'mairie'
+                role: 'mairie',
+                city: formData.city,
+                phone: formData.phone,
+                official_department: formData.officialDepartment,
+                subscription_tier: 'mairie_elite'
             }
         });
 
         if (authError) throw authError;
 
-        // 2. Création/Mise à jour du profil dans la table public.profiles
+        // 2. Synchronisation finale / Forçage du profil (Upsert pour plus de sécurité)
+        // Le trigger a normalement déjà fait l'insertion, cet appel sécurise l'opération
         const { error: profileError } = await supabaseAdmin
             .from('profiles')
-            .update({
+            .upsert({
+                id: authData.user.id,
                 full_name: formData.municipalityName,
+                email: formData.email,
                 role: 'mairie',
                 subscription_tier: 'mairie_elite',
                 phone: formData.phone,
                 city: formData.city,
                 status: 'Actif',
                 official_department: formData.officialDepartment
-            })
-            .eq('id', authData.user.id);
+            });
 
         if (profileError) throw profileError;
 
