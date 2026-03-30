@@ -37,7 +37,7 @@ export default function InvitationsPage() {
         const res = await createInvitation(mairieName);
         if (res.success && res.invitation) {
             const baseUrl = window.location.origin;
-            const link = `${baseUrl}/inscription?type=official&token=${res.invitation.code}&org=${encodeURIComponent(mairieName)}`;
+            const link = `${baseUrl}/mairie/join?token=${res.invitation.code}&org=${encodeURIComponent(mairieName)}`;
             setGeneratedLink(link);
             
             getInvitations().then(r => {
