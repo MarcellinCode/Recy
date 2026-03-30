@@ -2,6 +2,7 @@
  
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 /**
  * ACTIONS POUR LES ABONNEMENTS (SaaS & Operational)
@@ -86,7 +87,6 @@ export async function subscribeToPlatform(tier: string) {
     return { success: true };
 }
 
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 export async function forceSimulateSubscription(tierString: string) {
     const supabase = await createClient();
