@@ -2,7 +2,6 @@
  
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 /**
  * ACTIONS POUR LES ABONNEMENTS (SaaS & Operational)
@@ -93,13 +92,7 @@ export async function forceSimulateSubscription(tierString: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Non connecté" };
 
-    const adminAuthClient = createSupabaseClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-        process.env.SUPABASE_SERVICE_ROLE_KEY || '',
-        { auth: { persistSession: false } }
-    );
-
-    const { error } = await adminAuthClient
+    const { error } = await supabase
         .from('profiles')
         .update({ subscription_tier: tierString })
         .eq('id', user.id);
