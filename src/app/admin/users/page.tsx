@@ -32,6 +32,8 @@ type Profile = {
     role: string;
     status: string;
     city: string;
+    subscription_tier?: string;
+    official_department?: string;
     created_at: string;
 };
 
@@ -241,6 +243,9 @@ export default function UsersPage() {
                                <p className="text-base font-black text-gray-900 dark:text-white uppercase leading-none mb-1.5 flex items-center gap-2">
                                    {user.full_name}
                                    <span className="text-[9px] font-black text-primary px-1.5 py-0.5 bg-primary/10 rounded uppercase tracking-widest">{user.role}</span>
+                                   {user.subscription_tier && user.subscription_tier !== 'standard' && (
+                                       <span className="text-[9px] font-black text-amber-600 px-1.5 py-0.5 bg-amber-50 rounded uppercase tracking-widest border border-amber-100 italic">★ {user.subscription_tier}</span>
+                                   )}
                                </p>
                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
                                    <p className="text-xs text-gray-400 font-bold flex items-center gap-1.5 leading-none">
@@ -249,6 +254,11 @@ export default function UsersPage() {
                                    <p className="text-xs text-gray-400 font-bold flex items-center gap-1.5 leading-none">
                                        <Calendar size={12} /> {new Date(user.created_at).toLocaleDateString()}
                                    </p>
+                                   {user.official_department && (
+                                       <p className="text-xs text-primary font-black flex items-center gap-1.5 leading-none uppercase italic">
+                                           <Shield size={12} /> {user.official_department}
+                                       </p>
+                                   )}
                                </div>
                            </div>
                        </div>

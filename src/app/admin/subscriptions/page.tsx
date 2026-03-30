@@ -27,6 +27,7 @@ export default function SubscriptionsPage() {
     const [loading, setLoading] = useState(true);
     const [plans, setPlans] = useState<any[]>([]);
     const [subscriptions, setSubscriptions] = useState<any[]>([]);
+    const [platformSubs, setPlatformSubs] = useState<any[]>([]);
     const [concessions, setConcessions] = useState<any[]>([]);
     const [isAddPlanModalOpen, setIsAddPlanModalOpen] = useState(false);
     const [editingPlan, setEditingPlan] = useState<any | null>(null);
@@ -47,10 +48,12 @@ export default function SubscriptionsPage() {
         try {
             const { data: plansData } = await supabase.from('subscription_plans').select('*, concessions(zones(name))');
             const { data: subsData } = await supabase.from('household_subscriptions').select('*, profiles(full_name, email), subscription_plans(name, price_cfa)');
+            const { data: platformData } = await supabase.from('platform_subscriptions').select('*, profiles(full_name, email)');
             const { data: concData } = await supabase.from('concessions').select('*, zones(name), profiles(full_name)').eq('status', 'active');
             
             setPlans(plansData || []);
             setSubscriptions(subsData || []);
+            setPlatformSubs(platformData || []);
             setConcessions(concData || []);
             if (concData && concData.length > 0 && !newPlan.concession_id) {
                 setNewPlan(p => ({ ...p, concession_id: concData[0].id }));
@@ -129,8 +132,8 @@ export default function SubscriptionsPage() {
             {/* Subscription KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {[
-                    { label: "Abonnés Actifs", value: subscriptions.length, sub: "+12.5%", color: "text-emerald-500" },
-                    { label: "MRR (Est.)", value: (subscriptions.reduce((acc, s) => acc + (s.subscription_plans?.price_cfa || 0), 0)).toLocaleString(), sub: "FCFA / Mois", color: "text-primary" },
+                    { label: "Abonnés Actifs", value: subscriptions.length + platformSubs.length, sub: "+12.5%", color: "text-emerald-500" },
+                    { label: "MRR (Est.)", value: (subscriptions.reduce((acc, s) => acc + (s.subscription_plans?.price_cfa || 0), 0) + platformSubs.reduce((acc, s) => acc + (s.price_paid || 0), 0)).toLocaleString(), sub: "FCFA / Mois", color: "text-primary" },
                     { label: "Taux de Churn", value: "2.4%", sub: "-0.5% vs mois d'avant", color: "text-blue-500" },
                     { label: "Plans Actifs", value: plans.length, sub: "Vérifiés", color: "text-amber-500" },
                 ].map((stat, i) => (
@@ -213,15 +216,28 @@ export default function SubscriptionsPage() {
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50 dark:divide-zinc-800/50">
-                                    {subscriptions.length > 0 ? subscriptions.map((sub: any, i) => (
+                                    {/* Combining Household and Platform Subs visually */}
+                                    {[...subscriptions.map(s => ({...s, type: 'CITOYEN'})), ...platformSubs.map(s => ({...s, type: 'INSTITUTIONNEL', subscription_plans: {name: s.tier, price_cfa: s.price_paid}}))].length > 0 ? 
+                                        [...subscriptions.map(s => ({...s, type: 'CITOYEN'})), ...platformSubs.map(s => ({...s, type: 'INSTITUTIONNEL', subscription_plans: {name: s.tier, price_cfa: s.price_paid}}))]
+                                        .sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                                        .map((sub: any, i) => (
                                         <tr key={i} className="group hover:bg-gray-50/50 dark:hover:bg-zinc-800/20 transition-colors">
                                             <td className="px-8 py-6">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center font-black text-primary text-xs">
+                                                    <div className={cn(
+                                                        "w-10 h-10 rounded-full flex items-center justify-center font-black text-xs",
+                                                        sub.type === 'CITOYEN' ? "bg-primary/10 text-primary" : "bg-indigo-100 text-indigo-600"
+                                                    )}>
                                                         {sub.profiles?.full_name?.charAt(0)}
                                                     </div>
                                                     <div>
-                                                        <p className="text-xs font-black text-gray-900 dark:text-white uppercase leading-none mb-1">{sub.profiles?.full_name}</p>
+                                                        <p className="text-xs font-black text-gray-900 dark:text-white uppercase leading-none mb-1 flex items-center gap-2">
+                                                            {sub.profiles?.full_name}
+                                                            <span className={cn(
+                                                                "text-[7px] font-black px-1 py-0.5 rounded uppercase tracking-widest",
+                                                                sub.type === 'CITOYEN' ? "bg-primary/10 text-primary" : "bg-indigo-100 text-indigo-600"
+                                                            )}>{sub.type}</span>
+                                                        </p>
                                                         <p className="text-[10px] text-gray-400 font-bold uppercase">{sub.profiles?.email}</p>
                                                     </div>
                                                 </div>
@@ -242,7 +258,7 @@ export default function SubscriptionsPage() {
                                                     "px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest",
                                                     sub.status === 'active' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
                                                 )}>
-                                                    {sub.status === 'active' ? 'Payé' : sub.status}
+                                                    {sub.status === 'active' ? 'Payé / Actif' : sub.status}
                                                 </span>
                                             </td>
                                             <td className="px-8 py-6 text-right">

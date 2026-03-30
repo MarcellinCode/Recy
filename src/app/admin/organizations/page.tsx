@@ -28,6 +28,8 @@ type Organization = {
     role: string;
     city: string;
     status: string;
+    subscription_tier?: string;
+    official_department?: string;
     created_at: string;
 };
 
@@ -202,8 +204,18 @@ export default function OrganizationsPage() {
                                                 {org.role === 'mairie' ? <School size={20} /> : <Building2 size={20} />}
                                             </div>
                                             <div>
-                                                <p className="text-sm font-black text-gray-900 dark:text-white uppercase leading-none mb-1">{org.full_name}</p>
-                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Inscrit le {new Date(org.created_at).toLocaleDateString()}</p>
+                                                <p className="text-sm font-black text-gray-900 dark:text-white uppercase leading-none mb-1 flex items-center gap-2">
+                                                    {org.full_name}
+                                                    {org.subscription_tier && org.subscription_tier !== 'standard' && (
+                                                        <span className="text-[8px] font-black text-amber-600 px-1.5 py-0.5 bg-amber-50 rounded uppercase tracking-widest border border-amber-100 italic">★ {org.subscription_tier}</span>
+                                                    )}
+                                                </p>
+                                                <div className="flex items-center gap-3">
+                                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tight">Inscrit le {new Date(org.created_at).toLocaleDateString()}</p>
+                                                    {org.official_department && (
+                                                        <span className="text-[8px] font-black text-primary uppercase tracking-widest italic border-l border-gray-100 pl-2">{org.official_department}</span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>

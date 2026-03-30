@@ -13,7 +13,8 @@ import {
     X,
     TrendingUp,
     ShieldAlert,
-    Activity
+    Activity,
+    Landmark
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -21,6 +22,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
     { href: "/admin", label: "Tableau de Bord", icon: LayoutDashboard },
     { href: "/admin/organizations", label: "Organisations", icon: Building2 },
+    { href: "/admin/add-mairie", label: "Ajouter Mairie", icon: Landmark },
     { href: "/admin/users", label: "Utilisateurs", icon: Users },
     { href: "/admin/subscriptions", label: "Abonnements", icon: Activity },
     { href: "/admin/finance", label: "Finances", icon: TrendingUp },
