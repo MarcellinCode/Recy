@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/Modal";
+import Link from "next/link";
 
 type Organization = {
     id: string;
@@ -134,13 +135,22 @@ export default function OrganizationsPage() {
                     </h1>
                     <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Contrôle et validation des partenaires institutionnels</p>
                 </div>
-                <button 
-                    onClick={() => setIsAddModalOpen(true)}
-                    className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-900/10"
-                >
-                    <Plus size={16} />
-                    Nouvelle Organisation
-                </button>
+                <div className="flex flex-wrap gap-4">
+                    <Link 
+                        href="/admin/add-mairie"
+                        className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/10"
+                    >
+                        <School size={16} />
+                        Ajouter une Mairie
+                    </Link>
+                    <button 
+                        onClick={() => setIsAddModalOpen(true)}
+                        className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-black transition-all shadow-xl shadow-gray-900/10"
+                    >
+                        <Plus size={16} />
+                        Nouvelle Organisation
+                    </button>
+                </div>
             </header>
 
             {/* Filters & Search */}
