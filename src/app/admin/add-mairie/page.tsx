@@ -159,6 +159,7 @@ export default function AddMairiePage() {
                                         onChange={(e) => setFormData({...formData, email: e.target.value})}
                                         className="w-full pl-14 pr-6 py-4 bg-black/40 border border-zinc-800 focus:border-primary rounded-2xl text-sm outline-none text-white transition-all font-medium"
                                         placeholder="admin@commune.gouv.ci"
+                                        autoComplete="email"
                                     />
                                 </div>
                             </div>
@@ -174,6 +175,7 @@ export default function AddMairiePage() {
                                         onChange={(e) => setFormData({...formData, password: e.target.value})}
                                         className="w-full pl-14 pr-6 py-4 bg-black/40 border border-zinc-800 focus:border-primary rounded-2xl text-sm outline-none text-white transition-all font-medium tracking-widest"
                                         placeholder="••••••••"
+                                        autoComplete="new-password"
                                     />
                                 </div>
                                 <p className="text-[9px] text-zinc-600 italic px-4 mt-2">Ce mot de passe sera communiqué au Maire/Référent.</p>
@@ -190,6 +192,7 @@ export default function AddMairiePage() {
                                         onChange={(e) => setFormData({...formData, phone: e.target.value})}
                                         className="w-full pl-14 pr-6 py-4 bg-black/40 border border-zinc-800 focus:border-primary rounded-2xl text-sm outline-none text-white transition-all font-medium"
                                         placeholder="+225 00 00 00 00"
+                                        autoComplete="tel"
                                     />
                                 </div>
                             </div>
