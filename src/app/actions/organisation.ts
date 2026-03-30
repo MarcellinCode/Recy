@@ -17,16 +17,23 @@ export async function addAgent(formData: any) {
         return { success: false, error: "Accès refusé" };
     }
 
+    const agentData: any = {
+        full_name: formData.fullName,
+        phone: formData.phone,
+        email: formData.email,
+        app_pin: formData.pin, // Clé de connexion pour la version Agent mobile
+        role: formData.role, // 'collector' or 'driver'
+        organization_id: user.id,
+        city: formData.zoneId ? `Zone ${formData.zoneId}` : 'À définir'
+    };
+
+    if (formData.role === 'driver' && formData.vehicleId) {
+        agentData.assigned_vehicle_id = formData.vehicleId;
+    }
+
     const { data, error } = await supabase
         .from('profiles')
-        .insert([{
-            full_name: formData.fullName,
-            phone: formData.phone,
-            email: formData.email,
-            role: formData.role, // 'collector' or 'driver'
-            organization_id: user.id,
-            city: formData.zoneId ? `Zone ${formData.zoneId}` : 'À définir'
-        }]);
+        .insert([agentData]);
 
     if (error) return { success: false, error: error.message };
     
