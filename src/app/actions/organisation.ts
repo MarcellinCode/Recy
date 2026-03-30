@@ -7,25 +7,25 @@ import { revalidatePath } from "next/cache";
  * ACTIONS POUR LES ORGANISATIONS (B2B)
  */
 
-export async function inviteAgent(email: string, fullName: string) {
+export async function addAgent(formData: any) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Non connecté" };
 
-    // Vérification de l'abonnement
     const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
     if (!profile || (profile.subscription_tier !== 'organisation' && profile.subscription_tier !== 'mairie')) {
-        return { success: false, error: "Accès refusé : Abonnement Organisation requis pour recruter des agents." };
+        return { success: false, error: "Accès refusé" };
     }
 
-    // Simulation d'invitation (en production, cela enverrait un email via Resend/Supabase Auth)
     const { data, error } = await supabase
         .from('profiles')
         .insert([{
-            full_name: fullName,
-            role: 'agent_collecteur',
+            full_name: formData.fullName,
+            phone: formData.phone,
+            email: formData.email,
+            role: formData.role, // 'collector' or 'driver'
             organization_id: user.id,
-            city: 'À définir'
+            city: formData.zoneId ? `Zone ${formData.zoneId}` : 'À définir'
         }]);
 
     if (error) return { success: false, error: error.message };

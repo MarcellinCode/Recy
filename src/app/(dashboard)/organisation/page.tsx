@@ -29,7 +29,8 @@ import { showToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/Modal";
 import { submitBid } from "@/app/actions/tenders";
 import { topUpWallet } from "@/app/actions/wallet";
-import { inviteAgent, getOrganizationContext } from "@/app/actions/organisation";
+import { AddAgentForm } from "@/components/organisation/AddAgentForm";
+import { getOrganizationContext } from "@/app/actions/organisation";
 
 export default function OrganizationDashboard() {
     const supabase = createClient();
@@ -44,11 +45,10 @@ export default function OrganizationDashboard() {
     
     const [isBidModalOpen, setIsBidModalOpen] = useState(false);
     const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
-    const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+    const [isAddAgentMenuOpen, setIsAddAgentMenuOpen] = useState(false); // NEW
     const [selectedTender, setSelectedTender] = useState<any>(null);
     const [bidAmount, setBidAmount] = useState(0);
     const [topUpAmount, setTopUpAmount] = useState(50000);
-    const [newAgent, setNewAgent] = useState({ name: "", email: "" });
     
     useEffect(() => {
         fetchData();
@@ -88,19 +88,6 @@ export default function OrganizationDashboard() {
             }
         }
         setLoading(false);
-    };
-
-    const handleInviteAgent = async (e: React.FormEvent) => {
-        e.preventDefault();
-        const res = await inviteAgent(newAgent.email, newAgent.name);
-        if (res.success) {
-            showToast("Invitation envoyée à l'agent", "success");
-            setIsInviteModalOpen(false);
-            setNewAgent({ name: "", email: "" });
-            fetchData();
-        } else {
-            showToast(res.error || "Erreur lors de l'invitation", "error");
-        }
     };
 
     const handleTopUp = async () => {
@@ -234,7 +221,7 @@ export default function OrganizationDashboard() {
                                 <div className="flex items-center justify-between">
                                     <h2 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white">Exploitation Terrain</h2>
                                     <button 
-                                        onClick={() => setIsInviteModalOpen(true)}
+                                        onClick={() => setIsAddAgentMenuOpen(true)}
                                         className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline"
                                     >
                                         + Recruter un agent
@@ -418,35 +405,13 @@ export default function OrganizationDashboard() {
                 </div>
             </Modal>
 
-            <Modal isOpen={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} title="Recruter un Agent Terrain">
-                <form onSubmit={handleInviteAgent} className="space-y-6">
-                    <p className="text-[11px] font-medium text-zinc-500 text-center px-4">L'agent recevra une invitation à rejoindre votre organisation Citicline.</p>
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Nom complet de l'agent</label>
-                            <input 
-                                required
-                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
-                                placeholder="EX: MODESTE KOUASSI"
-                                value={newAgent.name}
-                                onChange={(e) => setNewAgent({...newAgent, name: e.target.value})}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Adresse Email</label>
-                            <input 
-                                type="email"
-                                required
-                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black"
-                                placeholder="agent@citicline.com"
-                                value={newAgent.email}
-                                onChange={(e) => setNewAgent({...newAgent, email: e.target.value})}
-                            />
-                        </div>
-                    </div>
-                    <button type="submit" className="w-full py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl">Envoyer l'Invitation</button>
-                </form>
-            </Modal>
+            <AddAgentForm 
+                isOpen={isAddAgentMenuOpen}
+                onClose={() => setIsAddAgentMenuOpen(false)}
+                onSuccess={fetchData}
+                concessions={concessions}
+                vehicles={vehicles}
+            />
         </div>
     );
 }
