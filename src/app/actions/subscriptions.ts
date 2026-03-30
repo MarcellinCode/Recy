@@ -86,12 +86,20 @@ export async function subscribeToPlatform(tier: string) {
     return { success: true };
 }
 
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+
 export async function forceSimulateSubscription(tierString: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Non connecté" };
 
-    const { error } = await supabase
+    const adminAuthClient = createSupabaseClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+        { auth: { persistSession: false } }
+    );
+
+    const { error } = await adminAuthClient
         .from('profiles')
         .update({ subscription_tier: tierString })
         .eq('id', user.id);

@@ -100,7 +100,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
 
             const { data: trackingData } = await supabase
                 .from('agent_live_positions')
-                .select('*, profiles(full_name), vehicles(name, type)')
+                .select('*')
                 .order('timestamp', { ascending: false })
                 .limit(100);
 

@@ -54,7 +54,7 @@ export default function SubscriptionPage() {
                 .select('*, subscription_plans(*, concessions(*, profiles(*)))')
                 .eq('profile_id', user.id)
                 .eq('status', 'active')
-                .single();
+                .maybeSingle();
             
             setSubscription(sub);
 
