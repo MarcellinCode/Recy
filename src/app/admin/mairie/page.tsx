@@ -79,8 +79,8 @@ export default function MairieManagementPage() {
                 .select('*');
             
             const profileIds = [...new Set([
-                ...(concessionsData?.map(c => c.organization_id) || []),
-                ...(concessionsData?.map(c => c.profiles?.id) || [])
+                ...(concessionsData?.map((c: any) => c.organization_id) || []),
+                ...(concessionsData?.map((c: any) => c.profiles?.id) || [])
             ].filter(Boolean))];
 
             const { data: profilesData } = await supabase
@@ -89,11 +89,11 @@ export default function MairieManagementPage() {
                 .in('id', profileIds);
 
             // 3. Fusionner les données pour les zones
-            const enrichedZones = zonesData?.map(zone => ({
+            const enrichedZones = zonesData?.map((zone: any) => ({
                 ...zone,
-                concessions: concessionsData?.filter(c => c.zone_id === zone.id).map(c => ({
+                concessions: concessionsData?.filter((c: any) => c.zone_id === zone.id).map((c: any) => ({
                     ...c,
-                    profiles: profilesData?.find(p => p.id === c.organization_id)
+                    profiles: profilesData?.find((p: any) => p.id === c.organization_id)
                 }))
             })) || [];
 
@@ -109,19 +109,19 @@ export default function MairieManagementPage() {
                 .from('tender_bids')
                 .select('*');
 
-            const enrichedTenders = tendersData?.map(t => ({
+            const enrichedTenders = tendersData?.map((t: any) => ({
                 ...t,
-                tender_bids: bidsData?.filter(b => b.tender_id === t.id).map(b => ({
+                tender_bids: bidsData?.filter((b: any) => b.tender_id === t.id).map((b: any) => ({
                     ...b,
-                    profiles: profilesData?.find(p => p.id === b.organization_id)
+                    profiles: profilesData?.find((p: any) => p.id === b.organization_id)
                 }))
             })) || [];
 
             setZones(enrichedZones);
-            setPendingConcessions(concessionsData?.filter(c => c.status === 'pending').map(c => ({
+            setPendingConcessions(concessionsData?.filter((c: any) => c.status === 'pending').map((c: any) => ({
                 ...c,
-                profiles: profilesData?.find(p => p.id === c.organization_id),
-                zones: zonesData?.find(z => z.id === c.zone_id)
+                profiles: profilesData?.find((p: any) => p.id === c.organization_id),
+                zones: zonesData?.find((z: any) => z.id === c.zone_id)
             })) || []);
             setWastes(wastesData || []);
             setTenders(enrichedTenders);

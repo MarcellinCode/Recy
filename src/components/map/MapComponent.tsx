@@ -127,8 +127,8 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                 // 4. Fusionner les données
                 const enrichedAgents = Object.values(latestPositions).map((pos: any) => ({
                     ...pos,
-                    profiles: profilesRes.data?.find(p => p.id === pos.agent_id),
-                    vehicles: vehiclesRes.data?.find(v => v.id === pos.vehicle_id)
+                    profiles: profilesRes.data?.find((p: any) => p.id === pos.agent_id),
+                    vehicles: vehiclesRes.data?.find((v: any) => v.id === pos.vehicle_id)
                 }));
 
                 setAgents(enrichedAgents as AgentMarker[]);
