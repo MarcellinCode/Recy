@@ -91,6 +91,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
 
     useEffect(() => {
         const fetchData = async () => {
+            // 1. Récupérer les déchets et types
             const { data: wastesData } = await supabase
                 .from('wastes')
                 .select('*, waste_types(*)')
@@ -98,20 +99,39 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                 .not('latitude', 'is', null)
                 .not('longitude', 'is', null);
 
+            // 2. Récupérer les positions en temps réel
             const { data: trackingData } = await supabase
                 .from('agent_live_positions')
                 .select('*')
                 .order('timestamp', { ascending: false })
-                .limit(100);
+                .limit(200);
 
-            if (trackingData) {
-                const latest = trackingData.reduce((acc: any, curr: any) => {
+            if (trackingData && trackingData.length > 0) {
+                // Déduplication pour n'avoir que la dernière position par agent
+                const latestPositions = trackingData.reduce((acc: any, curr: any) => {
                     if (!acc[curr.agent_id]) {
                         acc[curr.agent_id] = curr;
                     }
                     return acc;
                 }, {});
-                setAgents(Object.values(latest));
+
+                const agentIds = Object.keys(latestPositions);
+                const vehicleIds = Object.values(latestPositions).map((p: any) => p.vehicle_id).filter(Boolean);
+
+                // 3. Récupérer les profils et véhicules en parallèle (deuxième étape)
+                const [profilesRes, vehiclesRes] = await Promise.all([
+                    supabase.from('profiles').select('id, full_name').in('id', agentIds),
+                    supabase.from('vehicles').select('id, name, type').in('id', vehicleIds)
+                ]);
+
+                // 4. Fusionner les données
+                const enrichedAgents = Object.values(latestPositions).map((pos: any) => ({
+                    ...pos,
+                    profiles: profilesRes.data?.find(p => p.id === pos.agent_id),
+                    vehicles: vehiclesRes.data?.find(v => v.id === pos.vehicle_id)
+                }));
+
+                setAgents(enrichedAgents as AgentMarker[]);
             }
 
             setWastes(wastesData || []);

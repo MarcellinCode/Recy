@@ -31,7 +31,7 @@ export async function topUpWallet(amount: number) {
 
   // 3. Enregistrer la transaction
   await supabase.from('transactions').insert({
-    profile_id: user.id,
+    user_id: user.id,
     amount: amount,
     type: 'income',
     description: `Recharge simulation (+${amount} CFA)`

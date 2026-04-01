@@ -71,7 +71,7 @@ export async function subscribeToPlatform(tier: string) {
 
     // 4. Enregistrer la transaction
     await supabase.from('transactions').insert([{
-        profile_id: user.id,
+        user_id: user.id,
         amount: -amount,
         type: 'outcome',
         description: `Souscription Plan : ${tier.toUpperCase()}`

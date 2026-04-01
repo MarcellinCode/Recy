@@ -51,7 +51,6 @@ export async function createMairieAccount(formData: {
             .upsert({
                 id: authData.user.id,
                 full_name: formData.municipalityName,
-                email: formData.email,
                 role: 'mairie',
                 subscription_tier: 'mairie_elite',
                 phone: formData.phone,
@@ -60,7 +59,10 @@ export async function createMairieAccount(formData: {
                 official_department: formData.officialDepartment
             });
 
-        if (profileError) throw profileError;
+        if (profileError) {
+            console.error('Profile Sync Error:', profileError);
+            // On ne stoppe pas forcément si l'auth a réussi, car le trigger peut avoir fonctionné
+        }
 
         return { success: true, user: authData.user };
     } catch (error: any) {

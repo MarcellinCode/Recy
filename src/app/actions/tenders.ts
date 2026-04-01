@@ -56,7 +56,7 @@ export async function submitBid(data: {
   }
 
   const { error } = await supabase.from('tender_bids').insert({
-    organisation_id: user.id,
+    organization_id: user.id,
     ...data,
     status: 'pending'
   });
@@ -71,7 +71,7 @@ export async function submitBid(data: {
 /**
  * Attribuer un marché (Mairie)
  */
-export async function awardTender(tenderId: string, bidId: string, organisationId: string, zoneId: string) {
+export async function awardTender(tenderId: string, bidId: string, organizationId: string, zoneId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Non authentifié" };
@@ -93,7 +93,7 @@ export async function awardTender(tenderId: string, bidId: string, organisationI
  
   // 4. Créer la concession officielle
   await supabase.from('concessions').insert({
-    organisation_id: organisationId,
+    organization_id: organizationId,
     zone_id: zoneId,
     status: 'active'
   });

@@ -70,29 +70,63 @@ export default function MairieManagementPage() {
                 setProfile(profileData);
             }
 
-            const { data: zonesData } = await supabase
-                .from('zones')
-                .select('*, concessions(status, profiles(full_name))');
+            // 1. Récupérer les Zones
+            const { data: zonesData } = await supabase.from('zones').select('*');
             
+            // 2. Récupérer les Concessions associées (et profils)
             const { data: concessionsData } = await supabase
                 .from('concessions')
-                .select('*, profiles(full_name, role), zones(name)')
-                .eq('status', 'pending');
+                .select('*');
             
+            const profileIds = [...new Set([
+                ...(concessionsData?.map(c => c.organization_id) || []),
+                ...(concessionsData?.map(c => c.profiles?.id) || [])
+            ].filter(Boolean))];
+
+            const { data: profilesData } = await supabase
+                .from('profiles')
+                .select('id, full_name, role')
+                .in('id', profileIds);
+
+            // 3. Fusionner les données pour les zones
+            const enrichedZones = zonesData?.map(zone => ({
+                ...zone,
+                concessions: concessionsData?.filter(c => c.zone_id === zone.id).map(c => ({
+                    ...c,
+                    profiles: profilesData?.find(p => p.id === c.organization_id)
+                }))
+            })) || [];
+
             const { data: wastesData } = await supabase
                 .from('wastes')
                 .select('id, status, created_at, estimated_weight');
 
             const { data: tendersData } = await supabase
                 .from('tenders')
-                .select('*, tender_bids(*, profiles(full_name))');
+                .select('*');
             
-            setZones(zonesData || []);
-            setPendingConcessions(concessionsData || []);
+            const { data: bidsData } = await supabase
+                .from('tender_bids')
+                .select('*');
+
+            const enrichedTenders = tendersData?.map(t => ({
+                ...t,
+                tender_bids: bidsData?.filter(b => b.tender_id === t.id).map(b => ({
+                    ...b,
+                    profiles: profilesData?.find(p => p.id === b.organization_id)
+                }))
+            })) || [];
+
+            setZones(enrichedZones);
+            setPendingConcessions(concessionsData?.filter(c => c.status === 'pending').map(c => ({
+                ...c,
+                profiles: profilesData?.find(p => p.id === c.organization_id),
+                zones: zonesData?.find(z => z.id === c.zone_id)
+            })) || []);
             setWastes(wastesData || []);
-            setTenders(tendersData || []);
-        } catch (err) {
-            console.error(err);
+            setTenders(enrichedTenders);
+        } catch (err: any) {
+            console.error("fetchMairieData error:", err?.message);
         }
         setLoading(false);
     }
@@ -109,8 +143,8 @@ export default function MairieManagementPage() {
         }
     };
 
-    const handleAwardTender = async (tenderId: string, bidId: string, orgId: string, zoneId: string) => {
-        const res = await awardTender(tenderId, bidId, orgId, zoneId);
+    const handleAwardTender = async (tenderId: string, bidId: string, organizationId: string, zoneId: string) => {
+        const res = await awardTender(tenderId, bidId, organizationId, zoneId);
         if (res.success) {
             showToast("Marché attribué avec succès", "success");
             fetchMairieData();
