@@ -71,7 +71,7 @@ export default function AddMairiePage() {
                     <div className="space-y-4">
                         <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
                             <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Lien de Connexion Official</p>
-                            <p className="text-sm font-bold text-primary break-all">https://recy-app.vercel.app/login</p>
+                            <p className="text-sm font-bold text-primary break-all">https://citicline.com/login</p>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -89,7 +89,7 @@ export default function AddMairiePage() {
                     <div className="flex gap-4">
                          <button 
                             onClick={() => {
-                                navigator.clipboard.writeText(`Lien: https://recy-app.vercel.app/login\nEmail: ${formData.email}\nPass: ${formData.password}`);
+                                navigator.clipboard.writeText(`Lien: https://citicline.com/login\nEmail: ${formData.email}\nPass: ${formData.password}`);
                                 showToast("Copié dans le presse-papier !");
                             }}
                             className="flex-1 py-4 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all"
