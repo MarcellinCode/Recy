@@ -64,9 +64,9 @@ export async function createMairieAccount(formData: {
             // On ne stoppe pas forcément si l'auth a réussi, car le trigger peut avoir fonctionné
         }
 
-        return { success: true, user: authData.user };
+        return { success: true };
     } catch (error: any) {
         console.error('Error creating Mairie:', error);
-        return { success: false, error: error.message };
+        return { success: false, error: error?.message || "Erreur lors de l'enregistrement." };
     }
 }
