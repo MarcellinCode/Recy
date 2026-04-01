@@ -13,7 +13,8 @@ import {
     Plus,
     School,
     Ban,
-    Trash2
+    Trash2,
+    ExternalLink
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -137,7 +138,17 @@ export default function OrganizationsPage() {
                     </h1>
                     <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Contrôle et validation des partenaires institutionnels</p>
                 </div>
-                <div className="flex flex-wrap gap-4">
+                <div className="flex flex-wrap gap-4 items-center">
+                    <a 
+                        href="https://citicline.com/login"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-900 dark:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-primary hover:text-primary transition-all shadow-sm"
+                        title="Se connecter en tant que partenaire"
+                    >
+                        <ExternalLink size={16} />
+                        Portail Partenaire
+                    </a>
                     <Link 
                         href="/admin/add-mairie"
                         className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-xl shadow-emerald-600/10"

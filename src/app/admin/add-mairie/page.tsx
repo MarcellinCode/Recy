@@ -42,9 +42,6 @@ export default function AddMairiePage() {
             if (res.success) {
                 setSuccess(true);
                 showToast("Mairie créée avec succès !");
-                setTimeout(() => {
-                    router.push("/admin/organizations");
-                }, 2000);
             } else {
                 showToast(res.error || "Erreur lors de la création", "error");
             }
