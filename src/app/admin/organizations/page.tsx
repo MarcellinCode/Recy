@@ -280,7 +280,7 @@ export default function OrganizationsPage() {
                                                     <Ban size={18} />
                                                 </button>
                                             )}
-                                             <button 
+                                            <button 
                                                 onClick={(e) => {
                                                     e.stopPropagation();
                                                     deleteOrg(org.id);
@@ -290,6 +290,18 @@ export default function OrganizationsPage() {
                                             >
                                                 <Trash2 size={18} />
                                             </button>
+                                            {org.role === 'mairie' && (
+                                                <a 
+                                                    href="https://citicline.com/mairie/connexion"
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                                    title="Accéder au portail Mairie"
+                                                >
+                                                    <ExternalLink size={18} />
+                                                </a>
+                                            )}
                                             <button 
                                                 onClick={(e) => {
                                                     e.stopPropagation();
