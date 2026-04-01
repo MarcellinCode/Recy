@@ -57,15 +57,53 @@ export default function AddMairiePage() {
 
     if (success) {
         return (
-            <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-6">
+            <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-8 max-w-2xl mx-auto">
                 <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 rounded-full flex items-center justify-center animate-bounce">
                     <CheckCircle2 size={40} />
                 </div>
+                
                 <div className="text-center">
-                    <h2 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Provisionnement Réussi</h2>
-                    <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-2">La mairie a été ajoutée à l'écosystème City O.S.</p>
+                    <h2 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Institution Inititée</h2>
+                    <p className="text-sm text-gray-500 font-bold uppercase tracking-widest mt-2">La mairie de {formData.municipalityName} est prête.</p>
                 </div>
-                <Loader2 className="w-6 h-6 animate-spin text-primary mt-4" />
+
+                <div className="w-full bg-zinc-900 p-8 rounded-[2.5rem] border border-zinc-800 shadow-2xl space-y-6">
+                    <div className="space-y-4">
+                        <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Lien de Connexion Official</p>
+                            <p className="text-sm font-bold text-primary break-all">https://recy-app.vercel.app/login</p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Identifiant (Email)</p>
+                                <p className="text-sm font-bold text-white uppercase truncate">{formData.email}</p>
+                            </div>
+                            <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
+                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Mot de Passe</p>
+                                <p className="text-sm font-bold text-white tracking-widest">{formData.password}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex gap-4">
+                         <button 
+                            onClick={() => {
+                                navigator.clipboard.writeText(`Lien: https://recy-app.vercel.app/login\nEmail: ${formData.email}\nPass: ${formData.password}`);
+                                showToast("Copié dans le presse-papier !");
+                            }}
+                            className="flex-1 py-4 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all"
+                        >
+                            Copier la Fiche
+                        </button>
+                        <Link 
+                            href="/admin/organizations"
+                            className="flex-1 py-4 bg-zinc-800 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest text-center hover:bg-zinc-700 transition-all"
+                        >
+                            Tableau de Bord
+                        </Link>
+                    </div>
+                </div>
             </div>
         );
     }
