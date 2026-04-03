@@ -12,9 +12,11 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
     const router = useRouter();
     const supabase = createClient();
     const isSuperAdmin = pathname?.startsWith("/admin");
+    const isPublicMairie = pathname?.startsWith("/mairie/");
+    const shouldHideNav = isSuperAdmin || isPublicMairie;
 
     useEffect(() => {
-        if (isSuperAdmin) return;
+        if (shouldHideNav) return;
 
         let channel: any;
 
@@ -59,17 +61,17 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
         return () => {
             if (channel) supabase.removeChannel(channel);
         };
-    }, [pathname, isSuperAdmin]);
+    }, [pathname, shouldHideNav]);
 
     return (
         <>
-            {!isSuperAdmin && <Header />}
+            {!shouldHideNav && <Header />}
             
-            <main className={isSuperAdmin ? "" : "min-h-screen bg-gray-50/50 dark:bg-zinc-950/50"}>
+            <main className={shouldHideNav ? "" : "min-h-screen bg-gray-50/50 dark:bg-zinc-950/50"}>
                 {children}
             </main>
 
-            {!isSuperAdmin && <BottomNavigation />}
+            {!shouldHideNav && <BottomNavigation />}
         </>
     );
 }

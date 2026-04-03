@@ -75,10 +75,10 @@ export default async function MairieLandingPage({ params }: PageProps) {
 
                     <div className="flex flex-col sm:flex-row gap-6">
                         <Link
-                            href={`/inscription?role=citoyen&mairie=${mairie.id}`}
+                            href={`/mairie/${mairie.id}/connexion`}
                             className="flex items-center justify-center px-12 py-6 text-xs font-black text-white transition-all shadow-2xl rounded-[2rem] bg-primary hover:bg-primary/90 hover:scale-105 active:scale-95 shadow-primary/20 uppercase tracking-[0.2em]"
                         >
-                            Devenir Citoyen Actif
+                            Accéder au Dashboard de la Mairie
                             <ArrowRight className="w-5 h-5 ml-3" />
                         </Link>
                     </div>
@@ -156,10 +156,10 @@ export default async function MairieLandingPage({ params }: PageProps) {
                         Transformons ensemble nos quartiers en modèles de salubrité urbaine.
                     </p>
                     <Link
-                        href={`/inscription?role=citoyen&mairie=${mairie.id}`}
+                        href={`/mairie/${mairie.id}/connexion`}
                         className="inline-flex items-center justify-center px-12 py-6 text-xs font-black text-zinc-900 transition-all shadow-2xl rounded-[2rem] bg-white hover:bg-gray-100 hover:scale-105 active:scale-95 uppercase tracking-[0.2em]"
                     >
-                        S'inscrire maintenant
+                        Connexion Administration
                     </Link>
                 </div>
             </section>
