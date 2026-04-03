@@ -25,6 +25,7 @@ interface WasteMarker {
     };
     estimated_weight: number;
     location: string;
+    created_at?: string;
 }
 
 interface AgentMarker {
@@ -183,7 +184,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
 
         const res = await dispatchEmergencyAgent(wasteId, closestAgent.agent_id);
         if (res.success) {
-            showToast(\`Mission assignée de force à \${closestAgent.profiles?.full_name || 'Agent'} (\${minDistance.toFixed(1)}km)\`, "success");
+            showToast(`Mission assignée de force à ${closestAgent.profiles?.full_name || 'Agent'} (${minDistance.toFixed(1)}km)`, "success");
             // Optional: refetch or let real-time handle it
         } else {
             showToast("Échec: " + res.error, "error");
@@ -219,7 +220,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                 >
                     {wastes.map((waste) => {
                         const isSlaBreached = waste.created_at && (new Date().getTime() - new Date(waste.created_at).getTime() > 48 * 3600 * 1000);
-                        const isHotspot = isMairie && isSlaBreached && waste.status !== 'reserved';
+                        const isHotspot = !!(isMairie && isSlaBreached && waste.status !== 'reserved');
 
                         return (
                         <Marker
@@ -229,7 +230,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                         >
                             <Popup className="premium-popup">
                                 <div className="p-1 min-w-[220px] bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
-                                    <div className=\`flex items-center gap-3 mb-4 p-2 rounded-xl \${isHotspot ? 'bg-red-50 dark:bg-red-900/20' : 'bg-gray-50 dark:bg-zinc-800'}\`>
+                                    <div className={`flex items-center gap-3 mb-4 p-2 rounded-xl ${isHotspot ? 'bg-red-50 dark:bg-red-900/20' : 'bg-gray-50 dark:bg-zinc-800'}`}>
                                         <div className="text-3xl bg-white dark:bg-zinc-900 p-2 rounded-lg shadow-sm">
                                             {waste.waste_types.emoji}
                                         </div>
@@ -237,7 +238,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                                             <h3 className="font-black text-gray-900 dark:text-white uppercase text-xs tracking-tight italic">
                                                 {waste.waste_types.name}
                                             </h3>
-                                            <p className=\`text-[9px] font-bold uppercase tracking-widest \${isHotspot ? 'text-red-600' : 'text-primary'}\`>
+                                            <p className={`text-[9px] font-bold uppercase tracking-widest ${isHotspot ? 'text-red-600' : 'text-primary'}`}>
                                                 {isHotspot ? 'POINT NOIR (SLA >48h)' : (waste.status === 'reserved' ? 'Réservé' : 'Disponible')}
                                             </p>
                                         </div>
@@ -258,7 +259,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                                         <button
                                             onClick={() => handleEmergencyDispatch(waste.id, waste.latitude, waste.longitude)}
                                             disabled={waste.status === 'reserved'}
-                                            className=\`block w-full py-3 text-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg \${waste.status === 'reserved' ? 'bg-gray-100 text-gray-400 dark:bg-zinc-800 dark:text-zinc-600 cursor-not-allowed' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-500 hover:text-white hover:shadow-red-500/20'}\`
+                                            className={`block w-full py-3 text-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg ${waste.status === 'reserved' ? 'bg-gray-100 text-gray-400 dark:bg-zinc-800 dark:text-zinc-600 cursor-not-allowed' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-500 hover:text-white hover:shadow-red-500/20'}`}
                                         >
                                             <span className="flex justify-center items-center gap-2">
                                                 <Navigation size={12} />
@@ -267,7 +268,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                                         </button>
                                     ) : (
                                         <Link
-                                            href={\`/marketplace/\${waste.id}\`}
+                                            href={`/marketplace/${waste.id}`}
                                             className="block w-full py-3 bg-zinc-900 text-white dark:bg-zinc-800 text-center rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg hover:shadow-primary/20"
                                         >
                                             Détails & Réserver

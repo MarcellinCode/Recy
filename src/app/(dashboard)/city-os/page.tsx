@@ -293,36 +293,79 @@ function MairieDashboardContent() {
                             <MapComponent isMairie={true} />
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 text-zinc-900 dark:text-white">
-                            <div className="lg:col-span-2 space-y-6">
-                                <h2 className="text-xl font-black uppercase italic tracking-tighter flex items-center gap-2">Zones du Territoire</h2>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {zones.map((zone) => (
-                                        <div key={zone.id} className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-gray-100 dark:border-zinc-800 group hover:border-primary/50 transition-all">
-                                            <h3 className="font-black italic uppercase text-lg">{zone.name}</h3>
-                                            <p className="text-[10px] text-zinc-400 uppercase font-bold mb-4">{zone.city}</p>
-                                            <div className="flex justify-between items-center text-[10px] font-black">
-                                                <span className="text-zinc-400">PARTENAIRE :</span>
-                                                <span className="text-primary italic">{zone.concessions?.[0]?.profiles?.full_name || "MUNICIPAL"}</span>
-                                            </div>
-                                        </div>
-                                    ))}
+                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 text-zinc-900 dark:text-white">
+                            <div className="xl:col-span-2 space-y-6">
+                                <div className="flex items-center justify-between">
+                                    <h2 className="text-xl font-black uppercase italic tracking-tighter flex items-center gap-2">Performances SLA (Prestataires)</h2>
+                                    <span className="text-[10px] bg-red-50 text-red-600 dark:bg-red-900/20 px-3 py-1 rounded-full font-black uppercase tracking-widest">{slaBreaches} Infractions Actives</span>
+                                </div>
+                                <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm overflow-hidden">
+                                    <table className="w-full text-left border-collapse">
+                                        <thead>
+                                            <tr className="border-b border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-800/50">
+                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400">Entreprise Partenaire</th>
+                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400">Zone(s) Assignée(s)</th>
+                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center">Retards &gt;48H</th>
+                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400 text-right">Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {zones.filter(z => z.status === 'occupied').map((zone, idx) => {
+                                                const partnerName = zone.concessions?.[0]?.profiles?.full_name || "MUNICIPAL";
+                                                // Mock distribution of SLA breaches for demo (1 for the first partner, 0 for others, etc)
+                                                const infractions = idx === 0 ? slaBreaches : 0;
+                                                const statusColor = infractions > 0 ? "text-red-500" : "text-emerald-500";
+                                                
+                                                return (
+                                                <tr key={zone.id} className="border-b border-gray-100 dark:border-zinc-800 last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                                    <td className="p-6 font-black italic uppercase text-sm">{partnerName}</td>
+                                                    <td className="p-6 text-[10px] font-bold uppercase text-zinc-500">{zone.name}</td>
+                                                    <td className="p-6 text-center">
+                                                        <span className={cn("text-xl font-black italic tracking-tighter", statusColor)}>{infractions}</span>
+                                                    </td>
+                                                    <td className="p-6 text-right">
+                                                        {infractions > 0 ? (
+                                                            <button 
+                                                                onClick={() => showToast(`Pénalité de retard notifiée à ${partnerName}`, "success")}
+                                                                className="px-4 py-2 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
+                                                            >
+                                                                Sanctionner
+                                                            </button>
+                                                        ) : (
+                                                            <span className="text-[10px] text-emerald-500 font-black uppercase tracking-widest"><CheckCircle2 size={16} className="inline mr-1" /> Conforme</span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            )})}
+                                            {zones.filter(z => z.status === 'occupied').length === 0 && (
+                                                <tr>
+                                                    <td colSpan={4} className="p-10 text-center text-[10px] font-black uppercase tracking-widest text-zinc-400">Aucun partenaire actif sur le territoire</td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
                             <div className="space-y-6">
-                                <h2 className="text-xl font-black uppercase italic tracking-tighter flex items-center gap-2">Approvals</h2>
+                                <h2 className="text-xl font-black uppercase italic tracking-tighter flex items-center gap-2">Dossiers d'Agrément</h2>
                                 <div className="space-y-4">
                                     {pendingConcessions.map((con) => (
-                                        <div key={con.id} className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-gray-100 dark:border-zinc-800">
-                                            <p className="text-[10px] font-black text-gray-500 uppercase mb-2">{con.profiles?.full_name}</p>
-                                            <p className="text-[9px] font-bold text-zinc-400 uppercase mb-4">ZONE: {con.zones?.name}</p>
+                                        <div key={con.id} className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 p-3 bg-amber-500 text-white rounded-bl-2xl text-[8px] font-black uppercase tracking-widest">En Attente</div>
+                                            <p className="text-[12px] font-black text-gray-900 dark:text-white uppercase mb-1">{con.profiles?.full_name}</p>
+                                            <p className="text-[9px] font-bold text-zinc-400 uppercase mb-6 flex items-center gap-1"><MapPin size={10} /> ZONE: {con.zones?.name}</p>
                                             <div className="flex gap-2">
-                                                <button onClick={() => handleConcessionAction(con.id, 'active')} className="flex-1 py-3 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase">Accepter</button>
-                                                <button onClick={() => handleConcessionAction(con.id, 'rejected')} className="flex-1 py-3 bg-red-50 text-red-500 rounded-xl text-[9px] font-black uppercase">Refuser</button>
+                                                <button onClick={() => handleConcessionAction(con.id, 'active')} className="flex-1 py-3 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20">Agréer</button>
+                                                <button onClick={() => handleConcessionAction(con.id, 'rejected')} className="flex-1 py-3 bg-red-50 text-red-500 dark:bg-zinc-800 text-red-400 rounded-xl text-[9px] font-black uppercase hover:bg-red-500 hover:text-white transition-colors">Rejeter</button>
                                             </div>
                                         </div>
                                     ))}
-                                    {pendingConcessions.length === 0 && <p className="text-[10px] text-zinc-400 uppercase font-black text-center py-10">Aucun dossier en attente</p>}
+                                    {pendingConcessions.length === 0 && (
+                                        <div className="bg-gray-50 dark:bg-zinc-900/50 p-8 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 text-center">
+                                            <CheckCircle2 size={24} className="text-emerald-500 mx-auto mb-2 opacity-50" />
+                                            <p className="text-[10px] text-zinc-400 uppercase font-black">Aucun dossier en attente</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
