@@ -197,7 +197,7 @@ function MairieDashboardContent() {
     const slaBreaches = wastes.filter(w => w.status === 'published' && (now - new Date(w.created_at).getTime() > 48 * 3600 * 1000)).length;
 
     return (
-        <div className="space-y-12 pb-20">
+        <div className="space-y-12 pb-20 px-6 md:px-12 lg:px-24 max-w-[1600px] mx-auto pt-6">
             {/* Header */}
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
