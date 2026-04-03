@@ -22,7 +22,7 @@ import {
     Truck,
     Lock
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase";
@@ -37,7 +37,7 @@ const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
     loading: () => <div className="w-full h-[60vh] bg-gray-50 dark:bg-zinc-900 rounded-[3rem] animate-pulse border border-gray-100 flex items-center justify-center"><p className="text-[10px] font-black uppercase tracking-widest text-gray-300">Chargement de la carte...</p></div>
 });
 
-export default function MairieManagementPage() {
+function MairieDashboardContent() {
     const searchParams = useSearchParams();
     const targetMairieId = searchParams.get('id');
     
@@ -61,6 +61,7 @@ export default function MairieManagementPage() {
     useEffect(() => {
         fetchMairieData();
     }, [targetMairieId]);
+
 
     async function fetchMairieData() {
         setLoading(true);
@@ -555,5 +556,18 @@ export default function MairieManagementPage() {
                  </form>
             </Modal>
         </div>
+    );
+}
+
+export default function MairieManagementPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex flex-col items-center justify-center min-h-[50vh] space-y-4">
+                <Activity className="w-12 h-12 text-primary animate-pulse" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Initialisation du City OS...</p>
+            </div>
+        }>
+            <MairieDashboardContent />
+        </Suspense>
     );
 }
