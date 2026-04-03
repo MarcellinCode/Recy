@@ -59,6 +59,7 @@ export async function middleware(request: NextRequest) {
         '/bourse',
         '/organisation',
         '/admin',
+        '/city-os',
     ]
     const isDashboardRoute = protectedPaths.some(p => pathname.startsWith(p))
 
