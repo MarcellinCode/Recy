@@ -9,6 +9,8 @@ import Link from "next/link";
 import { Truck, MapPin, Package, Navigation, Loader2 } from "lucide-react";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { cn } from "@/lib/utils";
+import { dispatchEmergencyAgent } from "@/app/actions/mairie";
+import { showToast } from "@/components/ui/toast";
 
 // Custom interface for Waste markers
 interface WasteMarker {
@@ -35,14 +37,19 @@ interface AgentMarker {
 }
 
 // Custom Icon Creator
-const createCustomIcon = (emoji: string, color: string = "#22c55e") => {
+const createCustomIcon = (emoji: string, color: string = "#22c55e", isHotspot: boolean = false) => {
+    const mainColor = isHotspot ? 'red-600' : (color === '#22c55e' ? 'primary' : 'amber-500');
+    const ringClass = isHotspot ? 'bg-red-600 opacity-60 animate-ping border-4 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.8)]' : `bg-${mainColor} opacity-20 animate-ping`;
+    const iconBaseClass = isHotspot ? 'bg-red-50 dark:bg-black border-red-600 shadow-[0_0_20px_rgba(220,38,38,1)] text-2xl' : `bg-white dark:bg-zinc-900 border-${mainColor} shadow-xl text-xl`;
+
     return L.divIcon({
         html: `
             <div class="relative flex items-center justify-center">
-                <div class="absolute w-10 h-10 bg-${color === '#22c55e' ? 'primary' : 'amber-500'} rounded-full opacity-20 animate-ping"></div>
-                <div class="relative w-10 h-10 bg-white dark:bg-zinc-900 rounded-full border-4 border-${color === '#22c55e' ? 'primary' : 'amber-500'} shadow-xl flex items-center justify-center text-xl hover:scale-110 transition-transform">
+                <div class="absolute w-12 h-12 rounded-full ${ringClass}"></div>
+                <div class="relative w-10 h-10 rounded-full border-4 flex items-center justify-center hover:scale-110 transition-transform ${iconBaseClass}">
                     ${emoji}
                 </div>
+                ${isHotspot ? '<div class="absolute -top-2 -right-2 text-xs bg-red-600 text-white font-black px-1 rounded-full shadow-lg border border-white z-50">!</div>' : ''}
             </div>
         `,
         className: 'custom-div-icon',
@@ -95,7 +102,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
             const { data: wastesData } = await supabase
                 .from('wastes')
                 .select('*, waste_types(*)')
-                .eq('status', 'published')
+                .in('status', ['published', 'reserved'])
                 .not('latitude', 'is', null)
                 .not('longitude', 'is', null);
 
@@ -147,6 +154,42 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
         return () => { supabase.removeChannel(channel); };
     }, []);
 
+    const getDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    };
+
+    const handleEmergencyDispatch = async (wasteId: string, lat: number, lon: number) => {
+        if (agents.length === 0) {
+            showToast("Aucun agent actif détecté sur le radar.", "error");
+            return;
+        }
+
+        let closestAgent = agents[0];
+        let minDistance = getDistanceKm(lat, lon, closestAgent.latitude, closestAgent.longitude);
+        
+        for (const agent of agents) {
+            const d = getDistanceKm(lat, lon, agent.latitude, agent.longitude);
+            if (d < minDistance) {
+                minDistance = d;
+                closestAgent = agent;
+            }
+        }
+
+        const res = await dispatchEmergencyAgent(wasteId, closestAgent.agent_id);
+        if (res.success) {
+            showToast(\`Mission assignée de force à \${closestAgent.profiles?.full_name || 'Agent'} (\${minDistance.toFixed(1)}km)\`, "success");
+            // Optional: refetch or let real-time handle it
+        } else {
+            showToast("Échec: " + res.error, "error");
+        }
+    };
+
     if (loading) return (
         <div className="w-full h-[70vh] flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-900 rounded-[3rem] border border-gray-100 dark:border-zinc-800">
             <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
@@ -173,17 +216,20 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                 <MarkerClusterGroup
                     chunkedLoading
                     maxClusterRadius={50}
-                    // Custom cluster icon could be added here if needed
                 >
-                    {wastes.map((waste) => (
+                    {wastes.map((waste) => {
+                        const isSlaBreached = waste.created_at && (new Date().getTime() - new Date(waste.created_at).getTime() > 48 * 3600 * 1000);
+                        const isHotspot = isMairie && isSlaBreached && waste.status !== 'reserved';
+
+                        return (
                         <Marker
                             key={waste.id}
                             position={[waste.latitude, waste.longitude]}
-                            icon={createCustomIcon(waste.waste_types.emoji, waste.status === 'published' ? '#22c55e' : '#f59e0b')}
+                            icon={createCustomIcon(waste.waste_types.emoji, waste.status === 'published' ? '#22c55e' : '#f59e0b', isHotspot)}
                         >
                             <Popup className="premium-popup">
                                 <div className="p-1 min-w-[220px] bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
-                                    <div className="flex items-center gap-3 mb-4 p-2 bg-gray-50 dark:bg-zinc-800 rounded-xl">
+                                    <div className=\`flex items-center gap-3 mb-4 p-2 rounded-xl \${isHotspot ? 'bg-red-50 dark:bg-red-900/20' : 'bg-gray-50 dark:bg-zinc-800'}\`>
                                         <div className="text-3xl bg-white dark:bg-zinc-900 p-2 rounded-lg shadow-sm">
                                             {waste.waste_types.emoji}
                                         </div>
@@ -191,7 +237,9 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                                             <h3 className="font-black text-gray-900 dark:text-white uppercase text-xs tracking-tight italic">
                                                 {waste.waste_types.name}
                                             </h3>
-                                            <p className="text-[9px] font-bold text-primary uppercase tracking-widest">Disponible</p>
+                                            <p className=\`text-[9px] font-bold uppercase tracking-widest \${isHotspot ? 'text-red-600' : 'text-primary'}\`>
+                                                {isHotspot ? 'POINT NOIR (SLA >48h)' : (waste.status === 'reserved' ? 'Réservé' : 'Disponible')}
+                                            </p>
                                         </div>
                                     </div>
 
@@ -208,17 +256,18 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
 
                                     {isMairie ? (
                                         <button
-                                            onClick={() => alert(`Mission de dispatch d'urgence envoyée à l'agent le plus proche pour le dépôt de ${waste.estimated_weight}kg !`)}
-                                            className="block w-full py-3 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 text-center rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all shadow-lg hover:shadow-red-500/20"
+                                            onClick={() => handleEmergencyDispatch(waste.id, waste.latitude, waste.longitude)}
+                                            disabled={waste.status === 'reserved'}
+                                            className=\`block w-full py-3 text-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg \${waste.status === 'reserved' ? 'bg-gray-100 text-gray-400 dark:bg-zinc-800 dark:text-zinc-600 cursor-not-allowed' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-500 hover:text-white hover:shadow-red-500/20'}\`
                                         >
                                             <span className="flex justify-center items-center gap-2">
                                                 <Navigation size={12} />
-                                                Dispatcher un Agent
+                                                {waste.status === 'reserved' ? 'Action déjà en cours' : 'Dispatcher un Agent'}
                                             </span>
                                         </button>
                                     ) : (
                                         <Link
-                                            href={`/marketplace/${waste.id}`}
+                                            href={\`/marketplace/\${waste.id}\`}
                                             className="block w-full py-3 bg-zinc-900 text-white dark:bg-zinc-800 text-center rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all shadow-lg hover:shadow-primary/20"
                                         >
                                             Détails & Réserver
@@ -227,7 +276,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                                 </div>
                             </Popup>
                         </Marker>
-                    ))}
+                    )})}
                     
                     {agents.map((agent) => (
                         <Marker
