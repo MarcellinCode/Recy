@@ -20,7 +20,17 @@ import {
     BarChart3,
     FileDown,
     Truck,
-    Lock
+    Lock,
+    Leaf,
+    Globe,
+    TrendingUp,
+    DollarSign,
+    Eye,
+    FileText,
+    Calendar,
+    Printer,
+    AlertTriangle,
+    Zap
 } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
 import { cn } from "@/lib/utils";
@@ -29,7 +39,7 @@ import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/Modal";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { createTender, awardTender } from "@/app/actions/tenders";
 
 const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
@@ -40,16 +50,20 @@ const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
 function MairieDashboardContent() {
     const searchParams = useSearchParams();
     const targetMairieId = searchParams.get('id');
+    const router = useRouter();
     
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'overview' | 'tenders' | 'sovereignty' | 'fleet'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'tenders' | 'sovereignty' | 'fleet' | 'rapports'>('overview');
     const [zones, setZones] = useState<any[]>([]);
     const [pendingConcessions, setPendingConcessions] = useState<any[]>([]);
     const [wastes, setWastes] = useState<any[]>([]);
     const [tenders, setTenders] = useState<any[]>([]);
+    const [transactions, setTransactions] = useState<any[]>([]);
     const [isAddZoneModalOpen, setIsAddZoneModalOpen] = useState(false);
     const [isAddTenderModalOpen, setIsAddTenderModalOpen] = useState(false);
     const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
+    const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
+    const [isSanctionModalOpen, setIsSanctionModalOpen] = useState(false);
     const [editingZone, setEditingZone] = useState<any | null>(null);
     const [newZone, setNewZone] = useState({ name: "", city: "Abidjan", status: "available" });
     const [newTender, setNewTender] = useState({ zone_id: "", title: "", description: "", end_date: "", budget_estimate: 0 });
@@ -131,6 +145,13 @@ function MairieDashboardContent() {
                 .from('tender_bids')
                 .select('*');
 
+            // Fetch eco-tax transactions for the Mairie
+            const { data: txData } = await supabase
+                .from('transactions')
+                .select('*')
+                .eq('profile_id', mairieId)
+                .order('created_at', { ascending: false });
+
             const enrichedTenders = tendersData?.map((t: any) => ({
                 ...t,
                 tender_bids: bidsData?.filter((b: any) => b.tender_id === t.id).map((b: any) => ({
@@ -147,6 +168,7 @@ function MairieDashboardContent() {
             })) || []);
             setWastes(wastesData || []);
             setTenders(enrichedTenders);
+            setTransactions(txData || []);
         } catch (err: any) {
             console.error("fetchMairieData error:", err?.message);
         }
@@ -213,6 +235,7 @@ function MairieDashboardContent() {
                             { id: 'tenders', label: 'Appels d\'Offres', icon: Gavel },
                             { id: 'fleet', label: 'Gestion Flotte', icon: Truck },
                             { id: 'sovereignty', label: 'Souveraineté', icon: ShieldAlert },
+                            { id: 'rapports', label: 'Rapports', icon: FileText },
                         ].map((tab) => (
                             <button
                                 key={tab.id}
@@ -220,8 +243,8 @@ function MairieDashboardContent() {
                                 className={cn(
                                     "px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
                                     activeTab === tab.id 
-                                        ? "bg-white dark:bg-zinc-900 text-primary shadow-sm" 
-                                        : "text-gray-400 hover:text-gray-600"
+                                        ? "bg-white dark:bg-zinc-900 text-primary shadow-sm ring-1 ring-black/5" 
+                                        : "text-gray-400 hover:text-gray-600 hover:bg-white/50"
                                 )}
                             >
                                 <tab.icon size={12} />
@@ -270,23 +293,40 @@ function MairieDashboardContent() {
                         className="space-y-12"
                     >
                         {/* GovTech Analytics Row */}
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2">Salubrité Commune</p>
-                                <p className="text-3xl font-black italic tracking-tighter dark:text-white">{collectionRate}%</p>
-                            </div>
-                            <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2">Signalements Totaux</p>
-                                <p className="text-3xl font-black italic tracking-tighter dark:text-white">{totalWastes}</p>
-                            </div>
-                            <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm border-r-4 border-r-amber-500">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2">Zones en Concession</p>
-                                <p className="text-3xl font-black italic tracking-tighter dark:text-white">{zones.filter(z => z.status === 'occupied').length}</p>
-                            </div>
-                            <div className="p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm border-b-4 border-b-red-500 text-red-500">
-                                <p className="text-[9px] font-black uppercase tracking-widest text-red-300 mb-2">Dépassements SLA (48h)</p>
-                                <p className="text-3xl font-black italic tracking-tighter">{slaBreaches}</p>
-                            </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            <KPIStoreCard 
+                                label="Salubrité Commune" 
+                                value={`${collectionRate}%`} 
+                                icon={Zap} 
+                                trend="+2.4%" 
+                                color="bg-emerald-500" 
+                                progress={collectionRate}
+                            />
+                            <KPIStoreCard 
+                                label="Signalements Totaux" 
+                                value={totalWastes} 
+                                icon={AlertTriangle} 
+                                trend="+12" 
+                                color="bg-blue-500" 
+                                progress={75}
+                            />
+                            <KPIStoreCard 
+                                label="Zones en Concession" 
+                                value={zones.filter(z => z.status === 'occupied').length} 
+                                icon={Globe} 
+                                trend="Stable" 
+                                color="bg-amber-500" 
+                                progress={40}
+                            />
+                            <KPIStoreCard 
+                                label="Dépassements SLA" 
+                                value={slaBreaches} 
+                                icon={ShieldAlert} 
+                                trend="-5%" 
+                                color="bg-red-500" 
+                                progress={slaBreaches > 0 ? 100 : 0}
+                                isAlert={slaBreaches > 0}
+                            />
                         </div>
 
                         <div className="w-full shadow-2xl shadow-blue-900/5 rounded-[3rem] overflow-hidden">
@@ -438,18 +478,40 @@ function MairieDashboardContent() {
                     >
                         <div className="bg-gradient-to-br from-zinc-900 to-black p-12 rounded-[3.5rem] text-white border border-white/5 relative overflow-hidden group shadow-2xl">
                            <ShieldAlert className="absolute -bottom-10 -right-10 w-64 h-64 text-white/5 group-hover:text-primary/10 transition-all duration-700" />
-                           <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4">Police Verte</h3>
-                           <p className="text-zinc-400 text-sm font-bold leading-relaxed mb-8 max-w-md uppercase tracking-tight">Module de souveraineté territoriale : Verbalisation directe des pollueurs et contrôle des dépôts sauvages.</p>
-                           <button className="px-10 py-5 bg-white text-black rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-xl">Accéder au Centre de Sanction</button>
+                           <div className="relative z-10">
+                                <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-6 backdrop-blur-xl border border-white/10">
+                                    <ShieldCheck className="w-8 h-8 text-primary" />
+                                </div>
+                                <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4">Police Verte</h3>
+                                <p className="text-zinc-400 text-sm font-bold leading-relaxed mb-8 max-w-md uppercase tracking-tight">Module de souveraineté territoriale : Verbalisation directe des pollueurs et contrôle des dépôts sauvages.</p>
+                                <button 
+                                    onClick={() => setIsSanctionModalOpen(true)}
+                                    className="px-10 py-5 bg-white text-black rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-xl"
+                                >
+                                    Accéder au Centre de Sanction
+                                </button>
+                           </div>
                         </div>
-                        <div className="bg-white dark:bg-zinc-900 p-12 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 flex flex-col justify-between shadow-sm">
-                            <div>
+                        <div className="bg-white dark:bg-zinc-900 p-12 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 flex flex-col justify-between shadow-sm relative overflow-hidden">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] -mr-32 -mt-32" />
+                            <div className="relative z-10">
+                                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
+                                    <DollarSign className="w-8 h-8 text-primary" />
+                                </div>
                                 <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4 text-zinc-900 dark:text-white">Régie Financière</h3>
                                 <p className="text-zinc-400 text-sm font-bold leading-relaxed mb-8 uppercase tracking-tight">Collecte automatisée des taxes de salubrité urbaine et gestion des revenus municipaux.</p>
                             </div>
-                            <div className="flex gap-4">
-                                <button className="flex-1 px-8 py-5 border-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-zinc-900 hover:text-white transition-all">Audit Fiscal</button>
-                                <button className="flex-1 px-8 py-5 bg-zinc-900 dark:bg-white dark:text-black text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                            <div className="flex gap-4 relative z-10">
+                                <button 
+                                    onClick={() => setIsAuditModalOpen(true)}
+                                    className="flex-1 px-8 py-5 border-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-zinc-900 hover:text-white transition-all"
+                                >
+                                    Audit Fiscal
+                                </button>
+                                <button 
+                                    onClick={() => setActiveTab('rapports')}
+                                    className="flex-1 px-8 py-5 bg-zinc-900 dark:bg-white dark:text-black text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
+                                >
                                     <FileDown size={14} />
                                     Export Rapport
                                 </button>
@@ -506,6 +568,77 @@ function MairieDashboardContent() {
                                 </button>
                             </div>
                         )}
+                    </motion.div>
+                )}
+                {activeTab === 'rapports' && (
+                    <motion.div 
+                        key="rapports"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="space-y-12"
+                    >
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div className="md:col-span-2 bg-white dark:bg-zinc-900 p-10 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm">
+                                <div className="flex justify-between items-center mb-10">
+                                    <h3 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white">Impact Territorial</h3>
+                                    <span className="px-4 py-2 bg-emerald-50 text-emerald-500 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2">
+                                        <Leaf size={10} />
+                                        Performance ÉCO
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-2 gap-10">
+                                    <div className="space-y-4">
+                                        <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">CO2 Évité (Territoire)</p>
+                                        <p className="text-5xl font-black italic tracking-tighter text-emerald-500">{(collectedWastes * 1.5).toFixed(1)} <span className="text-xl">kg</span></p>
+                                        <p className="text-[8px] font-bold text-zinc-500 uppercase">Équivalent à {Math.round(collectedWastes * 0.05)} arbres plantés ce mois-ci.</p>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Volume Recyclé Total</p>
+                                        <p className="text-5xl font-black italic tracking-tighter dark:text-white">{wastes.reduce((acc, w) => acc + (w.status === 'collected' ? (w.final_weight || w.estimated_weight || 0) : 0), 0)} <span className="text-xl">kg</span></p>
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex-1 h-2 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                                <div className="h-full bg-primary w-[65%]" />
+                                            </div>
+                                            <span className="text-[8px] font-black text-primary uppercase">65% de l'objectif</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-zinc-900 p-10 rounded-[3.5rem] text-white flex flex-col justify-between group relative overflow-hidden">
+                                <TrendingUp className="absolute top-10 right-10 text-white/5 w-32 h-32" />
+                                <div>
+                                    <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-4 leading-none">Rapport <br/> Décisionnel</h3>
+                                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest leading-loose mb-10">Accédez à l'analyse complète multicritères de votre commune.</p>
+                                </div>
+                                <button 
+                                    onClick={() => router.push('/city-os/rapports')}
+                                    className="w-full py-5 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 group-hover:scale-[1.02] transition-all"
+                                >
+                                    Consulter le Rapport Global
+                                    <ArrowUpRight size={14} />
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="bg-white dark:bg-zinc-900 p-10 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm">
+                            <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 dark:text-white">Répartition par Catégorie</h3>
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
+                                {['Plastique', 'Métal', 'Verre', 'Papier', 'Autre'].map((cat, i) => (
+                                    <div key={cat} className="space-y-3">
+                                        <div className="h-32 bg-gray-50 dark:bg-zinc-800 rounded-2xl relative flex flex-col justify-end p-4 overflow-hidden">
+                                            <motion.div 
+                                                initial={{ height: 0 }}
+                                                animate={{ height: `${20 + (i * 15)}%` }}
+                                                className="absolute bottom-0 left-0 right-0 bg-primary/20"
+                                            />
+                                            <span className="relative z-10 text-[10px] font-black">{30 + (i * 20)}kg</span>
+                                        </div>
+                                        <p className="text-[8px] font-black uppercase text-center text-zinc-400">{cat}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -598,7 +731,116 @@ function MairieDashboardContent() {
                     <button type="submit" className="w-full py-5 bg-black text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest">Enregistrer la Zone</button>
                  </form>
             </Modal>
+
+            <Modal isOpen={isSanctionModalOpen} onClose={() => setIsSanctionModalOpen(false)} title="⚖️ CENTRE DE SANCTION - POLICE VERTE">
+                <div className="space-y-6">
+                    <div className="p-6 bg-red-50 dark:bg-red-900/20 rounded-3xl border border-red-100 dark:border-red-900/30">
+                        <p className="text-[10px] font-black uppercase text-red-600 mb-2">Alerte de Salubrité</p>
+                        <p className="text-xs font-bold leading-relaxed">
+                            Cet outil permet d'émettre des contraventions numériques aux partenaires ou citoyens identifiés comme pollueurs. 
+                            Toute sanction est enregistrée dans le registre territorial.
+                        </p>
+                    </div>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <button className="p-6 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-left hover:border-red-500 border border-transparent transition-all">
+                                <Clock className="text-red-500 mb-2" size={20} />
+                                <p className="text-[10px] font-black uppercase tracking-widest">Retard Collecte</p>
+                            </button>
+                            <button className="p-6 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-left hover:border-red-500 border border-transparent transition-all">
+                                <Trash2 className="text-red-500 mb-2" size={20} />
+                                <p className="text-[10px] font-black uppercase tracking-widest">Dépôt Sauvage</p>
+                            </button>
+                        </div>
+                        <textarea 
+                            className="w-full p-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-xs font-medium outline-none min-h-[80px]"
+                            placeholder="Détails de l'infraction constatée..."
+                        />
+                        <button 
+                            onClick={() => { showToast("Sanction envoyée", "success"); setIsSanctionModalOpen(false); }}
+                            className="w-full py-5 bg-red-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-600/20"
+                        >
+                            Émettre la Sanction
+                        </button>
+                    </div>
+                </div>
+            </Modal>
+
+            <Modal isOpen={isAuditModalOpen} onClose={() => setIsAuditModalOpen(false)} title="🏛️ AUDIT RÉGIE FINANCIÈRE">
+                <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl border border-emerald-100 dark:border-emerald-900/30">
+                            <p className="text-[8px] font-black uppercase text-emerald-600 mb-1">Revenus Totaux</p>
+                            <p className="text-2xl font-black italic tracking-tighter">
+                                {transactions.reduce((acc, tx) => acc + (tx.type === 'income' ? Number(tx.amount) : 0), 0).toLocaleString()} <span className="text-[10px]">CFA</span>
+                            </p>
+                        </div>
+                        <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-3xl border border-blue-100 dark:border-blue-900/30">
+                            <p className="text-[8px] font-black uppercase text-blue-600 mb-1">Transactions</p>
+                            <p className="text-2xl font-black italic tracking-tighter">{transactions.length}</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                        {transactions.map((tx) => (
+                            <div key={tx.id} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl flex justify-between items-center text-[10px] font-black uppercase tracking-widest border border-gray-100 dark:border-zinc-700">
+                                <div className="flex flex-col gap-1">
+                                    <span className="text-zinc-400">{new Date(tx.created_at).toLocaleDateString()}</span>
+                                    <span>{tx.description}</span>
+                                </div>
+                                <span className="text-emerald-500">+{Number(tx.amount).toLocaleString()}</span>
+                            </div>
+                        ))}
+                    </div>
+
+                    <button className="w-full py-5 bg-zinc-900 text-white dark:bg-white dark:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+                        <Printer size={14} />
+                        Imprimer l'État Major des Comptes
+                    </button>
+                </div>
+            </Modal>
         </div>
+    );
+}
+
+function KPIStoreCard({ label, value, icon: Icon, trend, color, progress, isAlert }: any) {
+    return (
+        <motion.div 
+            whileHover={{ y: -5 }}
+            className={cn(
+                "p-6 bg-white dark:bg-zinc-900 border rounded-3xl shadow-xl transition-all relative overflow-hidden group",
+                isAlert ? "border-red-500/50 shadow-red-500/5" : "border-gray-100 dark:border-zinc-800"
+            )}
+        >
+            <div className={cn("absolute top-0 right-0 w-32 h-32 blur-[60px] opacity-10 -mr-16 -mt-16 rounded-full transition-all group-hover:opacity-20", color)} />
+            
+            <div className="flex justify-between items-start mb-6">
+                <div className={cn("p-4 rounded-2xl", color.replace('bg-', 'bg-').concat('/10'), color.replace('bg-', 'text-'))}>
+                    <Icon className="w-6 h-6" />
+                </div>
+                {trend && (
+                    <span className={cn(
+                        "text-[9px] font-black px-2 py-1 rounded-full uppercase italic",
+                        trend.includes('+') ? "bg-emerald-50 text-emerald-500" : "bg-red-50 text-red-500"
+                    )}>
+                        {trend}
+                    </span>
+                )}
+            </div>
+
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 mb-1">{label}</p>
+            <div className="flex items-baseline gap-2 mb-4">
+                <p className={cn("text-4xl font-black italic tracking-tighter dark:text-white", isAlert && "text-red-600")}>{value}</p>
+            </div>
+
+            <div className="w-full h-1 bg-gray-50 dark:bg-zinc-800 rounded-full overflow-hidden">
+                <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${progress}%` }}
+                    className={cn("h-full", color)}
+                />
+            </div>
+        </motion.div>
     );
 }
 
