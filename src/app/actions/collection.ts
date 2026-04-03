@@ -58,8 +58,20 @@ export async function confirmCollection(wasteId: string, finalWeight: number) {
             }).eq('id', waste.collector_id);
         }
 
-        // 5. Enregistrement des transactions
-        await supabase.from('transactions').insert([
+        // 5. Recherche de la Mairie (super_admin) pour l'Éco-Taxe (Phase 3 - City OS)
+        const ecoTax = totalAmount * 0.02; // 2% de taxe urbaine
+        const { data: mairies } = await supabase.from('profiles').select('id, wallet_balance, push_token').eq('role', 'super_admin').limit(1);
+        const mairie = mairies?.[0];
+
+        if (mairie) {
+            // Crédit de la Mairie
+            await supabase.from('profiles').update({
+                wallet_balance: Number(mairie.wallet_balance || 0) + ecoTax
+            }).eq('id', mairie.id);
+        }
+
+        // 6. Enregistrement des transactions
+        const transactionsToInsert = [
             {
                 profile_id: waste.seller_id,
                 amount: sellerAmount,
@@ -72,10 +84,21 @@ export async function confirmCollection(wasteId: string, finalWeight: number) {
                 type: 'outcome',
                 description: `Achat de ${finalWeight}kg de ${waste.waste_types.name}`
             }
-        ]);
+        ];
 
-        // 6. Envoi des Notifications Internes
-        await supabase.from('notifications').insert([
+        if (mairie) {
+            transactionsToInsert.push({
+                profile_id: mairie.id,
+                amount: ecoTax,
+                type: 'income',
+                description: `Éco-taxe territoriale (2%) - Lot #${wasteId.split('-')[0]}`
+            });
+        }
+
+        await supabase.from('transactions').insert(transactionsToInsert);
+
+        // 7. Envoi des Notifications Internes
+        const notificationsToInsert = [
             {
                 profile_id: waste.seller_id,
                 title: "Paiement Reçu !",
@@ -88,9 +111,20 @@ export async function confirmCollection(wasteId: string, finalWeight: number) {
                 content: `Vous avez finalisé la collecte de ${finalWeight}kg de ${waste.waste_types.name}.`,
                 type: 'collection'
             }
-        ]);
+        ];
 
-        // 7. Envoi des Notifications Push
+        if (mairie) {
+             notificationsToInsert.push({
+                profile_id: mairie.id,
+                title: "Taxe Urbaine Perçue 🏛️",
+                content: `Une éco-taxe de ${ecoTax} FCFA a été prélevée sur une collecte.`,
+                type: 'system'
+             });
+        }
+
+        await supabase.from('notifications').insert(notificationsToInsert);
+
+        // 8. Envoi des Notifications Push
         const { sendPushNotification } = await import("@/lib/push");
         
         if (sellerProfile?.push_token) {
@@ -108,6 +142,15 @@ export async function confirmCollection(wasteId: string, finalWeight: number) {
                 "Collecte Terminée ✅",
                 `Vous avez finalisé la collecte de ${finalWeight}kg de ${waste.waste_types.name}.`,
                 { type: 'collection', wasteId }
+            );
+        }
+
+        if (mairie?.push_token) {
+            await sendPushNotification(
+                mairie.push_token,
+                "Taxe Urbaine Perçue 🏛️",
+                `+${ecoTax} FCFA provenant d'une collecte partenaire.`,
+                { type: 'system' }
             );
         }
 
