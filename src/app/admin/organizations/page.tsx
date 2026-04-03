@@ -14,7 +14,8 @@ import {
     School,
     Ban,
     Trash2,
-    ExternalLink
+    ExternalLink,
+    Activity
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -291,16 +292,25 @@ export default function OrganizationsPage() {
                                                 <Trash2 size={18} />
                                             </button>
                                             {org.role === 'mairie' && (
-                                                <a 
-                                                    href="https://citicline.com/mairie/connexion"
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                                                    title="Accéder au portail Mairie"
-                                                >
-                                                    <ExternalLink size={18} />
-                                                </a>
+                                                <>
+                                                    <Link 
+                                                        href={`/admin/mairie?id=${org.id}`}
+                                                        className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 rounded-lg transition-colors"
+                                                        title="Dashboard Interne"
+                                                    >
+                                                        <Activity size={18} />
+                                                    </Link>
+                                                    <a 
+                                                        href={`/mairie/${org.id}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                                        title="Voir la Page Landing"
+                                                    >
+                                                        <ExternalLink size={18} />
+                                                    </a>
+                                                </>
                                             )}
                                             <button 
                                                 onClick={(e) => {

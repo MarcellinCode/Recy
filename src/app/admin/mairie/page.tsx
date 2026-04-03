@@ -29,6 +29,7 @@ import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/Modal";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { createTender, awardTender } from "@/app/actions/tenders";
 
 const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
@@ -37,6 +38,9 @@ const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
 });
 
 export default function MairieManagementPage() {
+    const searchParams = useSearchParams();
+    const targetMairieId = searchParams.get('id');
+    
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'overview' | 'tenders' | 'sovereignty' | 'fleet'>('overview');
     const [zones, setZones] = useState<any[]>([]);
@@ -51,26 +55,42 @@ export default function MairieManagementPage() {
     const [newTender, setNewTender] = useState({ zone_id: "", title: "", description: "", end_date: "", budget_estimate: 0 });
     const [announcement, setAnnouncement] = useState({ title: "", message: "", type: "info" });
     const [profile, setProfile] = useState<any>(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const supabase = createClient();
 
     useEffect(() => {
         fetchMairieData();
-    }, []);
+    }, [targetMairieId]);
 
     async function fetchMairieData() {
         setLoading(true);
         try {
             const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                const { data: profileData } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', user.id)
-                    .single();
-                setProfile(profileData);
+            if (!user) return;
+            setCurrentUserId(user.id);
+
+            // Déterminer l'ID de la mairie à afficher
+            // Si on est Super Admin et qu'un ID est passé, on l'utilise
+            let mairieId = user.id;
+            
+            const { data: currentUserProfile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', user.id)
+                .single();
+
+            if (currentUserProfile?.role === 'super_admin' && targetMairieId) {
+                mairieId = targetMairieId;
             }
 
-            // 1. Récupérer les Zones
+            const { data: profileData } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', mairieId)
+                .single();
+            setProfile(profileData);
+
+            // 1. Récupérer les Zones (Idéalement filtrées par mairie_id si existant, sinon globales)
             const { data: zonesData } = await supabase.from('zones').select('*');
             
             // 2. Récupérer les Concessions associées (et profils)
@@ -103,7 +123,8 @@ export default function MairieManagementPage() {
 
             const { data: tendersData } = await supabase
                 .from('tenders')
-                .select('*');
+                .select('*')
+                .eq('mairie_id', mairieId);
             
             const { data: bidsData } = await supabase
                 .from('tender_bids')

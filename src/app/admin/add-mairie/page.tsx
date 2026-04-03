@@ -23,6 +23,7 @@ export default function AddMairiePage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
+    const [newMairieId, setNewMairieId] = useState<string | null>(null);
 
     const [formData, setFormData] = useState({
         municipalityName: "",
@@ -40,6 +41,7 @@ export default function AddMairiePage() {
         try {
             const res = await createMairieAccount(formData);
             if (res.success) {
+                setNewMairieId(res.userId || null);
                 setSuccess(true);
                 showToast("Mairie créée avec succès !");
             } else {
@@ -53,6 +55,8 @@ export default function AddMairiePage() {
     };
 
     if (success) {
+        const landingUrl = newMairieId ? `/mairie/${newMairieId}` : "https://citicline.com/mairie/connexion";
+        
         return (
             <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-8 max-w-2xl mx-auto">
                 <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-950/30 text-emerald-600 rounded-full flex items-center justify-center animate-bounce">
@@ -67,8 +71,8 @@ export default function AddMairiePage() {
                 <div className="w-full bg-zinc-900 p-8 rounded-[2.5rem] border border-zinc-800 shadow-2xl space-y-6">
                     <div className="space-y-4">
                         <div className="p-4 bg-white/5 rounded-2xl border border-white/5">
-                            <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Lien de Connexion Official</p>
-                            <p className="text-sm font-bold text-primary break-all">https://citicline.com/mairie/connexion</p>
+                            <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">Lien de la Page Landing</p>
+                            <p className="text-sm font-bold text-primary break-all">{landingUrl}</p>
                         </div>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -86,7 +90,7 @@ export default function AddMairiePage() {
                     <div className="flex gap-4">
                          <button 
                             onClick={() => {
-                                navigator.clipboard.writeText(`Lien: https://citicline.com/mairie/connexion\nEmail: ${formData.email}\nPass: ${formData.password}`);
+                                navigator.clipboard.writeText(`Lien: ${landingUrl}\nEmail: ${formData.email}\nPass: ${formData.password}`);
                                 showToast("Copié dans le presse-papier !");
                             }}
                             className="flex-1 py-4 bg-white text-black rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all"
