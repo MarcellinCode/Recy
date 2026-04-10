@@ -276,10 +276,12 @@ function MairieDashboardContent() {
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                     <div className="lg:col-span-2 relative h-[550px] rounded-[3.5rem] overflow-hidden border border-zinc-200 bg-white shadow-2xl shadow-zinc-200/50 group">
                                         <div className="absolute inset-0 z-0"><MapComponent isMairie={true} /></div>
-                                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20"><HoloGauge value={collectionRate} label="SALUBRITÉ COMMUNE" /></div>
                                         <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(255,255,255,0.2)_100%)]" />
                                     </div>
-                                    <div className="space-y-8">
+                                    <div className="space-y-8 overflow-y-auto pr-2 no-scrollbar">
+                                        <div className="flex justify-center bg-white/70 backdrop-blur-xl border border-zinc-100 rounded-[3rem] py-8 shadow-xl shadow-zinc-200/10">
+                                            <HoloGauge value={collectionRate} label="SALUBRITÉ COMMUNE" />
+                                        </div>
                                         <NeonCard title="SIGNALEMENTS ACTIFS" value={totalWastes} icon={AlertTriangle} color="blue" trend="+12 AUJOURD'HUI" />
                                         <NeonCard title="ZONES CONCÉDÉES" value={zones.filter(z => z.status === 'occupied').length} icon={Globe} color="amber" />
                                         <NeonCard title="DÉPASSEMENTS SLA" value={slaBreaches} icon={ShieldAlert} color="red" trend={slaBreaches > 0 ? "CRITIQUE" : "NOMINAL"} />
