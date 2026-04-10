@@ -297,7 +297,8 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                                 </div>
                             </Popup>
                         </Marker>
-                    ))}
+                        );
+                    })}
 
                     {isMairie && zones.map((zone) => {
                         // Position par défaut si non définie (Abidjan different areas)
