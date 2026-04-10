@@ -297,9 +297,6 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                                 </div>
                             </Popup>
                         </Marker>
-                    )})}
-                    
-                        </Marker>
                     ))}
 
                     {isMairie && zones.map((zone) => {
