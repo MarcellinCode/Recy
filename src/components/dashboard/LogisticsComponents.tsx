@@ -22,9 +22,10 @@ import {
  * VehicleCard: Carte de télémétrie haute densité pour une unité de la flotte
  */
 export function VehicleCard({ vehicle, position }: { vehicle: any, position?: any }) {
-    // Simulation de télémétrie si non présente dans la DB
-    const batteryLevel = vehicle.battery_level ?? Math.floor(Math.random() * 40) + 60;
-    const loadLevel = vehicle.load_level ?? Math.floor(Math.random() * 50) + 20;
+    // Simulation de télémétrie déterministe (évite les erreurs d'hydratation Next.js)
+    const seed = vehicle.id ? parseInt(vehicle.id.split('-')[0], 16) : 42;
+    const batteryLevel = vehicle.battery_level ?? (seed % 40 + 60);
+    const loadLevel = vehicle.load_level ?? (seed % 50 + 20);
     
     const statusColors = {
         active: "text-emerald-500 bg-emerald-50 border-emerald-100",
