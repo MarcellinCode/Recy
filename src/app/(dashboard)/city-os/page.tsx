@@ -49,6 +49,12 @@ import {
     revokeConcession, 
     checkAndCleanupExpiredConcessions 
 } from "@/app/actions/concessions";
+import { 
+    NeonCard, 
+    HoloGauge, 
+    LiveTicker, 
+    StatusIndicator 
+} from "@/components/dashboard/CockpitComponents";
 
 const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
     ssr: false,
@@ -71,20 +77,19 @@ function MairieDashboardContent() {
     
     const [isAddZoneModalOpen, setIsAddZoneModalOpen] = useState(false);
     const [isAddTenderModalOpen, setIsAddTenderModalOpen] = useState(false);
-    const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
     const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
     const [isSanctionModalOpen, setIsSanctionModalOpen] = useState(false);
     
-    const [editingZone, setEditingZone] = useState<any | null>(null);
     const [newZone, setNewZone] = useState({ name: "", city: "Abidjan", status: "available", description: "" });
     const [isAttributingDirectly, setIsAttributingDirectly] = useState(false);
     const [selectedOrgId, setSelectedOrgId] = useState("");
     const [concessionDuration, setConcessionDuration] = useState(12);
     
     const [newTender, setNewTender] = useState({ zone_id: "", title: "", description: "", end_date: "", budget_estimate: 0 });
-    const [announcement, setAnnouncement] = useState({ title: "", message: "", type: "info" });
-    const [profile, setProfile] = useState<any>(null);
-    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+    const [liveEvents, setLiveEvents] = useState<any[]>([
+        { id: 1, type: "INITIALISATION", message: "Chargement du système territorial...", timestamp: new Date() },
+        { id: 2, type: "RADAR", message: "Scan des points noirs activé.", timestamp: new Date() }
+    ]);
     const supabase = createClient();
 
     useEffect(() => {
@@ -101,48 +106,21 @@ function MairieDashboardContent() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
-            setCurrentUserId(user.id);
 
-            // Déterminer l'ID de la mairie à afficher
-            // Si on est Super Admin et qu'un ID est passé, on l'utilise
             let mairieId = user.id;
-            
-            const { data: currentUserProfile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', user.id)
-                .single();
+            const { data: currentUserProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+            if (currentUserProfile?.role === 'super_admin' && targetMairieId) mairieId = targetMairieId;
 
-            if (currentUserProfile?.role === 'super_admin' && targetMairieId) {
-                mairieId = targetMairieId;
-            }
-
-            const { data: profileData } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', mairieId)
-                .single();
-            setProfile(profileData);
-
-            // 1. Récupérer les Zones (Idéalement filtrées par mairie_id si existant, sinon globales)
             const { data: zonesData } = await supabase.from('zones').select('*');
-            
-            // 2. Récupérer les Concessions associées (et profils)
-            const { data: concessionsData } = await supabase
-                .from('concessions')
-                .select('*');
+            const { data: concessionsData } = await supabase.from('concessions').select('*');
             
             const profileIds = [...new Set([
                 ...(concessionsData?.map((c: any) => c.organization_id) || []),
                 ...(concessionsData?.map((c: any) => c.profiles?.id) || [])
             ].filter(Boolean))];
 
-            const { data: profilesData } = await supabase
-                .from('profiles')
-                .select('id, full_name, role')
-                .in('id', profileIds);
+            const { data: profilesData } = await supabase.from('profiles').select('id, full_name, role').in('id', profileIds);
 
-            // 3. Fusionner les données pour les zones
             const enrichedZones = zonesData?.map((zone: any) => ({
                 ...zone,
                 concessions: concessionsData?.filter((c: any) => c.zone_id === zone.id).map((c: any) => ({
@@ -151,25 +129,10 @@ function MairieDashboardContent() {
                 }))
             })) || [];
 
-            const { data: wastesData } = await supabase
-                .from('wastes')
-                .select('id, status, created_at, estimated_weight');
-
-            const { data: tendersData } = await supabase
-                .from('tenders')
-                .select('*')
-                .eq('mairie_id', mairieId);
-            
-            const { data: bidsData } = await supabase
-                .from('tender_bids')
-                .select('*');
-
-            // Fetch eco-tax transactions for the Mairie
-            const { data: txData } = await supabase
-                .from('transactions')
-                .select('*')
-                .eq('profile_id', mairieId)
-                .order('created_at', { ascending: false });
+            const { data: wastesData } = await supabase.from('wastes').select('id, status, created_at, estimated_weight');
+            const { data: tendersData } = await supabase.from('tenders').select('*').eq('mairie_id', mairieId);
+            const { data: bidsData } = await supabase.from('tender_bids').select('*');
+            const { data: txData } = await supabase.from('transactions').select('*').eq('profile_id', mairieId).order('created_at', { ascending: false });
 
             const enrichedTenders = tendersData?.map((t: any) => ({
                 ...t,
@@ -180,20 +143,14 @@ function MairieDashboardContent() {
             })) || [];
 
             setZones(enrichedZones);
-            setPendingConcessions(concessionsData?.filter((c: any) => c.status === 'pending').map((c: any) => ({
-                ...c,
-                profiles: profilesData?.find((p: any) => p.id === c.organization_id),
-                zones: zonesData?.find((z: any) => z.id === c.zone_id)
-            })) || []);
             setWastes(wastesData || []);
             setTenders(enrichedTenders);
             setTransactions(txData || []);
 
-            // 4. Récupérer les organisations pour l'attribution directe
             const orgsResult = await getOrganizationsForConcession();
-            if (orgsResult.success) {
-                setOrganizations(orgsResult.organizations || []);
-            }
+            if (orgsResult.success) setOrganizations(orgsResult.organizations || []);
+
+            setLiveEvents(prev => [{ id: Date.now(), type: "SYSTÈME", message: "Souveraineté territoriale confirmée.", timestamp: new Date() }, ...prev.slice(0, 5)]);
         } catch (err: any) {
             console.error("fetchMairieData error:", err?.message);
         }
@@ -207,9 +164,7 @@ function MairieDashboardContent() {
             showToast("Appel d'offres publié", "success");
             setIsAddTenderModalOpen(false);
             fetchMairieData();
-        } else {
-            showToast(res.error || "Erreur", "error");
-        }
+        } else showToast(res.error || "Erreur", "error");
     };
 
     const handleAwardTender = async (tenderId: string, bidId: string, organizationId: string, zoneId: string) => {
@@ -217,26 +172,9 @@ function MairieDashboardContent() {
         if (res.success) {
             showToast("Marché attribué avec succès", "success");
             fetchMairieData();
-        } else {
-            showToast("Erreur lors de l'attribution", "error");
-        }
+        } else showToast("Erreur lors de l'attribution", "error");
     };
 
-     async function handleConcessionAction(id: string, status: 'active' | 'rejected') {
-        const { error } = await supabase
-            .from('concessions')
-            .update({ status })
-            .eq('id', id);
-        
-        if (error) {
-            showToast("Erreur lors de la mise à jour", "error");
-        } else {
-            showToast(status === 'active' ? "Concession approuvée" : "Dossier refusé", "success");
-            fetchMairieData();
-        }
-    }
-
-    // Statistiques GovTech
     const totalWastes = wastes.length;
     const collectedWastes = wastes.filter(w => w.status === 'collected').length;
     const collectionRate = totalWastes > 0 ? Math.round((collectedWastes / totalWastes) * 100) : 0;
@@ -244,514 +182,274 @@ function MairieDashboardContent() {
     const slaBreaches = wastes.filter(w => w.status === 'published' && (now - new Date(w.created_at).getTime() > 48 * 3600 * 1000)).length;
 
     return (
-        <div className="space-y-12 pb-20 px-6 md:px-12 lg:px-24 max-w-[1600px] mx-auto pt-6">
-            {/* Header */}
-            <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h1 className="text-3xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-1">
-                        Mairie <span className="text-primary tracking-tighter">City OS</span>
-                    </h1>
-                    <p className="text-gray-500 text-xs font-bold uppercase tracking-widest mb-6">Plateforme de Souveraineté Urbaine & Pilotage Territorial</p>
-                    
-                    {/* Navigation Tabs */}
-                    <nav className="flex gap-2 p-1 bg-gray-100 dark:bg-zinc-800/50 rounded-2xl w-fit">
+        <div className="flex h-screen w-full bg-slate-50 text-zinc-900 overflow-hidden select-none">
+            {/* Sidebar : Live Intel Feed */}
+            <aside className="w-[320px] hidden lg:flex flex-col border-r border-zinc-200 bg-white/40 backdrop-blur-3xl p-6">
+                <div className="mb-10">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center">
+                            <ShieldCheck className="text-emerald-500" size={20} />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-black italic tracking-tighter uppercase leading-none text-zinc-900 text-shadow-glow-emerald">City OS</h1>
+                            <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-1">Souveraineté Numérique</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex-1 overflow-hidden">
+                    <LiveTicker events={liveEvents} />
+                </div>
+
+                <div className="pt-6 border-t border-zinc-100 space-y-4">
+                    <StatusIndicator label="Système Radar" status="active" />
+                    <StatusIndicator label="Collecte Live" status="active" />
+                    <StatusIndicator label="Signalements" status={slaBreaches > 0 ? "warning" : "active"} />
+                </div>
+            </aside>
+
+            {/* Main Cockpit Area */}
+            <main className="flex-1 flex flex-col relative overflow-hidden">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-500/[0.03] blur-[120px] rounded-full pointer-events-none" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-blue-500/[0.03] blur-[100px] rounded-full pointer-events-none" />
+
+                <header className="p-8 flex items-center justify-between z-50">
+                    <nav className="flex gap-2 p-1.5 bg-white/70 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-sm">
                         {[
-                            { id: 'overview', label: 'Vue d\'ensemble', icon: Activity },
-                            { id: 'tenders', label: 'Appels d\'Offres', icon: Gavel },
-                            { id: 'fleet', label: 'Gestion Flotte', icon: Truck },
-                            { id: 'sovereignty', label: 'Souveraineté', icon: ShieldAlert },
-                            { id: 'rapports', label: 'Rapports', icon: FileText },
+                            { id: 'overview', label: 'RADAR CENTRAL', icon: Activity },
+                            { id: 'tenders', label: 'APPELS D\'OFFRES', icon: Gavel },
+                            { id: 'sovereignty', label: 'SOUVERAINETÉ', icon: ShieldAlert },
+                            { id: 'fleet', label: 'LOGISTIQUE', icon: Truck },
+                            { id: 'rapports', label: 'ANALYSE', icon: FileText },
                         ].map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id as any)}
                                 className={cn(
-                                    "px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2 transition-all",
+                                    "px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-3 transition-all",
                                     activeTab === tab.id 
-                                        ? "bg-white dark:bg-zinc-900 text-primary shadow-sm ring-1 ring-black/5" 
-                                        : "text-gray-400 hover:text-gray-600 hover:bg-white/50"
+                                        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-105" 
+                                        : "text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50"
                                 )}
                             >
-                                <tab.icon size={12} />
+                                <tab.icon size={14} />
                                 {tab.label}
-                                {tab.id === 'fleet' && profile?.subscription_tier !== 'mairie' && <Lock size={8} className="text-primary ml-1" />}
                             </button>
                         ))}
                     </nav>
-                </div>
-                <div className="flex gap-4">
-                    {activeTab === 'tenders' ? (
-                        <button 
-                            onClick={() => setIsAddTenderModalOpen(true)}
-                            className="flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-primary/20"
-                        >
-                            <Plus size={16} />
-                            Lancer une Mise en Concurrence
-                        </button>
-                    ) : activeTab === 'overview' ? (
-                         <button 
-                            onClick={() => setIsAddZoneModalOpen(true)}
-                            className="flex items-center gap-2 px-8 py-4 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-xl shadow-primary/20"
-                        >
-                            <Plus size={16} />
-                            Nouvelle Zone
-                        </button>
-                    ) : (
-                        <button 
-                            onClick={() => setIsAnnouncementModalOpen(true)}
-                            className="flex items-center gap-2 px-8 py-4 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white border border-gray-100 dark:border-zinc-800 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-primary transition-all shadow-sm"
-                        >
-                            <Megaphone size={16} className="text-blue-500" />
-                            Alerte Citoyenne
-                        </button>
-                    )}
-                </div>
-            </header>
 
-            <AnimatePresence mode="wait">
-                {activeTab === 'overview' && (
-                    <motion.div 
-                        key="overview"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="space-y-12"
+                    <button 
+                        onClick={() => setIsAddZoneModalOpen(true)}
+                        className="px-8 py-3.5 bg-zinc-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-zinc-900/10"
                     >
-                        {/* GovTech Analytics Row */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <KPIStoreCard 
-                                label="Salubrité Commune" 
-                                value={`${collectionRate}%`} 
-                                icon={Zap} 
-                                trend="+2.4%" 
-                                color="bg-emerald-500" 
-                                progress={collectionRate}
-                            />
-                            <KPIStoreCard 
-                                label="Signalements Totaux" 
-                                value={totalWastes} 
-                                icon={AlertTriangle} 
-                                trend="+12" 
-                                color="bg-blue-500" 
-                                progress={75}
-                            />
-                            <KPIStoreCard 
-                                label="Zones en Concession" 
-                                value={zones.filter(z => z.status === 'occupied').length} 
-                                icon={Globe} 
-                                trend="Stable" 
-                                color="bg-amber-500" 
-                                progress={40}
-                            />
-                            <KPIStoreCard 
-                                label="Dépassements SLA" 
-                                value={slaBreaches} 
-                                icon={ShieldAlert} 
-                                trend="-5%" 
-                                color="bg-red-500" 
-                                progress={slaBreaches > 0 ? 100 : 0}
-                                isAlert={slaBreaches > 0}
-                            />
-                        </div>
+                        DÉPLOYER NOUVELLE ZONE
+                    </button>
+                </header>
 
-                        <div className="w-full shadow-2xl shadow-blue-900/5 rounded-[3rem] overflow-hidden">
-                            <MapComponent isMairie={true} />
-                        </div>
-
-                        <div className="grid grid-cols-1 xl:grid-cols-3 gap-10 text-zinc-900 dark:text-white">
-                            <div className="xl:col-span-2 space-y-6">
-                                <div className="flex items-center justify-between">
-                                    <h2 className="text-xl font-black uppercase italic tracking-tighter flex items-center gap-2">Performances SLA (Prestataires)</h2>
-                                    <span className="text-[10px] bg-red-50 text-red-600 dark:bg-red-900/20 px-3 py-1 rounded-full font-black uppercase tracking-widest">{slaBreaches} Infractions Actives</span>
-                                </div>
-                                <div className="bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm overflow-hidden">
-                                    <table className="w-full text-left border-collapse">
-                                        <thead>
-                                            <tr className="border-b border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-800/50">
-                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400">Entreprise Partenaire</th>
-                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400">Zone(s) Assignée(s)</th>
-                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center">Échéance</th>
-                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400 text-right">Souveraineté</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {zones.filter(z => z.status === 'occupied').map((zone, idx) => {
-                                                const concession = zone.concessions?.[0];
-                                                const partnerName = concession?.profiles?.full_name || "MUNICIPAL";
-                                                const expiryDate = concession?.rent_end ? new Date(concession.rent_end) : null;
-                                                const isExpiringSoon = expiryDate && (expiryDate.getTime() - new Date().getTime() < 30 * 24 * 3600 * 1000);
-                                                
-                                                return (
-                                                <tr key={zone.id} className="border-b border-gray-100 dark:border-zinc-800 last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
-                                                    <td className="p-6">
-                                                        <p className="font-black italic uppercase text-sm">{partnerName}</p>
-                                                        <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-widest">Contrat Actif</span>
-                                                    </td>
-                                                    <td className="p-6 text-[10px] font-bold uppercase text-zinc-500">{zone.name}</td>
-                                                    <td className="p-6 text-center">
-                                                        {expiryDate ? (
-                                                            <div className={cn("inline-flex flex-col items-center p-2 rounded-xl", isExpiringSoon ? "bg-amber-50 text-amber-600" : "bg-gray-50 text-zinc-500")}>
-                                                                <span className="text-[9px] font-black uppercase">{expiryDate.toLocaleDateString()}</span>
-                                                                {isExpiringSoon && <span className="text-[7px] font-black uppercase tracking-tighter">Expire bientôt</span>}
-                                                            </div>
-                                                        ) : (
-                                                            <span className="text-[9px] text-zinc-400 uppercase font-black">Indéterminé</span>
-                                                        )}
-                                                    </td>
-                                                    <td className="p-6 text-right">
-                                                        <div className="flex justify-end gap-2">
-                                                            <button 
-                                                                onClick={async () => {
-                                                                    if (confirm(`Révoquer la concession de ${partnerName} pour la zone ${zone.name} ?`)) {
-                                                                        const res = await revokeConcession(concession.id, zone.id);
-                                                                        if (res.success) {
-                                                                            showToast("Concession révoquée", "success");
-                                                                            fetchMairieData();
-                                                                        }
-                                                                    }
-                                                                }}
-                                                                className="px-4 py-2 border border-red-100 text-red-500 hover:bg-red-500 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
-                                                            >
-                                                                Révoquer
-                                                            </button>
-                                                            <button 
-                                                                onClick={() => showToast(`Audit demandé pour ${partnerName}`, "info")}
-                                                                className="px-4 py-2 bg-zinc-900 text-white dark:bg-zinc-800 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2"
-                                                            >
-                                                                <FileText size={12} />
-                                                                Audit
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            )})}
-                                            {zones.filter(z => z.status === 'occupied').length === 0 && (
-                                                <tr>
-                                                    <td colSpan={4} className="p-10 text-center text-[10px] font-black uppercase tracking-widest text-zinc-400">Aucun partenaire actif sur le territoire</td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                            <div className="space-y-6">
-                                <h2 className="text-xl font-black uppercase italic tracking-tighter flex items-center gap-2">Dossiers d'Agrément</h2>
-                                <div className="space-y-4">
-                                    {pendingConcessions.map((con) => (
-                                        <div key={con.id} className="bg-white dark:bg-zinc-900 p-6 rounded-3xl border border-gray-100 dark:border-zinc-800 shadow-sm relative overflow-hidden">
-                                            <div className="absolute top-0 right-0 p-3 bg-amber-500 text-white rounded-bl-2xl text-[8px] font-black uppercase tracking-widest">En Attente</div>
-                                            <p className="text-[12px] font-black text-gray-900 dark:text-white uppercase mb-1">{con.profiles?.full_name}</p>
-                                            <p className="text-[9px] font-bold text-zinc-400 uppercase mb-6 flex items-center gap-1"><MapPin size={10} /> ZONE: {con.zones?.name}</p>
-                                            <div className="flex gap-2">
-                                                <button onClick={() => handleConcessionAction(con.id, 'active')} className="flex-1 py-3 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase hover:bg-emerald-600 transition-colors shadow-lg shadow-emerald-500/20">Agréer</button>
-                                                <button onClick={() => handleConcessionAction(con.id, 'rejected')} className="flex-1 py-3 bg-red-50 text-red-500 dark:bg-zinc-800 text-red-400 rounded-xl text-[9px] font-black uppercase hover:bg-red-500 hover:text-white transition-colors">Rejeter</button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {pendingConcessions.length === 0 && (
-                                        <div className="bg-gray-50 dark:bg-zinc-900/50 p-8 rounded-3xl border border-dashed border-gray-200 dark:border-zinc-800 text-center">
-                                            <CheckCircle2 size={24} className="text-emerald-500 mx-auto mb-2 opacity-50" />
-                                            <p className="text-[10px] text-zinc-400 uppercase font-black">Aucun dossier en attente</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-
-                {activeTab === 'tenders' && (
-                    <motion.div 
-                        key="tenders"
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -20 }}
-                        className="space-y-8"
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {tenders.map((tender) => (
-                                <div key={tender.id} className="bg-white dark:bg-zinc-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-zinc-800 shadow-xl overflow-hidden relative">
-                                    <div className="flex justify-between items-start mb-6">
-                                        <span className={cn(
-                                            "px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest",
-                                            tender.status === 'open' ? "bg-emerald-50 text-emerald-600 border border-emerald-100" : "bg-gray-50 text-gray-400 border border-gray-100"
-                                        )}>
-                                            {tender.status}
-                                        </span>
-                                        <span className="text-[10px] font-black text-primary">Budget: {tender.budget_estimate?.toLocaleString()} CFA</span>
+                <div className="flex-1 overflow-y-auto no-scrollbar p-8 pt-0">
+                    <AnimatePresence mode="wait">
+                        {activeTab === 'overview' && (
+                            <motion.div key="overview" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} className="space-y-8">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    <div className="lg:col-span-2 relative h-[550px] rounded-[3.5rem] overflow-hidden border border-zinc-200 bg-white shadow-2xl shadow-zinc-200/50 group">
+                                        <div className="absolute inset-0 z-0"><MapComponent isMairie={true} /></div>
+                                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20"><HoloGauge value={collectionRate} label="SALUBRITÉ COMMUNE" /></div>
+                                        <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(255,255,255,0.2)_100%)]" />
                                     </div>
-                                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-2">{tender.title}</h3>
-                                    <p className="text-[10px] text-zinc-400 font-bold uppercase mb-8 line-clamp-2">{tender.description}</p>
-                                    
-                                    <div className="space-y-4">
-                                        <div className="flex justify-between items-center border-b border-zinc-100 dark:border-zinc-800 pb-2">
-                                            <h4 className="text-[11px] font-black uppercase tracking-widest text-zinc-900 dark:text-zinc-100 italic">Soumissions ({tender.tender_bids?.length || 0})</h4>
-                                            <BarChart3 size={16} className="text-primary" />
-                                        </div>
-                                        <div className="space-y-3">
-                                            {tender.tender_bids?.map((bid: any) => (
-                                                <div key={bid.id} className="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-2xl border border-gray-100 dark:border-zinc-800 flex items-center justify-between group transition-all hover:bg-white dark:hover:bg-zinc-800">
-                                                    <div>
-                                                        <p className="text-[10px] font-black uppercase text-zinc-900 dark:text-white leading-none mb-1">{bid.profiles?.full_name}</p>
-                                                        <p className="text-[10px] font-bold text-emerald-500 uppercase">{bid.bid_amount.toLocaleString()} CFA</p>
+                                    <div className="space-y-8">
+                                        <NeonCard title="SIGNALEMENTS ACTIFS" value={totalWastes} icon={AlertTriangle} color="blue" trend="+12 AUJOURD'HUI" />
+                                        <NeonCard title="ZONES CONCÉDÉES" value={zones.filter(z => z.status === 'occupied').length} icon={Globe} color="amber" />
+                                        <NeonCard title="DÉPASSEMENTS SLA" value={slaBreaches} icon={ShieldAlert} color="red" trend={slaBreaches > 0 ? "CRITIQUE" : "NOMINAL"} />
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+                                    <div className="bg-white/70 backdrop-blur-xl rounded-[3rem] border border-zinc-100 p-8 shadow-xl shadow-zinc-200/20 relative overflow-hidden group">
+                                        <h2 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900">SOUVERAINETÉ & CONCESSIONS</h2>
+                                        <div className="space-y-4 relative z-10">
+                                            {zones.filter(z => z.status === 'occupied').map((zone) => {
+                                                const concession = zone.concessions?.[0];
+                                                return (
+                                                    <div key={zone.id} className="flex items-center justify-between p-5 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] hover:border-emerald-500/30 transition-all">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="w-12 h-12 rounded-2xl bg-white border border-zinc-200 flex items-center justify-center text-emerald-500 shadow-sm"><Building2 size={24} /></div>
+                                                            <div>
+                                                                <p className="font-black italic uppercase text-lg text-zinc-900 leading-none mb-1">{concession?.profiles?.full_name || "MUNICIPAL"}</p>
+                                                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{zone.name}</p>
+                                                            </div>
+                                                        </div>
+                                                        <button onClick={async () => { if (confirm(`Révoquer la concession ?`)) { const res = await revokeConcession(concession.id, zone.id); if (res.success) fetchMairieData(); }}} className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"><XCircle size={18} /></button>
                                                     </div>
-                                                    {tender.status === 'open' ? (
+                                                );
+                                            })}
+                                            {zones.filter(z => z.status === 'occupied').length === 0 && (
+                                                <div className="py-20 text-center">
+                                                    <p className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">Aucune concession active.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="bg-zinc-900 rounded-[3rem] p-8 flex flex-col justify-between overflow-hidden shadow-2xl shadow-zinc-900/30 relative">
+                                        <TrendingUp className="absolute -right-4 -top-4 text-white/5 w-48 h-48" />
+                                        <div className="relative z-10">
+                                            <h3 className="text-3xl font-black italic tracking-tighter text-white mb-2 leading-none">AUDIT <br /> TERRITORIAL</h3>
+                                            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Flux financiers et taxes temps réel.</p>
+                                        </div>
+                                        <button onClick={() => setIsAuditModalOpen(true)} className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest relative z-10 hover:scale-[1.02] transition-transform shadow-xl shadow-emerald-500/20">Démarrer l'Audit</button>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {activeTab === 'tenders' && (
+                            <motion.div key="tenders" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {tenders.map((tender) => (
+                                        <div key={tender.id} className="bg-white border border-zinc-100 p-8 rounded-[3.5rem] shadow-xl shadow-zinc-200/20 group hover:border-emerald-500/30 transition-all relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity"><Gavel size={64} /></div>
+                                            <h3 className="text-2xl font-black italic uppercase text-zinc-900 mb-2 leading-none">{tender.title}</h3>
+                                            <p className="text-zinc-500 text-[10px] font-bold mb-10 line-clamp-3 uppercase tracking-wider">{tender.description}</p>
+                                            
+                                            <div className="space-y-4">
+                                                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Offres Reçues ({tender.tender_bids?.length || 0})</p>
+                                                {tender.tender_bids?.map((bid: any) => (
+                                                    <div key={bid.id} className="p-5 bg-zinc-50 rounded-2xl flex items-center justify-between border border-zinc-100 hover:border-emerald-500/30 transition-all">
+                                                        <div>
+                                                            <p className="text-[10px] font-black text-zinc-900 italic uppercase">{bid.profiles?.full_name}</p>
+                                                            <p className="text-[8px] font-bold text-emerald-500">SCORE: {bid.profiles?.performanceScore || '4.8'}/5</p>
+                                                        </div>
                                                         <button 
-                                                            onClick={() => handleAwardTender(tender.id, bid.id, bid.organisation_id, tender.zone_id)}
-                                                            className="px-4 py-2 bg-primary text-white rounded-xl text-[8px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-all font-black shadow-lg shadow-primary/20"
+                                                            onClick={() => handleAwardTender(tender.id, bid.id, bid.organization_id, tender.zone_id)} 
+                                                            className="px-5 py-2.5 bg-zinc-900 text-white rounded-xl text-[8px] font-black uppercase hover:shadow-lg transition-all"
                                                         >
                                                             Attribuer
                                                         </button>
-                                                    ) : bid.status === 'accepted' && (
-                                                        <CheckCircle2 size={16} className="text-emerald-500" />
-                                                    )}
-                                                </div>
-                                            ))}
-                                            {tender.tender_bids?.length === 0 && <p className="text-[10px] text-zinc-400 uppercase font-black text-center py-4 italic">En attente de soumissions...</p>}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </motion.div>
-                )}
-
-                {activeTab === 'sovereignty' && (
-                    <motion.div 
-                        key="sovereignty"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-10"
-                    >
-                        <div className="bg-gradient-to-br from-zinc-900 to-black p-12 rounded-[3.5rem] text-white border border-white/5 relative overflow-hidden group shadow-2xl">
-                           <ShieldAlert className="absolute -bottom-10 -right-10 w-64 h-64 text-white/5 group-hover:text-primary/10 transition-all duration-700" />
-                           <div className="relative z-10">
-                                <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center mb-6 backdrop-blur-xl border border-white/10">
-                                    <ShieldCheck className="w-8 h-8 text-primary" />
-                                </div>
-                                <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4">Police Verte</h3>
-                                <p className="text-zinc-400 text-sm font-bold leading-relaxed mb-8 max-w-md uppercase tracking-tight">Module de souveraineté territoriale : Verbalisation directe des pollueurs et contrôle des dépôts sauvages.</p>
-                                <button 
-                                    onClick={() => setIsSanctionModalOpen(true)}
-                                    className="px-10 py-5 bg-white text-black rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all shadow-xl"
-                                >
-                                    Accéder au Centre de Sanction
-                                </button>
-                           </div>
-                        </div>
-                        <div className="bg-white dark:bg-zinc-900 p-12 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 flex flex-col justify-between shadow-sm relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-[100px] -mr-32 -mt-32" />
-                            <div className="relative z-10">
-                                <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">
-                                    <DollarSign className="w-8 h-8 text-primary" />
-                                </div>
-                                <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4 text-zinc-900 dark:text-white">Régie Financière</h3>
-                                <p className="text-zinc-400 text-sm font-bold leading-relaxed mb-8 uppercase tracking-tight">Collecte automatisée des taxes de salubrité urbaine et gestion des revenus municipaux.</p>
-                            </div>
-                            <div className="flex gap-4 relative z-10">
-                                <button 
-                                    onClick={() => setIsAuditModalOpen(true)}
-                                    className="flex-1 px-8 py-5 border-2 border-zinc-900 dark:border-white text-zinc-900 dark:text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-zinc-900 hover:text-white transition-all"
-                                >
-                                    Audit Fiscal
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('rapports')}
-                                    className="flex-1 px-8 py-5 bg-zinc-900 dark:bg-white dark:text-black text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2"
-                                >
-                                    <FileDown size={14} />
-                                    Export Rapport
-                                </button>
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-
-                {activeTab === 'fleet' && (
-                    <motion.div 
-                        key="fleet"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="space-y-12"
-                    >
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                            <div className="bg-white dark:bg-zinc-900 p-12 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm relative overflow-hidden group">
-                                <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4 text-zinc-900 dark:text-white">Carnet d'Entretien</h3>
-                                <p className="text-zinc-500 text-xs font-bold uppercase tracking-tight mb-8">Suivi rigoureux de la maintenance curative et préventive de la flotte municipale.</p>
-                                <div className="space-y-3">
-                                    <div className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                                        <span>Camion-Benn #04</span>
-                                        <span className="text-amber-500">Vidange requise</span>
-                                    </div>
-                                    <div className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                                        <span>Compacteur #01</span>
-                                        <span className="text-emerald-500">Opérationnel</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="bg-gradient-to-br from-primary to-primary-focus p-12 rounded-[3.5rem] text-white shadow-2xl flex flex-col justify-between">
-                                <div>
-                                    <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4">Gestion de Parc</h3>
-                                    <p className="opacity-70 text-xs font-bold uppercase tracking-tight mb-8 leading-loose">Optimisez l'allocation de vos Ressources Mobiles et la rotation des agents de voirie.</p>
-                                </div>
-                                <button className="w-full py-5 bg-white text-primary rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl">Ajouter un Véhicule</button>
-                            </div>
-                        </div>
-
-                        {profile?.subscription_tier !== 'mairie' && (
-                            <div className="p-20 text-center bg-gray-50 dark:bg-zinc-900/50 rounded-[4rem] border-4 border-dashed border-gray-100 dark:border-zinc-800">
-                                <Lock size={48} className="mx-auto mb-6 text-primary" />
-                                <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-2 text-zinc-900 dark:text-zinc-100">Pack Elite Requis</h3>
-                                <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-[0.2em] max-w-sm mx-auto mb-10 leading-loose">
-                                    Activez l'abonnement **"Mairie Elite" (200 000 F / mois)** pour accéder aux outils de gestion de flotte et souveraineté territoriale.
-                                </p>
-                                <button
-                                    onClick={() => window.location.href = '/abonnements'}
-                                    className="px-10 py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest"
-                                >
-                                    Souscrire au Pack Elite
-                                </button>
-                            </div>
-                        )}
-                    </motion.div>
-                )}
-                {activeTab === 'rapports' && (
-                    <motion.div 
-                        key="rapports"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="space-y-12"
-                    >
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div className="md:col-span-2 bg-white dark:bg-zinc-900 p-10 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm">
-                                <div className="flex justify-between items-center mb-10">
-                                    <h3 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white">Impact Territorial</h3>
-                                    <span className="px-4 py-2 bg-emerald-50 text-emerald-500 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-2">
-                                        <Leaf size={10} />
-                                        Performance ÉCO
-                                    </span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-10">
-                                    <div className="space-y-4">
-                                        <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">CO2 Évité (Territoire)</p>
-                                        <p className="text-5xl font-black italic tracking-tighter text-emerald-500">{(collectedWastes * 1.5).toFixed(1)} <span className="text-xl">kg</span></p>
-                                        <p className="text-[8px] font-bold text-zinc-500 uppercase">Équivalent à {Math.round(collectedWastes * 0.05)} arbres plantés ce mois-ci.</p>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Volume Recyclé Total</p>
-                                        <p className="text-5xl font-black italic tracking-tighter dark:text-white">{wastes.reduce((acc, w) => acc + (w.status === 'collected' ? (w.final_weight || w.estimated_weight || 0) : 0), 0)} <span className="text-xl">kg</span></p>
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex-1 h-2 bg-gray-100 dark:bg-zinc-800 rounded-full overflow-hidden">
-                                                <div className="h-full bg-primary w-[65%]" />
+                                                    </div>
+                                                ))}
+                                                {(!tender.tender_bids || tender.tender_bids.length === 0) && (
+                                                    <div className="py-10 text-center border-2 border-dashed border-zinc-100 rounded-3xl">
+                                                        <p className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">En attente d'offres...</p>
+                                                    </div>
+                                                )}
                                             </div>
-                                            <span className="text-[8px] font-black text-primary uppercase">65% de l'objectif</span>
+                                        </div>
+                                    ))}
+                                    <button 
+                                        onClick={() => setIsAddTenderModalOpen(true)} 
+                                        className="aspect-square bg-white border-2 border-dashed border-zinc-200 rounded-[3.5rem] flex flex-col items-center justify-center gap-6 hover:border-emerald-500/50 hover:bg-emerald-50/20 transition-all group shadow-xl shadow-zinc-200/20"
+                                    >
+                                        <div className="w-20 h-20 rounded-[2rem] bg-zinc-50 flex items-center justify-center text-zinc-400 group-hover:text-emerald-500 transition-all shadow-inner"><Plus size={40} /></div>
+                                        <div>
+                                            <p className="text-[12px] font-black text-zinc-900 uppercase tracking-widest text-center">Nouveau Marché</p>
+                                            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] mt-1">Appel d'offres public</p>
+                                        </div>
+                                    </button>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {activeTab === 'sovereignty' && (
+                            <motion.div key="sovereignty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                <div className="bg-white border border-zinc-100 p-12 rounded-[4rem] shadow-2xl shadow-zinc-200/20 flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
+                                    <AlertOctagon className="absolute -right-12 -top-12 text-red-500/5 w-64 h-64 rotate-12 transition-transform group-hover:scale-110" />
+                                    <div className="relative z-10">
+                                        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><ShieldAlert size={32} /></div>
+                                        <h2 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none mb-4">Unités de <br />Sanction</h2>
+                                        <p className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Gestion stricte des litiges, retards de collecte et pénalités contractuelles.</p>
+                                    </div>
+                                    <button onClick={() => setIsSanctionModalOpen(true)} className="w-full py-7 bg-red-600 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-red-600/30 hover:scale-[1.01] transition-transform relative z-10">ACCÉDER AU REGISTRE DES CONFLITS</button>
+                                </div>
+                                <div className="bg-white border border-zinc-100 p-12 rounded-[4rem] shadow-2xl shadow-zinc-200/20 flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
+                                    <DollarSign className="absolute -right-12 -top-12 text-emerald-500/5 w-64 h-64 -rotate-12 transition-transform group-hover:scale-110" />
+                                    <div className="relative z-10">
+                                        <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><Activity size={32} /></div>
+                                        <h2 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none mb-4">Régie <br />Financière</h2>
+                                        <p className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Surveillance temps réel des flux fiscaux et des redevances territoriales.</p>
+                                    </div>
+                                    <button onClick={() => setIsAuditModalOpen(true)} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-zinc-900/30 hover:scale-[1.01] transition-transform relative z-10">LANCER L'AUDIT FISCAL COMPLET</button>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {activeTab === 'fleet' && (
+                            <motion.div key="fleet" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="h-full flex flex-col items-center justify-center space-y-8 py-20">
+                                <div className="w-32 h-32 bg-emerald-50 text-emerald-500 rounded-[3rem] flex items-center justify-center shadow-inner relative">
+                                    <Truck size={48} />
+                                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="absolute inset-0 border-2 border-dashed border-emerald-200 rounded-[3rem]" />
+                                </div>
+                                <div className="text-center">
+                                    <h2 className="text-3xl font-black italic uppercase tracking-tighter text-zinc-900">Module Logistique</h2>
+                                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mt-2">Suivi GPS et optimisation de flotte en cours de déploiement.</p>
+                                </div>
+                                <div className="flex gap-4">
+                                    <div className="px-6 py-3 bg-zinc-100 rounded-2xl text-[9px] font-black uppercase tracking-widest text-zinc-400">Scan des Unités</div>
+                                    <div className="px-6 py-3 bg-zinc-100 rounded-2xl text-[9px] font-black uppercase tracking-widest text-zinc-400">Routage IA</div>
+                                </div>
+                            </motion.div>
+                        )}
+
+                        {activeTab === 'rapports' && (
+                            <motion.div key="rapports" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+                                    <div className="lg:col-span-2 bg-white p-12 rounded-[4rem] border border-zinc-100 shadow-2xl shadow-zinc-200/20">
+                                        <div className="flex justify-between items-center mb-12">
+                                            <div>
+                                                <h3 className="text-3xl font-black uppercase italic tracking-tighter text-zinc-900 leading-none">Impact Territorial</h3>
+                                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-2">Mesure de la performance environnementale</p>
+                                            </div>
+                                            <span className="px-5 py-2.5 bg-emerald-50 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-3 border border-emerald-100 shadow-sm"><Leaf size={14} />Performance ÉCO</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                                            <div className="space-y-6">
+                                                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">CO2 Évité (Territoire)</p>
+                                                <p className="text-6xl font-black italic tracking-tighter text-emerald-500">{(collectedWastes * 1.5).toFixed(1)} <span className="text-2xl text-zinc-300">kg</span></p>
+                                                <div className="flex items-center gap-3 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-50">
+                                                    <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-emerald-500 shadow-sm"><Zap size={14} /></div>
+                                                    <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-tight leading-none">Équivalent à {Math.round(collectedWastes * 0.05)} arbres plantés ce mois-ci.</p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-6">
+                                                <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Volume Recyclé Total</p>
+                                                <p className="text-6xl font-black italic tracking-tighter text-zinc-900">{wastes.reduce((acc, w) => acc + (w.status === 'collected' ? (w.final_weight || w.estimated_weight || 0) : 0), 0)} <span className="text-2xl text-zinc-300">kg</span></p>
+                                                <div className="space-y-2">
+                                                    <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-400"><span>Objectif Mensuel</span><span>65%</span></div>
+                                                    <div className="w-full h-2.5 bg-zinc-50 rounded-full overflow-hidden shadow-inner"><div className="h-full bg-zinc-900 w-[65%] rounded-full" /></div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            </div>
-                            <div className="bg-zinc-900 p-10 rounded-[3.5rem] text-white flex flex-col justify-between group relative overflow-hidden">
-                                <TrendingUp className="absolute top-10 right-10 text-white/5 w-32 h-32" />
-                                <div>
-                                    <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-4 leading-none">Rapport <br/> Décisionnel</h3>
-                                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest leading-loose mb-10">Accédez à l'analyse complète multicritères de votre commune.</p>
-                                </div>
-                                <button 
-                                    onClick={() => router.push('/city-os/rapports')}
-                                    className="w-full py-5 bg-primary text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 group-hover:scale-[1.02] transition-all"
-                                >
-                                    Consulter le Rapport Global
-                                    <ArrowUpRight size={14} />
-                                </button>
-                            </div>
-                        </div>
-
-                        <div className="bg-white dark:bg-zinc-900 p-10 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm">
-                            <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 dark:text-white">Répartition par Catégorie</h3>
-                            <div className="grid grid-cols-2 md:grid-cols-5 gap-6">
-                                {['Plastique', 'Métal', 'Verre', 'Papier', 'Autre'].map((cat, i) => (
-                                    <div key={cat} className="space-y-3">
-                                        <div className="h-32 bg-gray-50 dark:bg-zinc-800 rounded-2xl relative flex flex-col justify-end p-4 overflow-hidden">
-                                            <motion.div 
-                                                initial={{ height: 0 }}
-                                                animate={{ height: `${20 + (i * 15)}%` }}
-                                                className="absolute bottom-0 left-0 right-0 bg-primary/20"
-                                            />
-                                            <span className="relative z-10 text-[10px] font-black">{30 + (i * 20)}kg</span>
+                                    <div className="bg-zinc-900 p-12 rounded-[4rem] text-white flex flex-col justify-between group relative overflow-hidden shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] min-h-[450px]">
+                                        <TrendingUp className="absolute top-10 right-10 text-white/[0.03] w-48 h-48 -rotate-12 transition-transform group-hover:scale-110" />
+                                        <div>
+                                            <div className="w-16 h-16 bg-white/10 backdrop-blur-xl rounded-[2rem] flex items-center justify-center mb-10"><BarChart3 size={28} className="text-emerald-500" /></div>
+                                            <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4 leading-none">Rapport <br/> Décisionnel</h3>
+                                            <p className="text-zinc-500 text-[11px] font-bold uppercase tracking-widest leading-loose mb-10 opacity-60">Accédez à l'analyse complète multicritères et prévisionnelle de votre commune.</p>
                                         </div>
-                                        <p className="text-[8px] font-black uppercase text-center text-zinc-400">{cat}</p>
+                                        <button onClick={() => router.push('/city-os/rapports')} className="w-full py-6 bg-emerald-500 text-white rounded-[2.5rem] text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-4 group-hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20">CONSULTER LE RAPPORT GLOBAL<ArrowUpRight size={18} /></button>
                                     </div>
-                                ))}
-                            </div>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </main>
 
-            {/* Modals */}
             <Modal isOpen={isAddTenderModalOpen} onClose={() => setIsAddTenderModalOpen(false)} title="Lancer une Mise en Concurrence">
                 <form onSubmit={handleCreateTender} className="space-y-6">
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Zone Stratégique</label>
-                        <select 
-                            required
-                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
-                            value={newTender.zone_id}
-                            onChange={(e) => setNewTender({...newTender, zone_id: e.target.value})}
-                        >
+                        <select required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" value={newTender.zone_id} onChange={(e) => setNewTender({...newTender, zone_id: e.target.value})}>
                             <option value="">Sélectionner une zone...</option>
-                            {zones.filter(z => z.status === 'available').map(z => (
-                                <option key={z.id} value={z.id}>{z.name}</option>
-                            ))}
+                            {zones.filter(z => z.status === 'available').map(z => (<option key={z.id} value={z.id}>{z.name}</option>))}
                         </select>
                     </div>
-                    <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Titre du Marché</label>
-                        <input 
-                            required
-                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
-                            placeholder="Ex: Collecte Déchets Plastiques 2024"
-                            value={newTender.title}
-                            onChange={(e) => setNewTender({...newTender, title: e.target.value})}
-                        />
-                    </div>
-                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Description des besoins</label>
-                        <textarea 
-                            required
-                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-medium min-h-[100px]"
-                            placeholder="Détails techniques, fréquences de passage..."
-                            value={newTender.description}
-                            onChange={(e) => setNewTender({...newTender, description: e.target.value})}
-                        />
-                    </div>
+                    <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Titre du Marché</label><input required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Titre du Marché" value={newTender.title} onChange={(e) => setNewTender({...newTender, title: e.target.value})} /></div>
+                    <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Description technique</label><textarea required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium min-h-[100px] outline-none" placeholder="Détails techniques..." value={newTender.description} onChange={(e) => setNewTender({...newTender, description: e.target.value})} /></div>
                     <div className="grid grid-cols-2 gap-4">
-                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Budget Approuvé</label>
-                            <input 
-                                type="number"
-                                required
-                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
-                                placeholder="CFA"
-                                value={newTender.budget_estimate}
-                                onChange={(e) => setNewTender({...newTender, budget_estimate: parseInt(e.target.value)})}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Clôture des offres</label>
-                            <input 
-                                type="date"
-                                required
-                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
-                                value={newTender.end_date}
-                                onChange={(e) => setNewTender({...newTender, end_date: e.target.value})}
-                            />
-                        </div>
+                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Budget (CFA)</label><input type="number" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="CFA" value={newTender.budget_estimate} onChange={(e) => setNewTender({...newTender, budget_estimate: parseInt(e.target.value)})} /></div>
+                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Clôture</label><input type="date" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" value={newTender.end_date} onChange={(e) => setNewTender({...newTender, end_date: e.target.value})} /></div>
                     </div>
-                    <button type="submit" className="w-full py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20">Diffuser l'Appel d'Offres</button>
+                    <button type="submit" className="w-full py-5 bg-emerald-500 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.01] transition-all">Diffuser l'Appel d'Offres</button>
                 </form>
             </Modal>
 
@@ -759,210 +457,61 @@ function MairieDashboardContent() {
                  <form onSubmit={async (e) => {
                      e.preventDefault();
                      setLoading(true);
-                     
-                     // 1. Créer la zone
-                     const { data: createdZone, error: zoneError } = await supabase
-                        .from('zones')
-                        .insert([newZone])
-                        .select()
-                        .single();
-
-                     if (zoneError) {
-                         showToast("Erreur lors de la création de la zone", "error");
-                         setLoading(false);
-                         return;
-                     }
-
-                     // 2. Si attribution directe activée
+                     const { data: createdZone, error: zoneError } = await supabase.from('zones').insert([newZone]).select().single();
+                     if (zoneError) { showToast("Erreur zone", "error"); setLoading(false); return; }
                      if (isAttributingDirectly && selectedOrgId) {
-                        const assignResult = await assignConcessionDirectly({
-                            zone_id: createdZone.id,
-                            organization_id: selectedOrgId,
-                            duration_months: concessionDuration
-                        });
-                        
-                        if (!assignResult.success) {
-                            showToast("Zone créée mais échec de l'attribution : " + assignResult.error, "error");
-                        } else {
-                            showToast("Concession attribuée avec succès !", "success");
-                        }
-                     } else {
-                        showToast("Périmètre territorial défini avec succès", "success");
+                        const assignResult = await assignConcessionDirectly({ zone_id: createdZone.id, organization_id: selectedOrgId, duration_months: concessionDuration });
+                        if (assignResult.success) showToast("Concession attribuée", "success");
                      }
-
-                     fetchMairieData();
-                     setIsAddZoneModalOpen(false);
-                     setLoading(false);
+                     fetchMairieData(); setIsAddZoneModalOpen(false); setLoading(false);
                  }} className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de la Zone</label>
-                            <input 
-                                required
-                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
-                                placeholder="Ex: Zone A - Plateau"
-                                value={newZone.name}
-                                onChange={(e) => setNewZone({...newZone, name: e.target.value})}
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Territoire Urbain</label>
-                            <input 
-                                required
-                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
-                                placeholder="Ville"
-                                value={newZone.city}
-                                onChange={(e) => setNewZone({...newZone, city: e.target.value})}
-                            />
-                        </div>
+                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de la Zone</label><input required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Nom de la Zone" value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} /></div>
+                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville</label><input required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Ville" value={newZone.city} onChange={(e) => setNewZone({...newZone, city: e.target.value})} /></div>
                     </div>
-
-                    <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-[2rem] border border-blue-100 dark:border-blue-800/30 space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <Handshake className="text-primary" size={20} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">Attribution Directe</span>
-                            </div>
-                            <button 
-                                type="button"
-                                onClick={() => setIsAttributingDirectly(!isAttributingDirectly)}
-                                className={cn(
-                                    "w-12 h-6 rounded-full p-1 transition-all duration-300",
-                                    isAttributingDirectly ? "bg-primary" : "bg-gray-200"
-                                )}
-                            >
-                                <div className={cn("bg-white w-4 h-4 rounded-full shadow-sm transition-all", isAttributingDirectly ? "ml-6" : "ml-0")} />
-                            </button>
-                        </div>
-
+                    <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-[2rem] space-y-4">
+                        <div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Attribution Directe</span><button type="button" onClick={() => setIsAttributingDirectly(!isAttributingDirectly)} className={cn("w-12 h-6 rounded-full p-1 transition-all", isAttributingDirectly ? "bg-emerald-500" : "bg-gray-200")}><div className={cn("bg-white w-4 h-4 rounded-full shadow-sm transition-all", isAttributingDirectly ? "ml-6" : "ml-0")} /></button></div>
                         {isAttributingDirectly && (
-                            <motion.div 
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                className="space-y-4 pt-4 border-t border-blue-100 dark:border-blue-800/30"
-                            >
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sélectionner un partenaire</label>
-                                    <select 
-                                        className="w-full px-6 py-4 bg-white dark:bg-zinc-900 rounded-2xl text-[10px] font-black uppercase outline-none border border-transparent focus:border-primary transition-all"
-                                        value={selectedOrgId}
-                                        onChange={(e) => setSelectedOrgId(e.target.value)}
-                                        required={isAttributingDirectly}
-                                    >
-                                        <option value="">Choisir une organisation...</option>
-                                        {organizations.map(org => (
-                                            <option key={org.id} value={org.id}>
-                                                {org.full_name} — Score: {org.performanceScore}/5
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Durée du contrat</label>
-                                        <select 
-                                            className="w-full px-6 py-4 bg-white dark:bg-zinc-900 rounded-2xl text-[10px] font-black uppercase outline-none"
-                                            value={concessionDuration}
-                                            onChange={(e) => setConcessionDuration(parseInt(e.target.value))}
-                                        >
-                                            <option value={6}>6 mois</option>
-                                            <option value={12}>12 mois</option>
-                                            <option value={24}>24 mois</option>
-                                        </select>
-                                    </div>
-                                    {selectedOrgId && (
-                                        <div className="flex items-end pb-2">
-                                            <div className="flex items-center gap-1 text-amber-500">
-                                                <Star size={14} fill="currentColor" />
-                                                <Star size={14} fill="currentColor" />
-                                                <Star size={14} fill="currentColor" />
-                                                <Star size={14} fill="currentColor" />
-                                                <span className="text-[10px] font-black ml-1">Trusted</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </motion.div>
+                            <div className="space-y-4 pt-4 border-t border-emerald-100">
+                                <select className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none" value={selectedOrgId} onChange={(e) => setSelectedOrgId(e.target.value)} required={isAttributingDirectly}><option value="">Choisir une organisation...</option>{organizations.map(org => (<option key={org.id} value={org.id}>{org.full_name} — Score: {org.performanceScore}/5</option>))}</select>
+                                <select className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none" value={concessionDuration} onChange={(e) => setConcessionDuration(parseInt(e.target.value))}><option value={6}>6 mois</option><option value={12}>12 mois</option><option value={24}>24 mois</option></select>
+                            </div>
                         )}
                     </div>
-
-                    <button 
-                        type="submit" 
-                        disabled={loading}
-                        className="w-full py-5 bg-black text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:scale-[1.01] transition-all disabled:opacity-50"
-                    >
-                        {loading ? "Traitement en cours..." : "Valider la Concession Territoriale"}
-                    </button>
+                    <button type="submit" disabled={loading} className="w-full py-5 bg-zinc-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest disabled:opacity-50 hover:scale-[1.01] transition-all">{loading ? "Traitement..." : "Valider la Concession"}</button>
                  </form>
             </Modal>
 
-            <Modal isOpen={isSanctionModalOpen} onClose={() => setIsSanctionModalOpen(false)} title="⚖️ CENTRE DE SANCTION - POLICE VERTE">
+            <Modal isOpen={isSanctionModalOpen} onClose={() => setIsSanctionModalOpen(false)} title="⚖️ CENTRE DE SANCTION">
                 <div className="space-y-6">
-                    <div className="p-6 bg-red-50 dark:bg-red-900/20 rounded-3xl border border-red-100 dark:border-red-900/30">
-                        <p className="text-[10px] font-black uppercase text-red-600 mb-2">Alerte de Salubrité</p>
-                        <p className="text-xs font-bold leading-relaxed">
-                            Cet outil permet d'émettre des contraventions numériques aux partenaires ou citoyens identifiés comme pollueurs. 
-                            Toute sanction est enregistrée dans le registre territorial.
-                        </p>
+                    <div className="grid grid-cols-2 gap-4">
+                        <button className="p-6 bg-gray-50 border border-gray-100 rounded-2xl text-left hover:border-red-500 transition-all group"><Clock className="text-zinc-400 group-hover:text-red-500 mb-2 transition-colors" size={20} /><p className="text-[10px] font-black uppercase">Retard Collecte</p></button>
+                        <button className="p-6 bg-gray-50 border border-gray-100 rounded-2xl text-left hover:border-red-500 transition-all group"><Trash2 className="text-zinc-400 group-hover:text-red-500 mb-2 transition-colors" size={20} /><p className="text-[10px] font-black uppercase">Dépôt Sauvage</p></button>
                     </div>
-                    <div className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
-                            <button className="p-6 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-left hover:border-red-500 border border-transparent transition-all">
-                                <Clock className="text-red-500 mb-2" size={20} />
-                                <p className="text-[10px] font-black uppercase tracking-widest">Retard Collecte</p>
-                            </button>
-                            <button className="p-6 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-left hover:border-red-500 border border-transparent transition-all">
-                                <Trash2 className="text-red-500 mb-2" size={20} />
-                                <p className="text-[10px] font-black uppercase tracking-widest">Dépôt Sauvage</p>
-                            </button>
-                        </div>
-                        <textarea 
-                            className="w-full p-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-xs font-medium outline-none min-h-[80px]"
-                            placeholder="Détails de l'infraction constatée..."
-                        />
-                        <button 
-                            onClick={() => { showToast("Sanction envoyée", "success"); setIsSanctionModalOpen(false); }}
-                            className="w-full py-5 bg-red-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-600/20"
-                        >
-                            Émettre la Sanction
-                        </button>
-                    </div>
+                    <button onClick={() => { showToast("Sanction envoyée", "success"); setIsSanctionModalOpen(false); }} className="w-full py-5 bg-red-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-600/20 hover:scale-[1.01] transition-all">Émettre la Sanction</button>
                 </div>
             </Modal>
 
             <Modal isOpen={isAuditModalOpen} onClose={() => setIsAuditModalOpen(false)} title="🏛️ AUDIT RÉGIE FINANCIÈRE">
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="p-6 bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl border border-emerald-100 dark:border-emerald-900/30">
-                            <p className="text-[8px] font-black uppercase text-emerald-600 mb-1">Revenus Totaux</p>
-                            <p className="text-2xl font-black italic tracking-tighter">
-                                {transactions.reduce((acc, tx) => acc + (tx.type === 'income' ? Number(tx.amount) : 0), 0).toLocaleString()} <span className="text-[10px]">CFA</span>
-                            </p>
-                        </div>
-                        <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-3xl border border-blue-100 dark:border-blue-900/30">
-                            <p className="text-[8px] font-black uppercase text-blue-600 mb-1">Transactions</p>
-                            <p className="text-2xl font-black italic tracking-tighter">{transactions.length}</p>
-                        </div>
+                        <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100"><p className="text-[8px] font-black uppercase text-emerald-600 mb-1">Revenus</p><p className="text-2xl font-black italic tracking-tighter text-zinc-900">{transactions.reduce((acc, tx) => acc + (tx.type === 'income' ? Number(tx.amount) : 0), 0).toLocaleString()} <span className="text-[10px]">CFA</span></p></div>
+                        <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100"><p className="text-[8px] font-black uppercase text-blue-600 mb-1">Transactions</p><p className="text-2xl font-black italic tracking-tighter text-zinc-900">{transactions.length}</p></div>
                     </div>
-
                     <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
                         {transactions.map((tx) => (
-                            <div key={tx.id} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl flex justify-between items-center text-[10px] font-black uppercase tracking-widest border border-gray-100 dark:border-zinc-700">
-                                <div className="flex flex-col gap-1">
-                                    <span className="text-zinc-400">{new Date(tx.created_at).toLocaleDateString()}</span>
-                                    <span>{tx.description}</span>
-                                </div>
-                                <span className="text-emerald-500">+{Number(tx.amount).toLocaleString()}</span>
-                            </div>
+                            <div key={tx.id} className="p-4 bg-gray-50 border border-zinc-100 rounded-2xl flex justify-between items-center text-[10px] font-black uppercase tracking-widest"><span className="text-zinc-400 italic">{new Date(tx.created_at).toLocaleDateString()}</span><span className="text-zinc-900">{tx.description}</span><span className="text-emerald-500">+{Number(tx.amount).toLocaleString()}</span></div>
                         ))}
                     </div>
-
-                    <button className="w-full py-5 bg-zinc-900 text-white dark:bg-white dark:text-black rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
-                        <Printer size={14} />
-                        Imprimer l'État Major des Comptes
-                    </button>
+                    <button className="w-full py-5 bg-zinc-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-black transition-all"><Printer size={14} />Imprimer le rapport fiscal</button>
                 </div>
             </Modal>
+
+            <style jsx global>{`
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+                .text-shadow-glow-emerald { text-shadow: 0 0 10px rgba(16, 185, 129, 0.2); }
+            `}</style>
         </div>
     );
 }
