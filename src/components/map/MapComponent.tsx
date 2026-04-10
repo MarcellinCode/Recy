@@ -37,6 +37,17 @@ interface AgentMarker {
     vehicles?: { name: string; type: string };
 }
 
+interface ZoneMarker {
+    id: string;
+    name: string;
+    status: string;
+    latitude?: number;
+    longitude?: number;
+    concessions?: {
+        profiles?: { full_name: string }
+    }[];
+}
+
 // Custom Icon Creator
 const createCustomIcon = (emoji: string, color: string = "#22c55e", isHotspot: boolean = false) => {
     const mainColor = isHotspot ? 'red-600' : (color === '#22c55e' ? 'primary' : 'amber-500');
@@ -94,6 +105,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
     const supabase = createClient();
     const [wastes, setWastes] = useState<WasteMarker[]>([]);
     const [agents, setAgents] = useState<AgentMarker[]>([]);
+    const [zones, setZones] = useState<ZoneMarker[]>([]);
     const [loading, setLoading] = useState(true);
     const [showUserLocation, setShowUserLocation] = useState(false);
 
@@ -140,6 +152,14 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                 }));
 
                 setAgents(enrichedAgents as AgentMarker[]);
+            }
+
+            // 5. Récupérer les Zones et Concessions pour la Mairie
+            if (isMairie) {
+                const { data: zonesData } = await supabase
+                    .from('zones')
+                    .select('*, concessions(*, profiles(full_name))');
+                setZones(zonesData || []);
             }
 
             setWastes(wastesData || []);
@@ -279,32 +299,71 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                         </Marker>
                     )})}
                     
-                    {agents.map((agent) => (
-                        <Marker
-                            key={`agent-${agent.id}`}
-                            position={[agent.latitude, agent.longitude]}
-                            icon={createCustomIcon('🚐', '#3b82f6')}
-                        >
-                            <Popup className="premium-popup">
-                                <div className="p-3 min-w-[200px] bg-white dark:bg-zinc-900 rounded-2xl">
-                                    <div className="flex items-center gap-3 mb-2">
-                                        <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center shadow-inner">
-                                            <Truck className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-black text-gray-900 dark:text-white uppercase text-xs tracking-tight italic">
-                                                {agent.profiles?.full_name || 'Agent Mobile'}
-                                            </h3>
-                                            <p className="text-[9px] font-bold text-blue-500 uppercase tracking-widest">En Service</p>
-                                        </div>
-                                    </div>
-                                    <p className="text-[10px] font-bold text-gray-500 mt-3 uppercase tracking-widest bg-gray-50 dark:bg-zinc-800 p-2 rounded-lg text-center">
-                                        {agent.vehicles?.name || 'Camionnette Standard'}
-                                    </p>
-                                </div>
-                            </Popup>
                         </Marker>
                     ))}
+
+                    {isMairie && zones.map((zone) => {
+                        // Position par défaut si non définie (Abidjan different areas)
+                        const lat = zone.latitude || 5.3484;
+                        const lon = zone.longitude || -4.0197;
+                        
+                        const isOccupied = zone.status === 'occupied' || zone.status === 'rented';
+                        const zoneColor = isOccupied ? "#3b82f6" : "#22c55e"; // Blue vs Green
+                        
+                        return (
+                            <Marker
+                                key={`zone-${zone.id}`}
+                                position={[lat, lon]}
+                                icon={L.divIcon({
+                                    html: `
+                                        <div class="relative group">
+                                            <div class="absolute -inset-8 rounded-full opacity-10 animate-pulse" style="background-color: ${zoneColor}"></div>
+                                            <div class="w-12 h-12 bg-white dark:bg-zinc-900 border-4 rounded-2xl flex items-center justify-center shadow-2xl transition-all group-hover:scale-110" style="border-color: ${zoneColor}">
+                                                <div class="text-[10px] font-black uppercase text-center leading-none" style="color: ${zoneColor}">
+                                                    ${zone.name.substring(0, 3)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `,
+                                    className: 'zone-marker-icon',
+                                    iconSize: [48, 48],
+                                    iconAnchor: [24, 24]
+                                })}
+                            >
+                                <Popup className="premium-popup">
+                                    <div className="p-4 min-w-[200px] bg-white dark:bg-zinc-900 rounded-2xl">
+                                        <div className="flex items-center gap-3 mb-4">
+                                            <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white shadow-lg" style={{ backgroundColor: zoneColor }}>
+                                                <MapPin size={20} />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-black text-xs uppercase italic dark:text-white">{zone.name}</h3>
+                                                <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: zoneColor }}>
+                                                    {zone.status === 'occupied' ? 'Sous Concession' : 'Territoire Libre'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        
+                                        {isOccupied && zone.concessions && zone.concessions[0] && (
+                                            <div className="p-3 bg-blue-50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-800/20 mb-2">
+                                                <p className="text-[8px] font-black uppercase text-blue-600 mb-1">Partenaire Actif</p>
+                                                <p className="text-[10px] font-bold dark:text-zinc-300">{(zone.concessions[0] as any).profiles?.full_name}</p>
+                                            </div>
+                                        )}
+                                        
+                                        {!isOccupied && (
+                                            <p className="text-[9px] font-black uppercase text-zinc-400 italic mb-4">En attente d'agrément territorial</p>
+                                        )}
+                                        
+                                        <div className="flex gap-2">
+                                            <button className="flex-1 py-3 bg-gray-100 dark:bg-zinc-800 text-zinc-900 dark:text-white rounded-xl text-[8px] font-black uppercase hover:bg-white transition-all">Secteurs</button>
+                                            {!isOccupied && <button className="flex-1 py-3 bg-primary text-white rounded-xl text-[8px] font-black uppercase shadow-lg shadow-primary/20">Attribuer</button>}
+                                        </div>
+                                    </div>
+                                </Popup>
+                            </Marker>
+                        )
+                    })}
                 </MarkerClusterGroup>
             </MapContainer>
 

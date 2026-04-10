@@ -30,7 +30,9 @@ import {
     Calendar,
     Printer,
     AlertTriangle,
-    Zap
+    Zap,
+    Star,
+    Handshake
 } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
 import { cn } from "@/lib/utils";
@@ -41,6 +43,12 @@ import { Modal } from "@/components/ui/Modal";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter } from "next/navigation";
 import { createTender, awardTender } from "@/app/actions/tenders";
+import { 
+    assignConcessionDirectly, 
+    getOrganizationsForConcession, 
+    revokeConcession, 
+    checkAndCleanupExpiredConcessions 
+} from "@/app/actions/concessions";
 
 const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
     ssr: false,
@@ -59,13 +67,20 @@ function MairieDashboardContent() {
     const [wastes, setWastes] = useState<any[]>([]);
     const [tenders, setTenders] = useState<any[]>([]);
     const [transactions, setTransactions] = useState<any[]>([]);
+    const [organizations, setOrganizations] = useState<any[]>([]);
+    
     const [isAddZoneModalOpen, setIsAddZoneModalOpen] = useState(false);
     const [isAddTenderModalOpen, setIsAddTenderModalOpen] = useState(false);
     const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
     const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
     const [isSanctionModalOpen, setIsSanctionModalOpen] = useState(false);
+    
     const [editingZone, setEditingZone] = useState<any | null>(null);
-    const [newZone, setNewZone] = useState({ name: "", city: "Abidjan", status: "available" });
+    const [newZone, setNewZone] = useState({ name: "", city: "Abidjan", status: "available", description: "" });
+    const [isAttributingDirectly, setIsAttributingDirectly] = useState(false);
+    const [selectedOrgId, setSelectedOrgId] = useState("");
+    const [concessionDuration, setConcessionDuration] = useState(12);
+    
     const [newTender, setNewTender] = useState({ zone_id: "", title: "", description: "", end_date: "", budget_estimate: 0 });
     const [announcement, setAnnouncement] = useState({ title: "", message: "", type: "info" });
     const [profile, setProfile] = useState<any>(null);
@@ -73,7 +88,11 @@ function MairieDashboardContent() {
     const supabase = createClient();
 
     useEffect(() => {
-        fetchMairieData();
+        const initDashboard = async () => {
+            await checkAndCleanupExpiredConcessions();
+            fetchMairieData();
+        };
+        initDashboard();
     }, [targetMairieId]);
 
 
@@ -169,6 +188,12 @@ function MairieDashboardContent() {
             setWastes(wastesData || []);
             setTenders(enrichedTenders);
             setTransactions(txData || []);
+
+            // 4. Récupérer les organisations pour l'attribution directe
+            const orgsResult = await getOrganizationsForConcession();
+            if (orgsResult.success) {
+                setOrganizations(orgsResult.organizations || []);
+            }
         } catch (err: any) {
             console.error("fetchMairieData error:", err?.message);
         }
@@ -345,35 +370,58 @@ function MairieDashboardContent() {
                                             <tr className="border-b border-gray-100 dark:border-zinc-800 bg-gray-50/50 dark:bg-zinc-800/50">
                                                 <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400">Entreprise Partenaire</th>
                                                 <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400">Zone(s) Assignée(s)</th>
-                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center">Retards &gt;48H</th>
-                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400 text-right">Action</th>
+                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center">Échéance</th>
+                                                <th className="p-6 text-[10px] font-black uppercase tracking-widest text-zinc-400 text-right">Souveraineté</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {zones.filter(z => z.status === 'occupied').map((zone, idx) => {
-                                                const partnerName = zone.concessions?.[0]?.profiles?.full_name || "MUNICIPAL";
-                                                // Mock distribution of SLA breaches for demo (1 for the first partner, 0 for others, etc)
-                                                const infractions = idx === 0 ? slaBreaches : 0;
-                                                const statusColor = infractions > 0 ? "text-red-500" : "text-emerald-500";
+                                                const concession = zone.concessions?.[0];
+                                                const partnerName = concession?.profiles?.full_name || "MUNICIPAL";
+                                                const expiryDate = concession?.rent_end ? new Date(concession.rent_end) : null;
+                                                const isExpiringSoon = expiryDate && (expiryDate.getTime() - new Date().getTime() < 30 * 24 * 3600 * 1000);
                                                 
                                                 return (
                                                 <tr key={zone.id} className="border-b border-gray-100 dark:border-zinc-800 last:border-0 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-colors">
-                                                    <td className="p-6 font-black italic uppercase text-sm">{partnerName}</td>
+                                                    <td className="p-6">
+                                                        <p className="font-black italic uppercase text-sm">{partnerName}</p>
+                                                        <span className="text-[8px] font-bold text-emerald-500 uppercase tracking-widest">Contrat Actif</span>
+                                                    </td>
                                                     <td className="p-6 text-[10px] font-bold uppercase text-zinc-500">{zone.name}</td>
                                                     <td className="p-6 text-center">
-                                                        <span className={cn("text-xl font-black italic tracking-tighter", statusColor)}>{infractions}</span>
+                                                        {expiryDate ? (
+                                                            <div className={cn("inline-flex flex-col items-center p-2 rounded-xl", isExpiringSoon ? "bg-amber-50 text-amber-600" : "bg-gray-50 text-zinc-500")}>
+                                                                <span className="text-[9px] font-black uppercase">{expiryDate.toLocaleDateString()}</span>
+                                                                {isExpiringSoon && <span className="text-[7px] font-black uppercase tracking-tighter">Expire bientôt</span>}
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-[9px] text-zinc-400 uppercase font-black">Indéterminé</span>
+                                                        )}
                                                     </td>
                                                     <td className="p-6 text-right">
-                                                        {infractions > 0 ? (
+                                                        <div className="flex justify-end gap-2">
                                                             <button 
-                                                                onClick={() => showToast(`Pénalité de retard notifiée à ${partnerName}`, "success")}
-                                                                className="px-4 py-2 bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white transition-all"
+                                                                onClick={async () => {
+                                                                    if (confirm(`Révoquer la concession de ${partnerName} pour la zone ${zone.name} ?`)) {
+                                                                        const res = await revokeConcession(concession.id, zone.id);
+                                                                        if (res.success) {
+                                                                            showToast("Concession révoquée", "success");
+                                                                            fetchMairieData();
+                                                                        }
+                                                                    }
+                                                                }}
+                                                                className="px-4 py-2 border border-red-100 text-red-500 hover:bg-red-500 hover:text-white rounded-xl text-[9px] font-black uppercase tracking-widest transition-all"
                                                             >
-                                                                Sanctionner
+                                                                Révoquer
                                                             </button>
-                                                        ) : (
-                                                            <span className="text-[10px] text-emerald-500 font-black uppercase tracking-widest"><CheckCircle2 size={16} className="inline mr-1" /> Conforme</span>
-                                                        )}
+                                                            <button 
+                                                                onClick={() => showToast(`Audit demandé pour ${partnerName}`, "info")}
+                                                                className="px-4 py-2 bg-zinc-900 text-white dark:bg-zinc-800 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-2"
+                                                            >
+                                                                <FileText size={12} />
+                                                                Audit
+                                                            </button>
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             )})}
@@ -707,28 +755,144 @@ function MairieDashboardContent() {
                 </form>
             </Modal>
 
-            <Modal isOpen={isAddZoneModalOpen} onClose={() => setIsAddZoneModalOpen(false)} title="Définir une Zone de Collecte">
+            <Modal isOpen={isAddZoneModalOpen} onClose={() => setIsAddZoneModalOpen(false)} title="🏛️ CENTRE DE COMMANDE : NOUVELLE CONCESSION">
                  <form onSubmit={async (e) => {
                      e.preventDefault();
-                     const { error } = await supabase.from('zones').insert([newZone]);
-                     if (error) showToast("Erreur", "error");
-                     else { showToast("Zone créée", "success"); fetchMairieData(); setIsAddZoneModalOpen(false); }
+                     setLoading(true);
+                     
+                     // 1. Créer la zone
+                     const { data: createdZone, error: zoneError } = await supabase
+                        .from('zones')
+                        .insert([newZone])
+                        .select()
+                        .single();
+
+                     if (zoneError) {
+                         showToast("Erreur lors de la création de la zone", "error");
+                         setLoading(false);
+                         return;
+                     }
+
+                     // 2. Si attribution directe activée
+                     if (isAttributingDirectly && selectedOrgId) {
+                        const assignResult = await assignConcessionDirectly({
+                            zone_id: createdZone.id,
+                            organization_id: selectedOrgId,
+                            duration_months: concessionDuration
+                        });
+                        
+                        if (!assignResult.success) {
+                            showToast("Zone créée mais échec de l'attribution : " + assignResult.error, "error");
+                        } else {
+                            showToast("Concession attribuée avec succès !", "success");
+                        }
+                     } else {
+                        showToast("Périmètre territorial défini avec succès", "success");
+                     }
+
+                     fetchMairieData();
+                     setIsAddZoneModalOpen(false);
+                     setLoading(false);
                  }} className="space-y-6">
-                    <input 
-                        required
-                        className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
-                        placeholder="Nom de la zone"
-                        value={newZone.name}
-                        onChange={(e) => setNewZone({...newZone, name: e.target.value})}
-                    />
-                    <input 
-                        required
-                        className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
-                        placeholder="Ville"
-                        value={newZone.city}
-                        onChange={(e) => setNewZone({...newZone, city: e.target.value})}
-                    />
-                    <button type="submit" className="w-full py-5 bg-black text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest">Enregistrer la Zone</button>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de la Zone</label>
+                            <input 
+                                required
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                                placeholder="Ex: Zone A - Plateau"
+                                value={newZone.name}
+                                onChange={(e) => setNewZone({...newZone, name: e.target.value})}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Territoire Urbain</label>
+                            <input 
+                                required
+                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                                placeholder="Ville"
+                                value={newZone.city}
+                                onChange={(e) => setNewZone({...newZone, city: e.target.value})}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="p-6 bg-blue-50 dark:bg-blue-900/20 rounded-[2rem] border border-blue-100 dark:border-blue-800/30 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Handshake className="text-primary" size={20} />
+                                <span className="text-[10px] font-black uppercase tracking-widest">Attribution Directe</span>
+                            </div>
+                            <button 
+                                type="button"
+                                onClick={() => setIsAttributingDirectly(!isAttributingDirectly)}
+                                className={cn(
+                                    "w-12 h-6 rounded-full p-1 transition-all duration-300",
+                                    isAttributingDirectly ? "bg-primary" : "bg-gray-200"
+                                )}
+                            >
+                                <div className={cn("bg-white w-4 h-4 rounded-full shadow-sm transition-all", isAttributingDirectly ? "ml-6" : "ml-0")} />
+                            </button>
+                        </div>
+
+                        {isAttributingDirectly && (
+                            <motion.div 
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                className="space-y-4 pt-4 border-t border-blue-100 dark:border-blue-800/30"
+                            >
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Sélectionner un partenaire</label>
+                                    <select 
+                                        className="w-full px-6 py-4 bg-white dark:bg-zinc-900 rounded-2xl text-[10px] font-black uppercase outline-none border border-transparent focus:border-primary transition-all"
+                                        value={selectedOrgId}
+                                        onChange={(e) => setSelectedOrgId(e.target.value)}
+                                        required={isAttributingDirectly}
+                                    >
+                                        <option value="">Choisir une organisation...</option>
+                                        {organizations.map(org => (
+                                            <option key={org.id} value={org.id}>
+                                                {org.full_name} — Score: {org.performanceScore}/5
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Durée du contrat</label>
+                                        <select 
+                                            className="w-full px-6 py-4 bg-white dark:bg-zinc-900 rounded-2xl text-[10px] font-black uppercase outline-none"
+                                            value={concessionDuration}
+                                            onChange={(e) => setConcessionDuration(parseInt(e.target.value))}
+                                        >
+                                            <option value={6}>6 mois</option>
+                                            <option value={12}>12 mois</option>
+                                            <option value={24}>24 mois</option>
+                                        </select>
+                                    </div>
+                                    {selectedOrgId && (
+                                        <div className="flex items-end pb-2">
+                                            <div className="flex items-center gap-1 text-amber-500">
+                                                <Star size={14} fill="currentColor" />
+                                                <Star size={14} fill="currentColor" />
+                                                <Star size={14} fill="currentColor" />
+                                                <Star size={14} fill="currentColor" />
+                                                <span className="text-[10px] font-black ml-1">Trusted</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        disabled={loading}
+                        className="w-full py-5 bg-black text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:scale-[1.01] transition-all disabled:opacity-50"
+                    >
+                        {loading ? "Traitement en cours..." : "Valider la Concession Territoriale"}
+                    </button>
                  </form>
             </Modal>
 
