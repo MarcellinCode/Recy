@@ -56,7 +56,7 @@ const createCustomIcon = (emoji: string, color: string = "#22c55e", isHotspot: b
 
     return L.divIcon({
         html: `
-            <div class="relative flex items-center justify-center">
+            <div class="relative flex items-center justify-center translate-y-[-20px]">
                 <div class="absolute w-12 h-12 rounded-full ${ringClass}"></div>
                 <div class="relative w-10 h-10 rounded-full border-4 flex items-center justify-center hover:scale-110 transition-transform ${iconBaseClass}">
                     ${emoji}
@@ -68,6 +68,25 @@ const createCustomIcon = (emoji: string, color: string = "#22c55e", isHotspot: b
         iconSize: [40, 40],
         iconAnchor: [20, 20],
         popupAnchor: [0, -20]
+    });
+};
+
+const createVehicleIcon = (type: string, status: string = 'active') => {
+    const colorClass = status === 'in_maintenance' ? 'amber-500' : 'emerald-500';
+    return L.divIcon({
+        html: `
+            <div class="relative flex items-center justify-center">
+                <div class="absolute w-10 h-10 bg-${colorClass} opacity-20 animate-pulse rounded-2xl"></div>
+                <div class="relative w-8 h-8 bg-white dark:bg-zinc-900 border-2 border-${colorClass} rounded-xl flex items-center justify-center shadow-xl text-${colorClass}">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10 17h4V5H2v12h3m1 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0m10 0a2 2 0 1 0 4 0 2 2 0 1 0-4 0M14 9h5l3 3v5h-3"/>
+                    </svg>
+                </div>
+            </div>
+        `,
+        className: 'vehicle-icon',
+        iconSize: [32, 32],
+        iconAnchor: [16, 16],
     });
 };
 
@@ -299,6 +318,42 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                         </Marker>
                         );
                     })}
+
+                    {agents.map((agent) => (
+                        <Marker
+                            key={`agent-${agent.id}`}
+                            position={[agent.latitude, agent.longitude]}
+                            icon={createVehicleIcon(agent.vehicles?.type || 'truck')}
+                        >
+                            <Popup className="premium-popup">
+                                <div className="p-3 min-w-[180px] bg-white dark:bg-zinc-900 rounded-2xl">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-500">
+                                            <Truck size={20} />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-[10px] font-black uppercase italic dark:text-white leading-none mb-1">
+                                                {agent.vehicles?.name || 'Unité de Collecte'}
+                                            </h3>
+                                            <p className="text-[8px] font-bold text-emerald-500 uppercase tracking-widest leading-none">
+                                                {agent.profiles?.full_name || 'Agent Terrain'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <div className="flex-1 p-2 bg-gray-50 dark:bg-zinc-800 rounded-xl flex items-center gap-2">
+                                            <Zap size={10} className="text-amber-500" />
+                                            <span className="text-[9px] font-black dark:text-gray-400">85%</span>
+                                        </div>
+                                        <div className="flex-1 p-2 bg-gray-50 dark:bg-zinc-800 rounded-xl flex items-center gap-2">
+                                            <Package size={10} className="text-blue-500" />
+                                            <span className="text-[9px] font-black dark:text-gray-400">20%</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </Popup>
+                        </Marker>
+                    ))}
 
                     {isMairie && zones.map((zone) => {
                         // Position par défaut si non définie (Abidjan different areas)

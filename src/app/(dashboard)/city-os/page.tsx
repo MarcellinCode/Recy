@@ -55,6 +55,12 @@ import {
     LiveTicker, 
     StatusIndicator 
 } from "@/components/dashboard/CockpitComponents";
+import { 
+    VehicleCard, 
+    MaintenanceIntel, 
+    TelemetryFeed, 
+    RouteOptimizationOverlay 
+} from "@/components/dashboard/LogisticsComponents";
 
 const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
     ssr: false,
@@ -74,6 +80,9 @@ function MairieDashboardContent() {
     const [tenders, setTenders] = useState<any[]>([]);
     const [transactions, setTransactions] = useState<any[]>([]);
     const [organizations, setOrganizations] = useState<any[]>([]);
+    const [vehicles, setVehicles] = useState<any[]>([]);
+    const [fleetPositions, setFleetPositions] = useState<any[]>([]);
+    const [isIAOptimizing, setIsIAOptimizing] = useState(false);
     
     const [isAddZoneModalOpen, setIsAddZoneModalOpen] = useState(false);
     const [isAddTenderModalOpen, setIsAddTenderModalOpen] = useState(false);
@@ -149,6 +158,12 @@ function MairieDashboardContent() {
 
             const orgsResult = await getOrganizationsForConcession();
             if (orgsResult.success) setOrganizations(orgsResult.organizations || []);
+
+            const { data: vehiclesData } = await supabase.from('vehicles').select('*');
+            const { data: posData } = await supabase.from('agent_live_positions').select('*');
+            
+            setVehicles(vehiclesData || []);
+            setFleetPositions(posData || []);
 
             setLiveEvents(prev => [{ id: Date.now(), type: "SYSTÈME", message: "Souveraineté territoriale confirmée.", timestamp: new Date() }, ...prev.slice(0, 5)]);
         } catch (err: any) {
@@ -239,10 +254,18 @@ function MairieDashboardContent() {
                     </nav>
 
                     <button 
-                        onClick={() => setIsAddZoneModalOpen(true)}
-                        className="px-8 py-3.5 bg-zinc-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-zinc-900/10"
+                        onClick={() => {
+                            if (activeTab === 'fleet') setIsIAOptimizing(!isIAOptimizing);
+                            else setIsAddZoneModalOpen(true);
+                        }}
+                        className={cn(
+                            "px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl",
+                            activeTab === 'fleet' 
+                                ? "bg-emerald-500 text-white shadow-emerald-500/20" 
+                                : "bg-zinc-900 text-white shadow-zinc-900/10"
+                        )}
                     >
-                        DÉPLOYER NOUVELLE ZONE
+                        {activeTab === 'fleet' ? (isIAOptimizing ? "DÉSACTIVER OPTIMISATION" : "LANCER OPTIMISATION IA") : "DÉPLOYER NOUVELLE ZONE"}
                     </button>
                 </header>
 
@@ -372,18 +395,45 @@ function MairieDashboardContent() {
                         )}
 
                         {activeTab === 'fleet' && (
-                            <motion.div key="fleet" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="h-full flex flex-col items-center justify-center space-y-8 py-20">
-                                <div className="w-32 h-32 bg-emerald-50 text-emerald-500 rounded-[3rem] flex items-center justify-center shadow-inner relative">
-                                    <Truck size={48} />
-                                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }} className="absolute inset-0 border-2 border-dashed border-emerald-200 rounded-[3rem]" />
+                            <motion.div key="fleet" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
+                                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                                    <div className="lg:col-span-3 relative h-[600px] rounded-[4rem] overflow-hidden border border-zinc-200 bg-white shadow-2xl shadow-zinc-200/20">
+                                        <div className="absolute inset-0 z-0"><MapComponent isMairie={true} /></div>
+                                        {isIAOptimizing && <RouteOptimizationOverlay />}
+                                        <div className="absolute top-8 left-8 z-20 flex gap-4">
+                                            <div className="px-6 py-3 bg-white/90 backdrop-blur-md rounded-2xl border border-zinc-100 shadow-xl flex items-center gap-3">
+                                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                                <span className="text-[10px] font-black uppercase tracking-widest text-zinc-900">{vehicles.length} UNITÉS ACTIVES</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-8">
+                                        <MaintenanceIntel vehicles={vehicles} />
+                                        <div className="p-8 bg-white border border-zinc-100 rounded-[3rem] shadow-xl shadow-zinc-200/20">
+                                            <TelemetryFeed />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="text-center">
-                                    <h2 className="text-3xl font-black italic uppercase tracking-tighter text-zinc-900">Module Logistique</h2>
-                                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mt-2">Suivi GPS et optimisation de flotte en cours de déploiement.</p>
-                                </div>
-                                <div className="flex gap-4">
-                                    <div className="px-6 py-3 bg-zinc-100 rounded-2xl text-[9px] font-black uppercase tracking-widest text-zinc-400">Scan des Unités</div>
-                                    <div className="px-6 py-3 bg-zinc-100 rounded-2xl text-[9px] font-black uppercase tracking-widest text-zinc-400">Routage IA</div>
+
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between px-4">
+                                        <h3 className="text-2xl font-black italic uppercase tracking-tighter text-zinc-900">Unités de Terrain</h3>
+                                        <div className="flex gap-2">
+                                            <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-400"><Search size={18} /></div>
+                                            <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center text-zinc-400"><Filter size={18} /></div>
+                                        </div>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+                                        {vehicles.map(v => (
+                                            <VehicleCard key={v.id} vehicle={v} position={fleetPositions.find(p => p.vehicle_id === v.id)} />
+                                        ))}
+                                        {vehicles.length === 0 && (
+                                            <div className="col-span-full py-20 bg-zinc-50 border-2 border-dashed border-zinc-100 rounded-[3rem] flex flex-col items-center justify-center gap-4">
+                                                <Truck className="text-zinc-200" size={48} />
+                                                <p className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">Aucun véhicule enregistré dans la flotte.</p>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </motion.div>
                         )}
