@@ -240,7 +240,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
     return (
         <div className="w-full h-[70vh] rounded-[3rem] overflow-hidden border-4 border-white dark:border-zinc-800 shadow-2xl relative z-0 group">
             <MapContainer
-                center={[6.37, 2.40]} // Cotonou
+                center={[5.3484, -4.0197]} // Abidjan, Côte d'Ivoire
                 zoom={12}
                 style={{ height: "100%", width: "100%" }}
                 scrollWheelZoom={true}
