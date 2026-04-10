@@ -2,6 +2,7 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { sendNotification } from "./notifications";
 
 export async function dispatchEmergencyAgent(wasteId: string, agentId: string) {
     const cookieStore = await cookies();
@@ -44,6 +45,50 @@ export async function dispatchEmergencyAgent(wasteId: string, agentId: string) {
                 title: '🚨 DÉPLOIEMENT D\'URGENCE',
                 content: 'La Mairie a réquisitionné votre véhicule pour un ramassage sanitaire prioritaire immédiat. Veuillez vous rendre au point critique !',
                 type: 'system',
+                is_read: false
+            });
+
+        if (notifError) throw new Error("Erreur lors de l'envoi de la notification: " + notifError.message);
+
+        return { success: true };
+    } catch (error: any) {
+        return { success: false, error: error.message };
+    }
+}
+
+export async function issueSanction(organizationId: string, type: string, description: string) {
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        {
+            cookies: {
+                getAll() {
+                    return cookieStore.getAll();
+                },
+                setAll(cookiesToSet) {
+                    try {
+                        cookiesToSet.forEach(({ name, value, options }) =>
+                            cookieStore.set(name, value, options)
+                        );
+                    } catch (_) {}
+                },
+            },
+        }
+    );
+
+    try {
+        // Optionnel: On pourrait insérer dans une table 'sanctions' ici
+        // await supabase.from('sanctions').insert({ organization_id: organizationId, type, description });
+
+        // Notifier l'organisation
+        const { error: notifError } = await supabase
+            .from('notifications')
+            .insert({
+                profile_id: organizationId,
+                title: `⚖️ SANCTION : ${type.toUpperCase()}`,
+                content: `Une sanction administrative a été émise à votre encontre. Motif : ${description}`,
+                type: 'alert',
                 is_read: false
             });
 

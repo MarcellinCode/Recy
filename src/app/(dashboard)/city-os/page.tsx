@@ -37,12 +37,13 @@ import {
 import { useState, useEffect, Suspense } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { createTender, awardTender } from "@/app/actions/tenders";
+import { issueSanction } from "@/app/actions/mairie";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/Modal";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter } from "next/navigation";
-import { createTender, awardTender } from "@/app/actions/tenders";
 import { 
     assignConcessionDirectly, 
     getOrganizationsForConcession, 
@@ -537,10 +538,29 @@ function MairieDashboardContent() {
             <Modal isOpen={isSanctionModalOpen} onClose={() => setIsSanctionModalOpen(false)} title="⚖️ CENTRE DE SANCTION">
                 <div className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <button className="p-6 bg-gray-50 border border-gray-100 rounded-2xl text-left hover:border-red-500 transition-all group"><Clock className="text-zinc-400 group-hover:text-red-500 mb-2 transition-colors" size={20} /><p className="text-[10px] font-black uppercase">Retard Collecte</p></button>
-                        <button className="p-6 bg-gray-50 border border-gray-100 rounded-2xl text-left hover:border-red-500 transition-all group"><Trash2 className="text-zinc-400 group-hover:text-red-500 mb-2 transition-colors" size={20} /><p className="text-[10px] font-black uppercase">Dépôt Sauvage</p></button>
+                        <button 
+                            onClick={async () => {
+                                const res = await issueSanction("ALL", "RETARD COLLECTE", "Retard de plus de 48h sur les points critiques.");
+                                if (res.success) { showToast("Sanction envoyée", "success"); setIsSanctionModalOpen(false); }
+                                else showToast("Erreur lors de l'envoi", "error");
+                            }}
+                            className="p-6 bg-gray-50 border border-gray-100 rounded-2xl text-left hover:border-red-500 transition-all group"
+                        >
+                            <Clock className="text-zinc-400 group-hover:text-red-500 mb-2 transition-colors" size={20} />
+                            <p className="text-[10px] font-black uppercase">Retard Collecte</p>
+                        </button>
+                        <button 
+                            onClick={async () => {
+                                const res = await issueSanction("ALL", "DÉPÔT SAUVAGE", "Signalement de dépôts illégaux dans la zone de concession.");
+                                if (res.success) { showToast("Sanction envoyée", "success"); setIsSanctionModalOpen(false); }
+                                else showToast("Erreur lors de l'envoi", "error");
+                            }}
+                            className="p-6 bg-gray-50 border border-gray-100 rounded-2xl text-left hover:border-red-500 transition-all group"
+                        >
+                            <Trash2 className="text-zinc-400 group-hover:text-red-500 mb-2 transition-colors" size={20} />
+                            <p className="text-[10px] font-black uppercase">Dépôt Sauvage</p>
+                        </button>
                     </div>
-                    <button onClick={() => { showToast("Sanction envoyée", "success"); setIsSanctionModalOpen(false); }} className="w-full py-5 bg-red-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-600/20 hover:scale-[1.01] transition-all">Émettre la Sanction</button>
                 </div>
             </Modal>
 

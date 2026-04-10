@@ -2,6 +2,7 @@
  
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
+import { sendNotification } from "./notifications";
 
 /**
  * Créer un nouvel appel d'offres (Mairie)
@@ -101,6 +102,14 @@ export async function awardTender(tenderId: string, bidId: string, organizationI
   // 5. Mettre à jour la zone
   await supabase.from('zones').update({ status: 'occupied' }).eq('id', zoneId);
  
+  // 6. Envoyer une notification de victoire
+  await sendNotification(
+    organizationId,
+    "🏆 MARCHÉ ATTRIBUÉ !",
+    `Félicitations ! Votre offre pour le marché "${tenderId}" a été retenue par la Mairie. Vous pouvez désormais opérer la zone concernée.`,
+    'success'
+  );
+
   revalidatePath('/admin/mairie');
   revalidatePath('/organisation');
   return { success: true };
