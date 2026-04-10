@@ -86,20 +86,20 @@ function GlobalRapportContent() {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-black pb-20">
-            {/* Header Sticky */}
-            <div className="sticky top-0 z-50 bg-white/80 dark:bg-black/80 backdrop-blur-xl border-b border-gray-100 dark:border-zinc-800 px-6 md:px-12 lg:px-24 py-6">
+        <div className="min-h-screen bg-slate-50 pb-20 selection:bg-emerald-100">
+            {/* Header Sticky - Cockpit Crystal Style */}
+            <div className="sticky top-0 z-50 bg-white/70 backdrop-blur-2xl border-b border-zinc-200 px-6 md:px-12 lg:px-24 py-8">
                 <div className="max-w-[1400px] mx-auto flex items-center justify-between">
                     <div className="flex items-center gap-6">
                         <button 
                             onClick={() => router.back()}
-                            className="p-3 bg-gray-100 dark:bg-zinc-900 rounded-2xl hover:bg-white transition-all shadow-sm"
+                            className="p-4 bg-white border border-zinc-200 rounded-2xl hover:bg-emerald-50 hover:border-emerald-200 transition-all shadow-sm group"
                         >
-                            <ArrowLeft size={18} />
+                            <ArrowLeft size={20} className="text-zinc-600 group-hover:text-emerald-500 transition-colors" />
                         </button>
                         <div>
-                            <h1 className="text-2xl font-black italic tracking-tighter uppercase dark:text-white leading-none mb-1">Rapport <span className="text-primary">Performance Global</span></h1>
-                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">Analytique Territoriale & Impact RSE</p>
+                            <h1 className="text-3xl font-black italic tracking-tighter uppercase text-zinc-900 leading-none mb-2">Rapport <span className="text-emerald-500">Performance Global</span></h1>
+                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">Analytique Territoriale & Impact Environnemental</p>
                         </div>
                     </div>
                     <div className="flex gap-4">
@@ -116,67 +116,70 @@ function GlobalRapportContent() {
             </div>
 
             <div className="max-w-[1400px] mx-auto px-6 md:px-12 lg:px-24 mt-12 space-y-12">
-                {/* Dashboard Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                    <div className="p-8 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12 transition-all group-hover:scale-150" />
-                        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2">Total Collecté</p>
-                        <p className="text-4xl font-black italic tracking-tighter dark:text-white mb-4">{totalWeight} <span className="text-sm">kg</span></p>
-                        <div className="flex items-center gap-2 text-[10px] font-black text-emerald-500 uppercase">
-                            <TrendingUp size={12} />
-                            +12% vs mois dernier
+                {/* Dashboard Stats - Crystal Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div className="p-10 bg-white/70 backdrop-blur-xl rounded-[3rem] border border-zinc-200 shadow-xl shadow-zinc-200/20 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 transition-all group-hover:scale-150" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Total Collecté</p>
+                        <p className="text-5xl font-black italic tracking-tighter text-zinc-900 mb-6">{totalWeight} <span className="text-xl text-zinc-300">kg</span></p>
+                        <div className="flex items-center gap-2 text-[11px] font-black text-emerald-500 uppercase">
+                            <TrendingUp size={14} />
+                            +12.4% vs MOIS DERNIER
                         </div>
                     </div>
 
-                    <div className="p-8 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full -mr-12 -mt-12 transition-all group-hover:scale-150" />
-                        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2">Impact CO2 Sauvé</p>
-                        <p className="text-4xl font-black italic tracking-tighter text-emerald-500 mb-4">{co2Saved} <span className="text-sm">kg</span></p>
-                        <div className="flex items-center gap-2 text-[10px] font-black text-emerald-500 uppercase italic">
-                            <Leaf size={12} />
-                            Objectif Atteint
+                    <div className="p-10 bg-white/70 backdrop-blur-xl rounded-[3rem] border border-zinc-200 shadow-xl shadow-zinc-200/20 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 transition-all group-hover:scale-150" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Impact CO2 Sauvé</p>
+                        <p className="text-5xl font-black italic tracking-tighter text-emerald-500 mb-6">{co2Saved} <span className="text-xl text-emerald-200">kg</span></p>
+                        <div className="flex items-center gap-2 text-[11px] font-black text-emerald-500 uppercase italic">
+                            <Leaf size={14} />
+                            OBJECTIF ATTEINT
                         </div>
                     </div>
 
-                    <div className="p-8 bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-full -mr-12 -mt-12 transition-all group-hover:scale-150" />
-                        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 mb-2">Salubrité Commune</p>
-                        <p className="text-4xl font-black italic tracking-tighter dark:text-white mb-4">84 <span className="text-sm">%</span></p>
-                        <div className="w-full h-1 bg-gray-100 dark:bg-zinc-800 rounded-full">
-                            <div className="h-full bg-blue-500 w-[84%]" />
+                    <div className="p-10 bg-white/70 backdrop-blur-xl rounded-[3rem] border border-zinc-200 shadow-xl shadow-zinc-200/20 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -mr-16 -mt-16 transition-all group-hover:scale-150" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">Salubrité Commune</p>
+                        <p className="text-5xl font-black italic tracking-tighter text-zinc-900 mb-6">84 <span className="text-xl text-zinc-300">%</span></p>
+                        <div className="w-full h-2 bg-zinc-100 rounded-full overflow-hidden">
+                            <motion.div initial={{ width: 0 }} animate={{ width: '84%' }} className="h-full bg-blue-500 rounded-full" />
                         </div>
                     </div>
 
-                    <div className="p-8 bg-zinc-900 rounded-[2.5rem] text-white shadow-2xl relative overflow-hidden group">
-                         <div className="absolute top-0 right-0 w-24 h-24 bg-primary/20 blur-[40px] -mr-12 -mt-12 transition-all group-hover:scale-150" />
-                        <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500 mb-2">Éco-taxe Commune</p>
-                        <p className="text-4xl font-black italic tracking-tighter text-white mb-4">{totalEcoTax.toLocaleString()} <span className="text-sm">CFA</span></p>
-                        <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">Revenus territoriaux directs</p>
+                    <div className="p-10 bg-zinc-900 rounded-[3rem] text-white shadow-2xl relative overflow-hidden group">
+                         <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500/10 blur-[60px] -mr-20 -mt-20 transition-all group-hover:scale-150" />
+                        <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-2">Éco-taxe Commune</p>
+                        <p className="text-5xl font-black italic tracking-tighter text-white mb-6">{totalEcoTax.toLocaleString()} <span className="text-xl text-zinc-600">CFA</span></p>
+                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">REVENUS TERRITORIAUX</p>
                     </div>
                 </div>
 
-                {/* Two Column Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                    {/* Weight Breakdown */}
-                    <div className="bg-white dark:bg-zinc-900 p-10 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm">
-                        <h3 className="text-xl font-black uppercase italic tracking-tighter mb-10 flex items-center gap-3">
-                            <PieChart className="text-primary" />
+                {/* Two Column Layout - Analytics & Finance */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                    {/* Weight Breakdown - Crystal Panel */}
+                    <div className="bg-white/70 backdrop-blur-xl p-12 rounded-[4rem] border border-zinc-200 shadow-xl shadow-zinc-200/10">
+                        <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-12 flex items-center gap-4">
+                            <PieChart className="text-emerald-500" size={24} />
                             Répartition des Flux
                         </h3>
-                        <div className="space-y-6">
+                        <div className="space-y-8">
                             {weightByCategory.map((cat, i) => (
-                                <div key={cat.name} className="space-y-2">
-                                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                                        <span className="text-zinc-500">{cat.name}</span>
-                                        <span className="dark:text-white">{cat.weight} kg</span>
+                                <div key={cat.name} className="space-y-3">
+                                    <div className="flex justify-between items-center text-[11px] font-black uppercase tracking-[0.2em]">
+                                        <span className="text-zinc-400">{cat.name}</span>
+                                        <span className="text-zinc-900">{cat.weight} kg</span>
                                     </div>
-                                    <div className="h-3 bg-gray-50 dark:bg-zinc-800 rounded-full overflow-hidden">
+                                    <div className="h-4 bg-zinc-50 rounded-full overflow-hidden shadow-inner">
                                         <motion.div 
                                             initial={{ width: 0 }}
                                             animate={{ width: `${(cat.weight / (totalWeight || 1)) * 100}%` }}
                                             className={cn(
-                                                "h-full",
-                                                i === 0 ? "bg-primary" : i === 1 ? "bg-emerald-500" : i === 2 ? "bg-blue-500" : i === 3 ? "bg-amber-500" : "bg-zinc-400"
+                                                "h-full rounded-full transition-all",
+                                                i === 0 ? "bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.3)]" : 
+                                                i === 1 ? "bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.3)]" : 
+                                                i === 2 ? "bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.3)]" : 
+                                                i === 3 ? "bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.3)]" : "bg-zinc-400"
                                             )}
                                         />
                                     </div>
@@ -185,29 +188,28 @@ function GlobalRapportContent() {
                         </div>
                     </div>
 
-                    {/* Financial History */}
-                    <div className="bg-white dark:bg-zinc-900 p-10 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm">
-                         <h3 className="text-xl font-black uppercase italic tracking-tighter mb-10 flex items-center gap-3">
-                            <Layers className="text-primary" />
-                            Historique des Taxes
+                    {/* Financial History - Crystal Panel */}
+                    <div className="bg-white/70 backdrop-blur-xl p-12 rounded-[4rem] border border-zinc-200 shadow-xl shadow-zinc-200/10">
+                         <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-12 flex items-center gap-4">
+                            <Layers className="text-emerald-500" size={24} />
+                            Journal des Flux Financiers
                         </h3>
-                        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-4 scrollbar-hide">
-                            {transactions.length === 0 && <p className="text-center text-zinc-400 text-xs py-10 uppercase font-black">Aucune transaction enregistrée</p>}
+                        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-6 no-scrollbar">
+                            {transactions.length === 0 && <p className="text-center text-zinc-300 text-[10px] py-20 uppercase font-black tracking-widest italic">Aucun flux financier détecté localement</p>}
                             {transactions.map((tx) => (
-                                <div key={tx.id} className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl flex justify-between items-center group transition-all hover:bg-primary/5">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                                            <DollarSign size={18} />
+                                <div key={tx.id} className="p-6 bg-white border border-zinc-100 rounded-[2rem] flex justify-between items-center group transition-all hover:border-emerald-500/30 hover:shadow-lg hover:shadow-emerald-500/5">
+                                    <div className="flex items-center gap-5">
+                                        <div className="w-14 h-14 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-500 border border-emerald-100">
+                                            <DollarSign size={20} />
                                         </div>
                                         <div>
-                                            <p className="text-[10px] font-black uppercase tracking-widest dark:text-white">{tx.description || "Taxes de salubrité"}</p>
-                                            <p className="text-[8px] font-bold text-zinc-400 uppercase">{new Date(tx.created_at).toLocaleDateString()} • {new Date(tx.created_at).toLocaleTimeString()}</p>
+                                            <p className="text-[11px] font-black uppercase tracking-widest text-zinc-900">{tx.description || "ÉCO-TAXE TERRITORIALE"}</p>
+                                            <p className="text-[9px] font-bold text-zinc-400 uppercase mt-1">{new Date(tx.created_at).toLocaleDateString()} • {new Date(tx.created_at).toLocaleTimeString()}</p>
                                         </div>
                                     </div>
-                                    <p className="text-md font-black italic tracking-tighter text-emerald-500">+{Number(tx.amount).toLocaleString()} CFA</p>
+                                    <p className="text-lg font-black italic tracking-tighter text-emerald-500">+{Number(tx.amount).toLocaleString()} <span className="text-[10px]">CFA</span></p>
                                 </div>
                             ))}
-                        </div>
                     </div>
                 </div>
 

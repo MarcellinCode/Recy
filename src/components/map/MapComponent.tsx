@@ -120,6 +120,42 @@ function LocationMarker() {
     );
 }
 
+function RadarScanner() {
+    return (
+        <div className="absolute inset-0 pointer-events-none z-[400] overflow-hidden rounded-[3rem]">
+            {/* Spinning Line */}
+            <motion.div 
+                animate={{ rotate: 360 }}
+                transition={{ duration: 6, repeat: Infinity, ease: "linear" }}
+                className="absolute top-1/2 left-1/2 w-[200%] h-[150px] bg-gradient-to-b from-transparent via-emerald-500/10 to-transparent -translate-x-1/2 -translate-y-1/2 origin-center"
+                style={{ clipPath: 'polygon(50% 50%, 100% 45%, 100% 55%)' }}
+            />
+            
+            {/* Pulsing Grid Background Layer (Subtle) */}
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.02)_1px,transparent_1px)] bg-[size:60px_60px] opacity-30" />
+            
+            {/* Scanning Ring */}
+            <motion.div 
+                animate={{ scale: [1, 1.5, 1], opacity: [0.1, 0.3, 0.1] }}
+                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                className="absolute top-1/2 left-1/2 w-96 h-96 border border-emerald-500/20 rounded-full -translate-x-1/2 -translate-y-1/2"
+            />
+
+            {/* Corners targeting UI */}
+            <div className="absolute top-8 left-8 w-12 h-12 border-t-2 border-l-2 border-emerald-500/20 rounded-tl-2xl" />
+            <div className="absolute top-8 right-8 w-12 h-12 border-t-2 border-r-2 border-emerald-500/20 rounded-tr-2xl" />
+            <div className="absolute bottom-8 left-8 w-12 h-12 border-b-2 border-l-2 border-emerald-500/20 rounded-bl-2xl" />
+            <div className="absolute bottom-8 right-8 w-12 h-12 border-b-2 border-r-2 border-emerald-500/20 rounded-br-2xl" />
+            
+            {/* Fixed crosshair in center (subtle) */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center opacity-20">
+                <div className="w-10 h-[1px] bg-emerald-500"></div>
+                <div className="h-10 w-[1px] bg-emerald-500 absolute"></div>
+            </div>
+        </div>
+    );
+}
+
 export default function MapComponent({ isMairie = false }: { isMairie?: boolean }) {
     const supabase = createClient();
     const [wastes, setWastes] = useState<WasteMarker[]>([]);
@@ -239,6 +275,7 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
 
     return (
         <div className="w-full h-[70vh] rounded-[3rem] overflow-hidden border-4 border-white dark:border-zinc-800 shadow-2xl relative z-0 group">
+            <RadarScanner />
             <MapContainer
                 center={[5.3484, -4.0197]} // Abidjan, Côte d'Ivoire
                 zoom={12}
