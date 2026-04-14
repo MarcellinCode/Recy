@@ -210,6 +210,7 @@ function GlobalRapportContent() {
                                     <p className="text-lg font-black italic tracking-tighter text-emerald-500">+{Number(tx.amount).toLocaleString()} <span className="text-[10px]">CFA</span></p>
                                 </div>
                             ))}
+                        </div>
                     </div>
                 </div>
 
