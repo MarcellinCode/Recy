@@ -26,12 +26,13 @@ export async function dispatchEmergencyAgent(wasteId: string, agentId: string) {
     );
 
     try {
-        // Mettre à jour le statut du déchet pour forcer la réservation
+        // Mettre à jour le statut du déchet pour forcer la réservation et marquer comme urgent
         const { error: wasteError } = await supabase
             .from('wastes')
             .update({ 
                 status: 'reserved',
-                collector_id: agentId 
+                collector_id: agentId,
+                is_urgent: true
             })
             .eq('id', wasteId);
 
@@ -43,7 +44,7 @@ export async function dispatchEmergencyAgent(wasteId: string, agentId: string) {
             .insert({
                 profile_id: agentId,
                 title: '🚨 DÉPLOIEMENT D\'URGENCE',
-                content: 'La Mairie a réquisitionné votre véhicule pour un ramassage sanitaire prioritaire immédiat. Veuillez vous rendre au point critique !',
+                content: 'La Mairie a réquisitionné votre véhicule pour un ramassage sanitaire prioritaire immédiat.',
                 type: 'system',
                 is_read: false
             });
@@ -56,7 +57,7 @@ export async function dispatchEmergencyAgent(wasteId: string, agentId: string) {
     }
 }
 
-export async function issueSanction(organizationId: string, type: string, description: string) {
+export async function issueSanction(organizationId: string, type: string, description: string, severity: string = 'medium', penaltyAmount: number = 0) {
     const cookieStore = await cookies();
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -78,8 +79,18 @@ export async function issueSanction(organizationId: string, type: string, descri
     );
 
     try {
-        // Optionnel: On pourrait insérer dans une table 'sanctions' ici
-        // await supabase.from('sanctions').insert({ organization_id: organizationId, type, description });
+        // Enregistrement dans la table sanctions
+        const { error: sanctionError } = await supabase
+            .from('sanctions')
+            .insert({ 
+                organization_id: organizationId, 
+                type, 
+                description,
+                severity,
+                penalty_amount: penaltyAmount
+            });
+
+        if (sanctionError) throw sanctionError;
 
         // Notifier l'organisation
         const { error: notifError } = await supabase

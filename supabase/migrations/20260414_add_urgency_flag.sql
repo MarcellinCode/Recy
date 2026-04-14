@@ -1,0 +1,2 @@
+-- 🚨 AJOUT DU FLAG D'URGENCE (Requisition Mairie)
+ALTER TABLE public.wastes ADD COLUMN IF NOT EXISTS is_urgent BOOLEAN DEFAULT FALSE;

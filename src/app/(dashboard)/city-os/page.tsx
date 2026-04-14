@@ -81,6 +81,7 @@ function MairieDashboardContent() {
     const [tenders, setTenders] = useState<any[]>([]);
     const [transactions, setTransactions] = useState<any[]>([]);
     const [organizations, setOrganizations] = useState<any[]>([]);
+    const [sanctions, setSanctions] = useState<any[]>([]);
     const [vehicles, setVehicles] = useState<any[]>([]);
     const [fleetPositions, setFleetPositions] = useState<any[]>([]);
     const [isIAOptimizing, setIsIAOptimizing] = useState(false);
@@ -90,7 +91,7 @@ function MairieDashboardContent() {
     const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
     const [isSanctionModalOpen, setIsSanctionModalOpen] = useState(false);
     
-    const [newZone, setNewZone] = useState({ name: "", city: "Abidjan", status: "available", description: "" });
+    const [sanctionForm, setSanctionForm] = useState({ orgId: "", type: "RETARD COLLECTE", description: "", amount: 0, severity: "medium" as any });
     const [isAttributingDirectly, setIsAttributingDirectly] = useState(false);
     const [selectedOrgId, setSelectedOrgId] = useState("");
     const [concessionDuration, setConcessionDuration] = useState(12);
@@ -143,6 +144,7 @@ function MairieDashboardContent() {
             const { data: tendersData } = await supabase.from('tenders').select('*').eq('mairie_id', mairieId);
             const { data: bidsData } = await supabase.from('tender_bids').select('*');
             const { data: txData } = await supabase.from('transactions').select('*').eq('profile_id', mairieId).order('created_at', { ascending: false });
+            const { data: sanctionsData } = await supabase.from('sanctions').select('*, profiles:organization_id(full_name)').order('created_at', { ascending: false });
 
             const enrichedTenders = tendersData?.map((t: any) => ({
                 ...t,
@@ -156,6 +158,7 @@ function MairieDashboardContent() {
             setWastes(wastesData || []);
             setTenders(enrichedTenders);
             setTransactions(txData || []);
+            setSanctions(sanctionsData || []);
 
             const orgsResult = await getOrganizationsForConcession();
             if (orgsResult.success) setOrganizations(orgsResult.organizations || []);
@@ -375,24 +378,55 @@ function MairieDashboardContent() {
                         )}
 
                         {activeTab === 'sovereignty' && (
-                            <motion.div key="sovereignty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                <div className="bg-white border border-zinc-100 p-12 rounded-[4rem] shadow-2xl shadow-zinc-200/20 flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
-                                    <AlertOctagon className="absolute -right-12 -top-12 text-red-500/5 w-64 h-64 rotate-12 transition-transform group-hover:scale-110" />
-                                    <div className="relative z-10">
-                                        <div className="w-16 h-16 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><ShieldAlert size={32} /></div>
-                                        <h2 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none mb-4">Unités de <br />Sanction</h2>
-                                        <p className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Gestion stricte des litiges, retards de collecte et pénalités contractuelles.</p>
+                            <motion.div key="sovereignty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                    <div className="bg-white border border-zinc-100 p-12 rounded-[4rem] shadow-2xl shadow-zinc-200/20 flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
+                                        <AlertOctagon className="absolute -right-12 -top-12 text-red-500/5 w-64 h-64 rotate-12 transition-transform group-hover:scale-110" />
+                                        <div className="relative z-10">
+                                            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><ShieldAlert size={32} /></div>
+                                            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none mb-4">Unités de <br />Sanction</h2>
+                                            <p className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Gestion stricte des litiges, retards de collecte et pénalités contractuelles.</p>
+                                        </div>
+                                        <button onClick={() => setIsSanctionModalOpen(true)} className="w-full py-7 bg-red-600 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-red-600/30 hover:scale-[1.01] transition-transform relative z-10">ÉMETTRE UNE SANCTION</button>
                                     </div>
-                                    <button onClick={() => setIsSanctionModalOpen(true)} className="w-full py-7 bg-red-600 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-red-600/30 hover:scale-[1.01] transition-transform relative z-10">ACCÉDER AU REGISTRE DES CONFLITS</button>
+                                    <div className="bg-white border border-zinc-100 p-12 rounded-[4rem] shadow-2xl shadow-zinc-200/20 flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
+                                        <DollarSign className="absolute -right-12 -top-12 text-emerald-500/5 w-64 h-64 -rotate-12 transition-transform group-hover:scale-110" />
+                                        <div className="relative z-10">
+                                            <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><Activity size={32} /></div>
+                                            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none mb-4">Régie <br />Financière</h2>
+                                            <p className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Surveillance temps réel des flux fiscaux et des redevances territoriales.</p>
+                                        </div>
+                                        <button onClick={() => setIsAuditModalOpen(true)} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-zinc-900/30 hover:scale-[1.01] transition-transform relative z-10">LANCER L'AUDIT FISCAL COMPLET</button>
+                                    </div>
                                 </div>
-                                <div className="bg-white border border-zinc-100 p-12 rounded-[4rem] shadow-2xl shadow-zinc-200/20 flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
-                                    <DollarSign className="absolute -right-12 -top-12 text-emerald-500/5 w-64 h-64 -rotate-12 transition-transform group-hover:scale-110" />
-                                    <div className="relative z-10">
-                                        <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><Activity size={32} /></div>
-                                        <h2 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none mb-4">Régie <br />Financière</h2>
-                                        <p className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Surveillance temps réel des flux fiscaux et des redevances territoriales.</p>
+
+                                <div className="bg-white/70 backdrop-blur-xl rounded-[3rem] border border-zinc-100 p-10 shadow-xl shadow-zinc-200/20">
+                                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900">Registre des Sanctions Administratives</h3>
+                                    <div className="space-y-4">
+                                        {sanctions.map((s) => (
+                                            <div key={s.id} className="flex items-center justify-between p-6 bg-white border border-zinc-50 rounded-[2rem] hover:shadow-lg transition-all">
+                                                <div className="flex items-center gap-6">
+                                                    <div className={cn(
+                                                        "w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xs",
+                                                        s.severity === 'high' || s.severity === 'critical' ? "bg-red-50 text-red-600" : "bg-zinc-50 text-zinc-500"
+                                                    )}>!</div>
+                                                    <div>
+                                                        <p className="font-black italic uppercase text-zinc-900">{s.profiles?.full_name || "Organisation"}</p>
+                                                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{s.type} — {new Date(s.created_at).toLocaleDateString()}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <p className="text-sm font-black text-red-500">-{s.penalty_amount.toLocaleString()} CFA</p>
+                                                    <p className="text-[9px] font-black text-zinc-300 uppercase italic">Pénalité Appliquée</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {sanctions.length === 0 && (
+                                            <div className="py-20 text-center bg-zinc-50/50 rounded-[3rem] border border-dashed border-zinc-100">
+                                                <p className="text-[10px] font-black text-zinc-300 uppercase tracking-[0.3em]">Aucune sanction enregistrée.</p>
+                                            </div>
+                                        )}
                                     </div>
-                                    <button onClick={() => setIsAuditModalOpen(true)} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-zinc-900/30 hover:scale-[1.01] transition-transform relative z-10">LANCER L'AUDIT FISCAL COMPLET</button>
                                 </div>
                             </motion.div>
                         )}
@@ -536,32 +570,92 @@ function MairieDashboardContent() {
             </Modal>
 
             <Modal isOpen={isSanctionModalOpen} onClose={() => setIsSanctionModalOpen(false)} title="⚖️ CENTRE DE SANCTION">
-                <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        <button 
-                            onClick={async () => {
-                                const res = await issueSanction("ALL", "RETARD COLLECTE", "Retard de plus de 48h sur les points critiques.");
-                                if (res.success) { showToast("Sanction envoyée", "success"); setIsSanctionModalOpen(false); }
-                                else showToast("Erreur lors de l'envoi", "error");
-                            }}
-                            className="p-6 bg-gray-50 border border-gray-100 rounded-2xl text-left hover:border-red-500 transition-all group"
+                <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!sanctionForm.orgId) { showToast("Veuillez choisir une organisation", "error"); return; }
+                    setLoading(true);
+                    const res = await issueSanction(sanctionForm.orgId, sanctionForm.type, sanctionForm.description, sanctionForm.severity, sanctionForm.amount);
+                    if (res.success) {
+                        showToast("Sanction enregistrée et notifiée", "success");
+                        setIsSanctionModalOpen(false);
+                        fetchMairieData();
+                    } else {
+                        showToast("Erreur: " + res.error, "error");
+                    }
+                    setLoading(false);
+                }} className="space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Organisation Cible</label>
+                        <select 
+                            required 
+                            className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none"
+                            value={sanctionForm.orgId}
+                            onChange={(e) => setSanctionForm({...sanctionForm, orgId: e.target.value})}
                         >
-                            <Clock className="text-zinc-400 group-hover:text-red-500 mb-2 transition-colors" size={20} />
-                            <p className="text-[10px] font-black uppercase">Retard Collecte</p>
-                        </button>
-                        <button 
-                            onClick={async () => {
-                                const res = await issueSanction("ALL", "DÉPÔT SAUVAGE", "Signalement de dépôts illégaux dans la zone de concession.");
-                                if (res.success) { showToast("Sanction envoyée", "success"); setIsSanctionModalOpen(false); }
-                                else showToast("Erreur lors de l'envoi", "error");
-                            }}
-                            className="p-6 bg-gray-50 border border-gray-100 rounded-2xl text-left hover:border-red-500 transition-all group"
-                        >
-                            <Trash2 className="text-zinc-400 group-hover:text-red-500 mb-2 transition-colors" size={20} />
-                            <p className="text-[10px] font-black uppercase">Dépôt Sauvage</p>
-                        </button>
+                            <option value="">Sélectionner...</option>
+                            {organizations.map(org => (<option key={org.id} value={org.id}>{org.full_name}</option>))}
+                        </select>
                     </div>
-                </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Type de Litige</label>
+                            <select 
+                                className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black outline-none"
+                                value={sanctionForm.type}
+                                onChange={(e) => setSanctionForm({...sanctionForm, type: e.target.value})}
+                            >
+                                <option value="RETARD COLLECTE">RETARD COLLECTE</option>
+                                <option value="DÉPÔT SAUVAGE">DÉPÔT SAUVAGE</option>
+                                <option value="DÉFAUT MAINTENANCE">DÉFAUT MAINTENANCE</option>
+                                <option value="AUTRE">AUTRE</option>
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Gravité</label>
+                            <select 
+                                className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black outline-none"
+                                value={sanctionForm.severity}
+                                onChange={(e) => setSanctionForm({...sanctionForm, severity: e.target.value})}
+                            >
+                                <option value="low">FAIBLE</option>
+                                <option value="medium">MOYENNE</option>
+                                <option value="high">ÉLEVÉE</option>
+                                <option value="critical">CRITIQUE</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Pénalité (CFA)</label>
+                        <input 
+                            type="number"
+                            className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none"
+                            placeholder="Montant en CFA"
+                            value={sanctionForm.amount}
+                            onChange={(e) => setSanctionForm({...sanctionForm, amount: parseInt(e.target.value)})}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Description / Justification</label>
+                        <textarea 
+                            required
+                            className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium min-h-[80px] outline-none"
+                            placeholder="Détails du manquement..."
+                            value={sanctionForm.description}
+                            onChange={(e) => setSanctionForm({...sanctionForm, description: e.target.value})}
+                        />
+                    </div>
+
+                    <button 
+                        type="submit" 
+                        disabled={loading}
+                        className="w-full py-5 bg-red-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-600/20 disabled:opacity-50"
+                    >
+                        {loading ? "Traitement..." : "Appliquer la Sanction"}
+                    </button>
+                </form>
             </Modal>
 
             <Modal isOpen={isAuditModalOpen} onClose={() => setIsAuditModalOpen(false)} title="🏛️ AUDIT RÉGIE FINANCIÈRE">

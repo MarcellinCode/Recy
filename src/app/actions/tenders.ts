@@ -57,7 +57,7 @@ export async function submitBid(data: {
   }
 
   const { error } = await supabase.from('tender_bids').insert({
-    organization_id: user.id,
+    organisation_id: user.id,
     ...data,
     status: 'pending'
   });
@@ -72,7 +72,7 @@ export async function submitBid(data: {
 /**
  * Attribuer un marché (Mairie)
  */
-export async function awardTender(tenderId: string, bidId: string, organizationId: string, zoneId: string) {
+export async function awardTender(tenderId: string, bidId: string, organisationId: string, zoneId: string) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Non authentifié" };
@@ -94,7 +94,7 @@ export async function awardTender(tenderId: string, bidId: string, organizationI
  
   // 4. Créer la concession officielle
   await supabase.from('concessions').insert({
-    organization_id: organizationId,
+    organization_id: organisationId,
     zone_id: zoneId,
     status: 'active'
   });
@@ -104,7 +104,7 @@ export async function awardTender(tenderId: string, bidId: string, organizationI
  
   // 6. Envoyer une notification de victoire
   await sendNotification(
-    organizationId,
+    organisationId,
     "🏆 MARCHÉ ATTRIBUÉ !",
     `Félicitations ! Votre offre pour le marché "${tenderId}" a été retenue par la Mairie. Vous pouvez désormais opérer la zone concernée.`,
     'success'
