@@ -92,6 +92,7 @@ function MairieDashboardContent() {
     const [isSanctionModalOpen, setIsSanctionModalOpen] = useState(false);
     
     const [sanctionForm, setSanctionForm] = useState({ orgId: "", type: "RETARD COLLECTE", description: "", amount: 0, severity: "medium" as any });
+    const [newZone, setNewZone] = useState({ name: "", city: "Abidjan", status: "available", description: "" });
     const [isAttributingDirectly, setIsAttributingDirectly] = useState(false);
     const [selectedOrgId, setSelectedOrgId] = useState("");
     const [concessionDuration, setConcessionDuration] = useState(12);
