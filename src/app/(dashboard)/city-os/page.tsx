@@ -162,7 +162,14 @@ function MairieDashboardContent() {
             setSanctions(sanctionsData || []);
 
             const orgsResult = await getOrganizationsForConcession();
-            if (orgsResult.success) setOrganizations(orgsResult.organizations || []);
+            if (orgsResult.success) {
+                // Filtrer les organisations avec un score critique
+                const enrichedOrgs = (orgsResult.organizations || []).map((org: any) => ({
+                    ...org,
+                    isSuspended: (org.performance_score || 5) < 2.5
+                }));
+                setOrganizations(enrichedOrgs);
+            }
 
             const { data: vehiclesData } = await supabase.from('vehicles').select('*');
             const { data: posData } = await supabase.from('agent_live_positions').select('*');
@@ -429,6 +436,54 @@ function MairieDashboardContent() {
                                         )}
                                     </div>
                                 </div>
+
+                                <div className="bg-white/70 backdrop-blur-xl rounded-[3rem] border border-zinc-100 p-10 shadow-xl shadow-zinc-200/20">
+                                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900 flex items-center justify-between">
+                                        <span>Annuaire des Partenaires Certifiés</span>
+                                        <span className="text-[10px] font-black text-zinc-400">SEUIL D'EXCLUSION : 2.5/5.0</span>
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        {organizations.map((org) => (
+                                            <div key={org.id} className={cn(
+                                                "p-8 rounded-[2.5rem] border flex items-center justify-between transition-all",
+                                                org.isSuspended ? "bg-red-50 border-red-100 opacity-80" : "bg-white border-zinc-50 hover:border-emerald-500/30"
+                                            )}>
+                                                <div className="flex items-center gap-5">
+                                                    <div className={cn(
+                                                        "w-16 h-16 rounded-3xl flex items-center justify-center font-black text-xl",
+                                                        org.isSuspended ? "bg-red-500 text-white" : "bg-emerald-50 text-emerald-500"
+                                                    )}>
+                                                        {org.full_name?.charAt(0) || "P"}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-black italic uppercase text-zinc-900">{org.full_name}</p>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <div className="flex gap-0.5">
+                                                                {[1,2,3,4,5].map(s => (
+                                                                    <div key={s} className={cn(
+                                                                        "w-3 h-1 rounded-full",
+                                                                        s <= (org.performance_score || 5) ? (org.isSuspended ? "bg-red-500" : "bg-emerald-500") : "bg-zinc-100"
+                                                                    )} />
+                                                                ))}
+                                                            </div>
+                                                            <span className={cn(
+                                                                "text-[9px] font-black uppercase",
+                                                                org.isSuspended ? "text-red-600" : "text-emerald-600"
+                                                            )}>
+                                                                Score : {(org.performance_score || 5).toFixed(1)}/5
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                {org.isSuspended && (
+                                                    <div className="px-4 py-2 bg-red-600 text-white rounded-xl text-[8px] font-black uppercase tracking-widest animate-pulse">
+                                                        SUSPENDU
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
                             </motion.div>
                         )}
 
@@ -660,17 +715,55 @@ function MairieDashboardContent() {
             </Modal>
 
             <Modal isOpen={isAuditModalOpen} onClose={() => setIsAuditModalOpen(false)} title="🏛️ AUDIT RÉGIE FINANCIÈRE">
-                <div className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="p-6 bg-emerald-50 rounded-3xl border border-emerald-100"><p className="text-[8px] font-black uppercase text-emerald-600 mb-1">Revenus</p><p className="text-2xl font-black italic tracking-tighter text-zinc-900">{transactions.reduce((acc, tx) => acc + (tx.type === 'income' ? Number(tx.amount) : 0), 0).toLocaleString()} <span className="text-[10px]">CFA</span></p></div>
-                        <div className="p-6 bg-blue-50 rounded-3xl border border-blue-100"><p className="text-[8px] font-black uppercase text-blue-600 mb-1">Transactions</p><p className="text-2xl font-black italic tracking-tighter text-zinc-900">{transactions.length}</p></div>
+                <div className="space-y-10">
+                    <div className="grid grid-cols-2 gap-8">
+                        <div className="p-10 bg-emerald-50 rounded-[3rem] border border-emerald-100 shadow-sm relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150" />
+                            <p className="text-[10px] font-black uppercase text-emerald-600 mb-4 tracking-[0.2em] relative z-10">Éco-Taxes Perçues</p>
+                            <p className="text-5xl font-black italic tracking-tighter text-emerald-700 relative z-10">
+                                {transactions
+                                    .filter(tx => tx.type === 'income')
+                                    .reduce((acc, tx) => acc + Number(tx.amount), 0)
+                                    .toLocaleString()} <span className="text-xl">CFA</span>
+                            </p>
+                        </div>
+                        <div className="p-10 bg-zinc-900 rounded-[3rem] shadow-2xl relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150" />
+                            <p className="text-[10px] font-black uppercase text-zinc-500 mb-4 tracking-[0.2em] relative z-10">Actes Administratifs</p>
+                            <p className="text-5xl font-black italic tracking-tighter text-white relative z-10">
+                                {transactions.length}
+                            </p>
+                        </div>
                     </div>
-                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
-                        {transactions.map((tx) => (
-                            <div key={tx.id} className="p-4 bg-gray-50 border border-zinc-100 rounded-2xl flex justify-between items-center text-[10px] font-black uppercase tracking-widest"><span className="text-zinc-400 italic">{new Date(tx.created_at).toLocaleDateString()}</span><span className="text-zinc-900">{tx.description}</span><span className="text-emerald-500">+{Number(tx.amount).toLocaleString()}</span></div>
-                        ))}
+                    
+                    <div className="bg-white border border-zinc-100 rounded-[3rem] p-10 shadow-xl shadow-zinc-200/20">
+                        <h4 className="text-[11px] font-black uppercase tracking-widest text-zinc-900 mb-8 flex items-center gap-3">
+                            <Activity size={16} className="text-emerald-500" />
+                            Registre des Flux de Trésorerie Territoriale
+                        </h4>
+                        <div className="space-y-4 max-h-[350px] overflow-y-auto pr-6 no-scrollbar">
+                            {transactions.length === 0 && <p className="text-center py-20 text-[10px] font-black text-zinc-300 uppercase italic">Aucune transaction enregistrée</p>}
+                            {transactions.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).map(tx => (
+                                <div key={tx.id} className="flex justify-between items-center p-6 bg-zinc-50/50 border border-zinc-100 rounded-3xl hover:border-emerald-500/30 transition-all">
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black uppercase text-zinc-900 leading-none mb-1">{tx.description || "PERCEPTION RÉGILE"}</span>
+                                        <span className="text-[9px] font-bold text-zinc-400 uppercase">{new Date(tx.created_at).toLocaleDateString()} • {new Date(tx.created_at).toLocaleTimeString()}</span>
+                                    </div>
+                                    <span className={cn(
+                                        "text-lg font-black italic tracking-tighter",
+                                        tx.type === 'income' ? "text-emerald-600" : "text-red-500"
+                                    )}>
+                                        {tx.type === 'income' ? '+' : '-'}{Math.abs(Number(tx.amount)).toLocaleString()} <span className="text-[10px]">CFA</span>
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <button className="w-full py-5 bg-zinc-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-black transition-all"><Printer size={14} />Imprimer le rapport fiscal</button>
+
+                    <button className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-zinc-900/30 flex items-center justify-center gap-4 hover:scale-[1.01] transition-transform">
+                        <Printer size={18} />
+                        Générer l'Audit Certifié (PDF)
+                    </button>
                 </div>
             </Modal>
 

@@ -92,13 +92,33 @@ export async function issueSanction(organizationId: string, type: string, descri
 
         if (sanctionError) throw sanctionError;
 
+        // Débit immédiat du Wallet si un montant est spécifié
+        if (penaltyAmount > 0) {
+            const { error: penaltyError } = await supabase.rpc('fn_apply_sanction_penalty', {
+                p_organization_id: organizationId,
+                p_amount: penaltyAmount,
+                p_description: `${type} (${severity})`
+            });
+            if (penaltyError) throw new Error("Erreur débit sanction: " + penaltyError.message);
+        }
+
+        // Mise à jour du Score de Performance (baisse proportionnelle à la sévérité)
+        const penaltyMap: Record<string, number> = { low: 0.1, medium: 0.25, high: 0.5, critical: 1.0 };
+        const scoreDrop = penaltyMap[severity] || 0.25;
+
+        // Récupérer le score actuel
+        const { data: profile } = await supabase.from('profiles').select('performance_score').eq('id', organizationId).single();
+        const newScore = Math.max(0, (profile?.performance_score || 5.0) - scoreDrop);
+
+        await supabase.from('profiles').update({ performance_score: newScore }).eq('id', organizationId);
+
         // Notifier l'organisation
         const { error: notifError } = await supabase
             .from('notifications')
             .insert({
                 profile_id: organizationId,
-                title: `⚖️ SANCTION : ${type.toUpperCase()}`,
-                content: `Une sanction administrative a été émise à votre encontre. Motif : ${description}`,
+                title: `⚖️ SANCTION ADMINISTRATIVE`,
+                content: `Une amende de ${penaltyAmount} CFA a été appliquée pour : ${description}. Score actuel : ${newScore.toFixed(1)}/5`,
                 type: 'alert',
                 is_read: false
             });
