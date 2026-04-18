@@ -78,18 +78,31 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              "name": "CITICLINE",
-              "url": "https://www.citicline.com",
-              "logo": "https://www.citicline.com/logo.png",
-              "description": "Plateforme d'intelligence urbaine pour la gestion et la valorisation des déchets recyclables.",
-              "sameAs": [
-                "https://twitter.com/citicline",
-                "https://linkedin.com/company/citicline"
-              ]
-            })
+            __html: JSON.stringify([
+              {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": "CITICLINE",
+                "url": "https://www.citicline.com",
+                "potentialAction": {
+                  "@type": "SearchAction",
+                  "target": "https://www.citicline.com/marketplace?search={search_term_string}",
+                  "query-input": "required name=search_term_string"
+                }
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                "name": "CITICLINE",
+                "url": "https://www.citicline.com",
+                "logo": "https://www.citicline.com/logo.png",
+                "description": "Plateforme d'intelligence urbaine pour la gestion et la valorisation des déchets recyclables.",
+                "sameAs": [
+                  "https://twitter.com/citicline",
+                  "https://linkedin.com/company/citicline"
+                ]
+              }
+            ])
           }}
         />
         <ToastProvider />
