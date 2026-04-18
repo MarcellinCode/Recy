@@ -17,6 +17,20 @@ export const metadata: Metadata = {
   },
   description: "Rejoignez l'intelligence urbaine. CITICLINE transforme vos déchets en ressources. Marketplace de collecte, suivi d'impact écologique et paiements sécurisés.",
   manifest: "/manifest.json",
+  alternates: {
+    canonical: '/',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
   keywords: ["recyclage", "écologie", "déchets", "marketplace", "économie circulaire", "CITICLINE", "city clean"],
   authors: [{ name: "CITICLINE Team" }],
   openGraph: {
@@ -61,6 +75,23 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.variable} font-sans antialiased`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "Organization",
+              "name": "CITICLINE",
+              "url": "https://www.citicline.com",
+              "logo": "https://www.citicline.com/logo.png",
+              "description": "Plateforme d'intelligence urbaine pour la gestion et la valorisation des déchets recyclables.",
+              "sameAs": [
+                "https://twitter.com/citicline",
+                "https://linkedin.com/company/citicline"
+              ]
+            })
+          }}
+        />
         <ToastProvider />
         <NavigationWrapper>
             {children}

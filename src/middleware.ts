@@ -2,6 +2,19 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
 export async function middleware(request: NextRequest) {
+    const pathname = request.nextUrl.pathname
+    const host = request.headers.get("host") || ""
+    const protocol = request.headers.get("x-forwarded-proto") || "http"
+    const isLocal = host.includes("localhost") || host.includes("127.0.0.1")
+
+    // 🔥 Force Canonical URL: https://www.citicline.com
+    if (!isLocal && (host === "citicline.com" || protocol === "http")) {
+        return NextResponse.redirect(
+            `https://www.citicline.com${pathname}${request.nextUrl.search}`,
+            301
+        )
+    }
+
     let response = NextResponse.next({
         request: {
             headers: request.headers,
@@ -36,8 +49,6 @@ export async function middleware(request: NextRequest) {
     const {
         data: { user },
     } = await supabase.auth.getUser()
-
-    const pathname = request.nextUrl.pathname
 
     // Auth pages (login / inscription)
     const isAuthPage = pathname.startsWith('/connexion') || pathname.startsWith('/inscription')

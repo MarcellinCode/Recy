@@ -5,7 +5,19 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      disallow: ['/admin/', '/dashboard/', '/profil/', '/chat/', '/wallet/'],
+      disallow: [
+        '/admin',
+        '/city-os',
+        '/dashboard',
+        '/api',
+        '/chat',
+        '/missions',
+        '/notifications',
+        '/reservations',
+        '/wallet',
+        '/mes-dechets',
+        '/profil'
+      ],
     },
     sitemap: 'https://www.citicline.com/sitemap.xml',
   }
