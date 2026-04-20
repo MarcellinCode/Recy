@@ -4,6 +4,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { BottomNavigation } from "@/components/layout/BottomNavigation";
+import { Footer } from "@/components/layout/Footer";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
 
