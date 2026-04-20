@@ -72,6 +72,7 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
             </main>
 
             {!shouldHideNav && <BottomNavigation />}
+            {!shouldHideNav && <Footer />}
         </>
     );
 }

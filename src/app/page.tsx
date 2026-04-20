@@ -26,7 +26,7 @@ export default async function Home() {
         <div className="absolute inset-0 z-0">
           <img
             src="https://www.kaweru.com/wp-content/uploads/2025/12/Cotonou.jpg"
-            alt="CITICLINE - Cotonou Propre"
+            alt="CITICLINE - Plateforme d'Intelligence Urbaine et Gestion des Déchets"
             className="w-full h-full object-cover scale-105 brightness-110"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/60 to-transparent"></div>
@@ -39,10 +39,13 @@ export default async function Home() {
               <span className="text-xs font-black tracking-[0.2em] uppercase">City Waste Management OS</span>
             </div>
 
-            <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter text-white leading-none sm:leading-[0.85] uppercase italic drop-shadow-2xl">
+            <h1 
+              aria-label="CITICLINE - L'Intelligence Urbaine"
+              className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter text-white leading-none sm:leading-[0.85] uppercase italic drop-shadow-2xl"
+            >
               L'Intelligence <br />
               <span className="text-primary italic">Urbaine</span> <br />
-              CITI<span className="text-primary tracking-tighter">CLINE</span>
+              CITICLINE
             </h1>
 
             <p className="max-w-2xl text-lg md:text-2xl text-gray-300 font-medium leading-relaxed">
