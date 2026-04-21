@@ -45,6 +45,9 @@ import { Modal } from "@/components/ui/Modal";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter } from "next/navigation";
 import { 
+    assignConcessionDirectly, 
+    getOrganizationsForConcession, 
+    revokeConcession, 
     checkAndCleanupExpiredConcessions 
 } from "@/app/actions/concessions";
 import { 
