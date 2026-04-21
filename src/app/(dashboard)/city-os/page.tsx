@@ -51,6 +51,10 @@ import {
     checkAndCleanupExpiredConcessions 
 } from "@/app/actions/concessions";
 import { 
+    createPoliceAgent, 
+    getPoliceAgents 
+} from "@/app/actions/police-agents";
+import { 
     reportInfraction, 
     updateInfractionStatus, 
     convertInfractionToSanction, 
@@ -97,12 +101,15 @@ function MairieDashboardContent() {
     const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
     const [isSanctionModalOpen, setIsSanctionModalOpen] = useState(false);
     const [isInfractionDetailModalOpen, setIsInfractionDetailModalOpen] = useState(false);
+    const [isAddAgentModalOpen, setIsAddAgentModalOpen] = useState(false);
     
     const [infractions, setInfractions] = useState<any[]>([]);
+    const [policeAgents, setPoliceAgents] = useState<any[]>([]);
     const [infractionStats, setInfractionStats] = useState<any>(null);
     const [selectedInfraction, setSelectedInfraction] = useState<any>(null);
     const [penaltyAmount, setPenaltyAmount] = useState(50000);
     
+    const [newAgent, setNewAgent] = useState({ fullName: "", email: "", password: "", phone: "", city: "Abidjan", zoneId: "" });
     const [sanctionForm, setSanctionForm] = useState({ orgId: "", type: "RETARD COLLECTE", description: "", amount: 0, severity: "medium" as any });
     const [newZone, setNewZone] = useState({ name: "", city: "Abidjan", status: "available", description: "" });
     const [isAttributingDirectly, setIsAttributingDirectly] = useState(false);
@@ -174,6 +181,9 @@ function MairieDashboardContent() {
             setTransactions(txData || []);
             setSanctions(sanctionsData || []);
             setInfractions(infractionsData || []);
+
+            const agentsRes = await getPoliceAgents();
+            if (agentsRes.success) setPoliceAgents(agentsRes.agents || []);
 
             const infractionStatsRes = await getInfractionStats();
             if (infractionStatsRes.success) setInfractionStats(infractionStatsRes.stats);
@@ -689,6 +699,43 @@ function MairieDashboardContent() {
                                         </div>
                                     </div>
                                 </div>
+
+                                <div className="bg-white/70 backdrop-blur-xl rounded-[3.5rem] border border-zinc-100 p-10 shadow-xl shadow-zinc-200/20">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <div>
+                                            <h3 className="text-xl font-black uppercase italic tracking-tighter text-zinc-900">EFFECTIFS POLICE VERTE</h3>
+                                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mt-1">Agents assermentés rattachés à la municipalité</p>
+                                        </div>
+                                        <button 
+                                            onClick={() => setIsAddAgentModalOpen(true)}
+                                            className="px-6 py-3 bg-zinc-900 text-white rounded-2xl text-[9px] font-black uppercase tracking-widest flex items-center gap-3 hover:scale-105 transition-transform"
+                                        >
+                                            <Plus size={14} /> RECRUTER UN AGENT
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                        {policeAgents.map((agent) => (
+                                            <div key={agent.id} className="p-6 bg-white border border-zinc-50 rounded-[2.5rem] hover:shadow-lg transition-all flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center font-black italic">
+                                                        {agent.full_name?.charAt(0)}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-black italic uppercase text-zinc-900">{agent.full_name}</p>
+                                                        <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">{agent.zones?.name || "Patrouille Libre"}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                            </div>
+                                        ))}
+                                        {policeAgents.length === 0 && (
+                                            <div className="col-span-full py-12 text-center border-2 border-dashed border-zinc-100 rounded-[3rem]">
+                                                <p className="text-[10px] font-black text-zinc-300 uppercase tracking-[0.3em]">Aucune recrue enregistrée.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -977,6 +1024,42 @@ function MairieDashboardContent() {
                         </div>
                      </div>
                  )}
+            </Modal>
+
+            <Modal isOpen={isAddAgentModalOpen} onClose={() => setIsAddAgentModalOpen(false)} title="📋 RECRUTEMENT DE NOUVEL AGENT (POLICE VERTE)">
+                <form onSubmit={async (e) => {
+                    e.preventDefault();
+                    setLoading(true);
+                    const res = await createPoliceAgent(newAgent);
+                    if (res.success) {
+                        showToast("Officier recruté avec succès", "success");
+                        setIsAddAgentModalOpen(false);
+                        fetchMairieData();
+                    } else showToast(res.error, "error");
+                    setLoading(false);
+                }} className="space-y-6">
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom Complet de l'Officier</label>
+                        <input required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.fullName} onChange={(e) => setNewAgent({...newAgent, fullName: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Email Professionnel</label><input type="email" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.email} onChange={(e) => setNewAgent({...newAgent, email: e.target.value})} /></div>
+                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Mot de Passe Initial</label><input type="password" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.password} onChange={(e) => setNewAgent({...newAgent, password: e.target.value})} /></div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Numéro de Téléphone</label><input required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.phone} onChange={(e) => setNewAgent({...newAgent, phone: e.target.value})} /></div>
+                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Zone d'Affectation</label>
+                            <select className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black uppercase outline-none" value={newAgent.zoneId} onChange={(e) => setNewAgent({...newAgent, zoneId: e.target.value})}>
+                                <option value="">Choisir une zone...</option>
+                                {zones.map(z => (<option key={z.id} value={z.id}>{z.name}</option>))}
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" disabled={loading} className="w-full py-5 bg-emerald-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20">
+                        {loading ? "Génération du badge..." : "CRÉER LE COMPTE AGENT"}
+                    </button>
+                    <p className="text-[8px] font-bold text-center text-zinc-400 uppercase tracking-widest">L'agent pourra se connecter sur l'app mobile immédiatement avec ces identifiants.</p>
+                </form>
             </Modal>
 
             <style jsx global>{`
