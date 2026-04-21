@@ -45,11 +45,14 @@ import { Modal } from "@/components/ui/Modal";
 import dynamic from "next/dynamic";
 import { useSearchParams, useRouter } from "next/navigation";
 import { 
-    assignConcessionDirectly, 
-    getOrganizationsForConcession, 
-    revokeConcession, 
     checkAndCleanupExpiredConcessions 
 } from "@/app/actions/concessions";
+import { 
+    reportInfraction, 
+    updateInfractionStatus, 
+    convertInfractionToSanction, 
+    getInfractionStats 
+} from "@/app/actions/police-verte";
 import { 
     NeonCard, 
     HoloGauge, 
@@ -74,7 +77,7 @@ function MairieDashboardContent() {
     const router = useRouter();
     
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'overview' | 'tenders' | 'sovereignty' | 'fleet' | 'rapports'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'tenders' | 'sovereignty' | 'fleet' | 'police' | 'rapports'>('overview');
     const [zones, setZones] = useState<any[]>([]);
     const [pendingConcessions, setPendingConcessions] = useState<any[]>([]);
     const [wastes, setWastes] = useState<any[]>([]);
@@ -90,6 +93,12 @@ function MairieDashboardContent() {
     const [isAddTenderModalOpen, setIsAddTenderModalOpen] = useState(false);
     const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
     const [isSanctionModalOpen, setIsSanctionModalOpen] = useState(false);
+    const [isInfractionDetailModalOpen, setIsInfractionDetailModalOpen] = useState(false);
+    
+    const [infractions, setInfractions] = useState<any[]>([]);
+    const [infractionStats, setInfractionStats] = useState<any>(null);
+    const [selectedInfraction, setSelectedInfraction] = useState<any>(null);
+    const [penaltyAmount, setPenaltyAmount] = useState(50000);
     
     const [sanctionForm, setSanctionForm] = useState({ orgId: "", type: "RETARD COLLECTE", description: "", amount: 0, severity: "medium" as any });
     const [newZone, setNewZone] = useState({ name: "", city: "Abidjan", status: "available", description: "" });
@@ -146,6 +155,7 @@ function MairieDashboardContent() {
             const { data: bidsData } = await supabase.from('tender_bids').select('*');
             const { data: txData } = await supabase.from('transactions').select('*').eq('profile_id', mairieId).order('created_at', { ascending: false });
             const { data: sanctionsData } = await supabase.from('sanctions').select('*, profiles:organization_id(full_name)').order('created_at', { ascending: false });
+            const { data: infractionsData } = await supabase.from('environmental_infractions').select('*, profiles:reporter_id(full_name), zones:zone_id(name)').order('created_at', { ascending: false });
 
             const enrichedTenders = tendersData?.map((t: any) => ({
                 ...t,
@@ -160,6 +170,10 @@ function MairieDashboardContent() {
             setTenders(enrichedTenders);
             setTransactions(txData || []);
             setSanctions(sanctionsData || []);
+            setInfractions(infractionsData || []);
+
+            const infractionStatsRes = await getInfractionStats();
+            if (infractionStatsRes.success) setInfractionStats(infractionStatsRes.stats);
 
             const orgsResult = await getOrganizationsForConcession();
             if (orgsResult.success) {
@@ -246,6 +260,7 @@ function MairieDashboardContent() {
                             { id: 'overview', label: 'RADAR CENTRAL', icon: Activity },
                             { id: 'tenders', label: 'APPELS D\'OFFRES', icon: Gavel },
                             { id: 'sovereignty', label: 'SOUVERAINETÉ', icon: ShieldAlert },
+                            { id: 'police', label: 'POLICE VERTE', icon: ShieldCheck },
                             { id: 'fleet', label: 'LOGISTIQUE', icon: Truck },
                             { id: 'rapports', label: 'ANALYSE', icon: FileText },
                         ].map((tab) => (
@@ -573,6 +588,106 @@ function MairieDashboardContent() {
                                 </div>
                             </motion.div>
                         )}
+
+                        {activeTab === 'police' && (
+                            <motion.div key="police" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="space-y-10">
+                                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                                    <div className="lg:col-span-3 h-[600px] rounded-[4rem] overflow-hidden border border-zinc-200 bg-white relative shadow-2xl shadow-zinc-200/20">
+                                        <div className="absolute inset-0 z-0 opacity-40 grayscale-[0.5]"><MapComponent isMairie={true} /></div>
+                                        <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                                            <div className="w-[500px] h-[500px] border border-red-500/10 rounded-full animate-ping opacity-20" />
+                                            <div className="absolute w-[300px] h-[300px] border border-red-500/20 rounded-full animate-pulse opacity-20" />
+                                        </div>
+                                        
+                                        {/* Infraction Markers (Simulation visual markers on map) */}
+                                        <div className="absolute inset-0 z-20 pointer-events-none p-20">
+                                            {infractions.filter(i => i.status === 'open').slice(0, 5).map((inf, idx) => (
+                                                <div key={idx} className="absolute animate-bounce" style={{ top: `${20 + idx * 15}%`, left: `${30 + idx * 10}%` }}>
+                                                    <div className="p-3 bg-red-600 text-white rounded-2xl shadow-2xl shadow-red-600/40 flex items-center gap-2">
+                                                        <AlertTriangle size={14} className="animate-pulse" />
+                                                        <span className="text-[8px] font-black uppercase tracking-widest">{inf.type}</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="absolute bottom-10 left-10 z-30 p-8 bg-zinc-900 text-white rounded-[2.5rem] shadow-2xl space-y-4 max-w-[320px]">
+                                            <h4 className="text-xl font-black italic uppercase tracking-tighter leading-none border-b border-white/10 pb-4">STATUT RADAR</h4>
+                                            <div className="space-y-3">
+                                                <div className="flex justify-between items-center"><span className="text-[9px] font-bold text-zinc-400 uppercase">Alertes Actives</span><span className="text-sm font-black text-red-500">{infractionStats?.open || 0}</span></div>
+                                                <div className="flex justify-between items-center"><span className="text-[9px] font-bold text-zinc-400 uppercase">Points Critiques</span><span className="text-sm font-black text-amber-500">{infractionStats?.critical || 0}</span></div>
+                                                <div className="flex justify-between items-center pt-2 border-t border-white/5"><span className="text-[9px] font-bold text-emerald-500 uppercase">Système IA</span><span className="text-[9px] font-black bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-400">NOMINAL</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-6 overflow-y-auto pr-2 no-scrollbar">
+                                        <h3 className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] pl-4">INCIDENTS RÉCENTS</h3>
+                                        {infractions.map((inf) => (
+                                            <button 
+                                                key={inf.id} 
+                                                onClick={() => { setSelectedInfraction(inf); setIsInfractionDetailModalOpen(true); }}
+                                                className="w-full text-left p-6 bg-white border border-zinc-100 rounded-[2.5rem] hover:border-red-500/30 transition-all group relative overflow-hidden"
+                                            >
+                                                <div className={cn(
+                                                    "absolute top-0 right-0 p-3 text-[7px] font-black uppercase tracking-widest rounded-bl-xl",
+                                                    inf.status === 'open' ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
+                                                )}>
+                                                    {inf.status}
+                                                </div>
+                                                <div className="flex items-start gap-4">
+                                                    <div className="w-12 h-12 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-red-500 transition-colors">
+                                                        <Trash2 size={24} />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-black italic uppercase text-zinc-900 leading-none mb-1">{inf.type}</p>
+                                                        <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">{inf.zones?.name || "Zone non définie"}</p>
+                                                    </div>
+                                                </div>
+                                            </button>
+                                        ))}
+                                        {infractions.length === 0 && (
+                                            <div className="py-20 text-center border-2 border-dashed border-zinc-100 rounded-[3rem]">
+                                                <p className="text-[10px] font-black text-zinc-300 uppercase tracking-widest italic leading-loose">Aucun incident <br /> détecté par le RADAR.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    <div className="p-10 bg-zinc-950 rounded-[3.5rem] text-white flex flex-col justify-between group overflow-hidden relative min-h-[350px]">
+                                        <Megaphone className="absolute -right-8 -top-8 text-white/5 w-48 h-48 -rotate-12 transition-transform group-hover:rotate-0" />
+                                        <div className="relative z-10">
+                                            <h3 className="text-3xl font-black italic tracking-tighter mb-4 leading-none text-red-500">ALERTE <br /> GÉNÉRALE</h3>
+                                            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] leading-relaxed mb-10 opacity-70">Diffuser un ordre de salubrité immédiat à tous les collecteurs du district.</p>
+                                        </div>
+                                        <button className="w-full py-6 bg-white/10 backdrop-blur-xl border border-white/10 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-zinc-900 transition-all">LANCER LE SIGNAL D'URGENCE</button>
+                                    </div>
+                                    <div className="lg:col-span-2 p-10 bg-white border border-zinc-100 rounded-[3.5rem] shadow-xl shadow-zinc-200/10">
+                                        <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900">Registre des Infractions Clôturées</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {infractions.filter(i => i.status === 'resolved' || i.status === 'sanctionne').slice(0, 4).map((inf) => (
+                                                <div key={inf.id} className="p-5 bg-zinc-50/50 rounded-3xl border border-zinc-50 flex items-center justify-between">
+                                                    <div className="flex items-center gap-4">
+                                                         <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><CheckCircle2 size={16} /></div>
+                                                         <div>
+                                                             <p className="text-[10px] font-black text-zinc-900 uppercase">{inf.type}</p>
+                                                             <p className="text-[8px] font-bold text-zinc-400 uppercase">{new Date(inf.created_at).toLocaleDateString()}</p>
+                                                         </div>
+                                                    </div>
+                                                    <ArrowUpRight size={14} className="text-zinc-300" />
+                                                </div>
+                                            ))}
+                                            {infractions.filter(i => i.status === 'resolved' || i.status === 'sanctionne').length === 0 && (
+                                                <div className="col-span-2 py-12 text-center">
+                                                    <p className="text-[9px] font-black text-zinc-300 uppercase tracking-widest italic opacity-50">Aucun historique disponible.</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
                     </AnimatePresence>
                 </div>
             </main>
@@ -765,6 +880,100 @@ function MairieDashboardContent() {
                         Générer l'Audit Certifié (PDF)
                     </button>
                 </div>
+            </Modal>
+
+            <Modal isOpen={isInfractionDetailModalOpen} onClose={() => setIsInfractionDetailModalOpen(false)} title="⚖️ ADJUDICATION POLICE VERTE">
+                 {selectedInfraction && (
+                     <div className="space-y-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-6">
+                                <div className="p-8 bg-zinc-900 rounded-[3rem] text-white relative overflow-hidden group">
+                                    <div className="absolute inset-0 bg-red-600/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <h4 className="text-[9px] font-black uppercase text-zinc-500 mb-2 tracking-widest">Type d'Infraction</h4>
+                                    <p className="text-3xl font-black italic uppercase tracking-tighter text-red-500 leading-none">{selectedInfraction.type}</p>
+                                    <div className="mt-8 flex items-center gap-3">
+                                        <div className="p-2 bg-white/5 rounded-lg"><MapPin size={12} className="text-zinc-500" /></div>
+                                        <p className="text-[10px] font-bold uppercase text-zinc-300">{selectedInfraction.zones?.name || "Coordonnées GPS directes"}</p>
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <h4 className="text-[10px] font-black uppercase text-zinc-400 tracking-widest ml-4">Preuve Capturée</h4>
+                                    <div className="aspect-video w-full bg-zinc-100 rounded-[2.5rem] border border-zinc-200 overflow-hidden flex items-center justify-center italic text-[10px] text-zinc-400">
+                                        {selectedInfraction.images?.[0] ? <img src={selectedInfraction.images[0]} className="w-full h-full object-cover" /> : "Image Terrain Indisponible"}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-8">
+                                <div className="p-8 bg-emerald-50 rounded-[3rem] border border-emerald-100">
+                                    <h4 className="text-[10px] font-black uppercase text-emerald-600 mb-4 tracking-widest flex items-center gap-2">
+                                        <Zap size={14} /> ANALYSE IA AIDA
+                                    </h4>
+                                    <p className="text-xs font-bold text-emerald-800 leading-relaxed italic uppercase">
+                                        "L'IA a détecté une accumulation de déchets plastiques non broyés en zone urbaine. Risque sanitaire modéré. Délai de résolution contractuel dépassé."
+                                    </p>
+                                </div>
+
+                                <div className="space-y-4 pt-10 border-t border-zinc-100">
+                                    <h4 className="text-[10px] font-black uppercase text-zinc-900 tracking-[0.2em]">ACTIONS RÉGALIENNES</h4>
+                                    
+                                    <div className="space-y-3">
+                                        <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 flex items-center justify-between">
+                                            <span className="text-[10px] font-black uppercase text-zinc-500 tracking-widest">Montant Sanction</span>
+                                            <input 
+                                                type="number" 
+                                                className="w-24 bg-transparent border-none text-right font-black text-sm outline-none text-red-600"
+                                                value={penaltyAmount}
+                                                onChange={(e) => setPenaltyAmount(parseInt(e.target.value))}
+                                            />
+                                        </div>
+                                        
+                                        <button 
+                                            onClick={async () => {
+                                                setLoading(true);
+                                                const res = await convertInfractionToSanction(selectedInfraction.id, penaltyAmount);
+                                                if (res.success) {
+                                                    showToast("Sanction appliquée avec succès", "success");
+                                                    setIsInfractionDetailModalOpen(false);
+                                                    fetchMairieData();
+                                                } else showToast(res.error, "error");
+                                                setLoading(false);
+                                            }}
+                                            disabled={loading || !selectedInfraction.responsible_org_id || selectedInfraction.status === 'sanctioned'}
+                                            className="w-full py-5 bg-red-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-600/30 flex items-center justify-center gap-3 disabled:grayscale"
+                                        >
+                                            <Gavel size={16} /> ÉMETTRE LA SANCTION FINANCIÈRE
+                                        </button>
+
+                                        <button 
+                                            onClick={async () => {
+                                                setLoading(true);
+                                                const res = await updateInfractionStatus(selectedInfraction.id, 'resolved');
+                                                if (res.success) {
+                                                    showToast("Incident résolu", "success");
+                                                    setIsInfractionDetailModalOpen(false);
+                                                    fetchMairieData();
+                                                } else showToast(res.error, "error");
+                                                setLoading(false);
+                                            }}
+                                            disabled={loading || selectedInfraction.status === 'resolved'}
+                                            className="w-full py-5 bg-zinc-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 disabled:opacity-50"
+                                        >
+                                            <CheckCircle2 size={16} /> CLASSÉ SANS SUITE / RÉSOLU
+                                        </button>
+                                    </div>
+
+                                    {!selectedInfraction.responsible_org_id && (
+                                        <p className="text-[9px] font-bold text-red-400 uppercase italic text-center px-6">
+                                            ⚠️ Aucune organisation n'est responsable de cette zone. La sanction financière directe est impossible.
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                     </div>
+                 )}
             </Modal>
 
             <style jsx global>{`
