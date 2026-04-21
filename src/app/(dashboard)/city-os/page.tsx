@@ -596,7 +596,7 @@ function MairieDashboardContent() {
                             <motion.div key="police" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="space-y-10">
                                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                                     <div className="lg:col-span-3 h-[600px] rounded-[4rem] overflow-hidden border border-zinc-200 bg-white relative shadow-2xl shadow-zinc-200/20">
-                                        <div className="absolute inset-0 z-0 opacity-40 grayscale-[0.5]"><MapComponent isMairie={true} /></div>
+                                        <div className="absolute inset-0 z-0"><MapComponent isMairie={true} /></div>
                                         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
                                             <div className="w-[500px] h-[500px] border border-red-500/10 rounded-full animate-ping opacity-20" />
                                             <div className="absolute w-[300px] h-[300px] border border-red-500/20 rounded-full animate-pulse opacity-20" />
