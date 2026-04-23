@@ -121,7 +121,7 @@ export default function ProfilePage() {
                     </div>
                 </div>
 
-                <button className="px-8 py-4 bg-gray-900 text-white dark:bg-zinc-800 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-primary transition-all active:scale-95 shadow-xl shadow-gray-200 dark:shadow-none">
+                <button onClick={() => navigateSafe(router, ROUTES.PROFILE_INFOS as any)} className="px-8 py-4 bg-gray-900 text-white dark:bg-zinc-800 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-primary transition-all active:scale-95 shadow-xl shadow-gray-200 dark:shadow-none">
                     Modifier
                 </button>
             </div>

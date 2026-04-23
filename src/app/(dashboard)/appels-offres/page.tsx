@@ -260,7 +260,7 @@ export default function BulkMarketplacePage() {
                                 </div>
                             </div>
 
-                            <button className="w-full md:w-auto px-8 py-4 bg-primary text-white font-black rounded-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[9px]">
+                            <button onClick={() => showToast('Bientôt disponible', 'success')} className="w-full md:w-auto px-8 py-4 bg-primary text-white font-black rounded-2xl hover:bg-primary/90 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-[9px]">
                                 {profile?.role === 'collecteur' ? "Répondre à l'offre" : "Détails"}
                                 <ChevronRight className="w-4 h-4" />
                             </button>
@@ -275,7 +275,7 @@ export default function BulkMarketplacePage() {
                 <p className="text-sm text-gray-400 font-bold uppercase tracking-widest leading-relaxed max-w-2xl mb-8">
                     Notre équipe d'experts facilite les transactions massives pour garantir la traçabilité et la qualité industrielle.
                 </p>
-                <button className="px-10 py-4 border-2 border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">
+                <button onClick={() => showToast('Consultation gratuite à venir', 'success')} className="px-10 py-4 border-2 border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/5 transition-all">
                     Contacter un consultant CITICLINE
                 </button>
             </div>

@@ -1,21 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserCircle, ArrowLeft, Loader2, Save, Mail, MapPin, User } from "lucide-react";
+import { UserCircle, ArrowLeft, Loader2, Save, Mail, MapPin, User, Camera, Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { userService } from "@/services/userService";
 import { showToast } from "@/components/ui/toast";
+import { uploadImage } from "@/app/actions/cloudinary";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function ProfileInfosPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+    const [uploading, setUploading] = useState(false);
     const [formData, setFormData] = useState({
         full_name: "",
         city: "",
-        email: "" // Readonly
+        email: "",
+        avatar_url: ""
     });
 
     useEffect(() => {
@@ -26,7 +31,8 @@ export default function ProfileInfosPage() {
                     setFormData({
                         full_name: data.full_name || "",
                         city: data.city || "",
-                        email: data.email || ""
+                        email: data.email || "",
+                        avatar_url: data.avatar_url || ""
                     });
                 }
             } catch (error) {
@@ -39,13 +45,38 @@ export default function ProfileInfosPage() {
         fetchUserData();
     }, []);
 
+    const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            const reader = new FileReader();
+            reader.onloadend = async () => {
+                const res = await uploadImage(reader.result as string);
+                if (res.success && res.url) {
+                    setFormData(prev => ({ ...prev, avatar_url: res.url! }));
+                    showToast("Photo de profil mise à jour localement", "success");
+                } else {
+                    showToast(res.error || "Échec de l'envoi", "error");
+                }
+                setUploading(false);
+            };
+            reader.readAsDataURL(file);
+        } catch (err) {
+            console.error(err);
+            setUploading(false);
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setSaving(true);
         try {
             await userService.updateProfile({
                 full_name: formData.full_name,
-                city: formData.city
+                city: formData.city,
+                avatar_url: formData.avatar_url
             });
             showToast("Profil mis à jour !", "success");
             router.push(ROUTES.PROFILE);
@@ -83,6 +114,42 @@ export default function ProfileInfosPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="bg-white dark:bg-zinc-900 rounded-[3rem] p-10 border-2 border-gray-100 dark:border-zinc-800 shadow-xl space-y-8">
+                {/* Avatar Update Section */}
+                <div className="flex flex-col items-center gap-4 py-4">
+                    <div className="relative group">
+                        <div className="w-24 h-24 rounded-[2rem] bg-gray-50 dark:bg-zinc-800 overflow-hidden border-2 border-gray-100 dark:border-zinc-700 shadow-inner flex items-center justify-center">
+                            {formData.avatar_url ? (
+                                <Image src={formData.avatar_url} alt="Avatar" fill className="object-cover" />
+                            ) : (
+                                <UserCircle className="w-12 h-12 text-gray-200" />
+                            )}
+                            {uploading && (
+                                <div className="absolute inset-0 bg-white/60 dark:bg-black/60 flex items-center justify-center">
+                                    <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                                </div>
+                            )}
+                        </div>
+                        <label 
+                            className={cn(
+                                "absolute -bottom-2 -right-2 bg-zinc-900 text-white p-2 rounded-xl cursor-pointer hover:bg-primary transition-all shadow-lg border-2 border-white dark:border-zinc-800",
+                                uploading && "opacity-50 pointer-events-none"
+                            )}
+                        >
+                            <Camera className="w-4 h-4" />
+                            <input 
+                                type="file" 
+                                className="hidden" 
+                                accept="image/*" 
+                                onChange={handleAvatarChange}
+                                disabled={uploading}
+                            />
+                        </label>
+                    </div>
+                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic mt-2">
+                        {uploading ? "Chargement..." : "Photo de profil"}
+                    </p>
+                </div>
+
                 <div className="space-y-6">
                     {/* Nom Complet */}
                     <div className="space-y-3">

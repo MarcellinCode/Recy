@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ShoppingBag, Filter, MapPin, ArrowRight, Loader2, Search } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { showToast } from "@/components/ui/toast";
 
 import { MarketplaceSkeleton } from "@/components/ui/Skeleton";
 
@@ -99,7 +100,7 @@ export default function MarketplacePage() {
                         <MapPin className={cn("w-4 h-4", filterByDistance ? "text-white" : "text-primary")} />
                         {filterByDistance ? "Proximité Activée" : "Par Proximité"}
                     </button>
-                    <button className="flex items-center gap-2 px-6 py-3.5 bg-white dark:bg-zinc-900 border-2 border-gray-100 dark:border-zinc-800 text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest rounded-2xl hover:border-primary transition-all shadow-sm">
+                    <button onClick={() => showToast('Filtres avancés bientôt disponibles', 'success')} className="flex items-center gap-2 px-6 py-3.5 bg-white dark:bg-zinc-900 border-2 border-gray-100 dark:border-zinc-800 text-gray-700 dark:text-gray-300 font-black text-[10px] uppercase tracking-widest rounded-2xl hover:border-primary transition-all shadow-sm">
                         <Filter className="w-4 h-4 text-primary" />
                         Filtres Avancés
                     </button>

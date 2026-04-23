@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { Lock, Settings, ShieldCheck } from "lucide-react";
 
 const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
@@ -33,6 +34,7 @@ import { AddAgentForm } from "@/components/organisation/AddAgentForm";
 import { getOrganizationContext } from "@/app/actions/organisation";
 
 export default function OrganizationDashboard() {
+    const router = useRouter();
     const supabase = createClient();
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<'fleet' | 'concessions' | 'opportunities' | 'marketplace'>('fleet');
@@ -245,7 +247,7 @@ export default function OrganizationDashboard() {
                                         <PlanSummary name="Entreprise" count={0} price="6,000" color="bg-blue-500" />
                                         <PlanSummary name="Industrie" count={0} price="15,000" color="bg-amber-500" />
                                     </div>
-                                    <button className="w-full py-4 border-2 border-zinc-900 dark:border-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-zinc-900 hover:text-white transition-all">Gérer les Tarifs Zone</button>
+                                    <button onClick={() => showToast("Configuration des tarifs de zone en cours de développement", "success")} className="w-full py-4 border-2 border-zinc-900 dark:border-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-zinc-900 hover:text-white transition-all">Gérer les Tarifs Zone</button>
                                 </div>
                             </div>
                         </div>
@@ -349,14 +351,14 @@ export default function OrganizationDashboard() {
                            <TrendingUp className="absolute -bottom-10 -right-10 w-64 h-64 text-zinc-50 group-hover:text-emerald-500/10 transition-all" />
                            <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4">La Bourse</h3>
                            <p className="text-zinc-500 text-xs font-bold uppercase tracking-tight mb-8">Revendez vos stocks de matières premières recyclées aux industries de transformation.</p>
-                           <button className="px-10 py-5 bg-emerald-500 text-white rounded-[2.5rem] text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-emerald-500/20">Accéder au Marché</button>
+                           <button onClick={() => router.push('/marketplace')} className="px-10 py-5 bg-emerald-500 text-white rounded-[2.5rem] text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-emerald-500/20">Accéder au Marché</button>
                         </div>
                         <div className="bg-white dark:bg-zinc-900 p-12 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm">
                             <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4">Rapports ESG</h3>
                             <p className="text-zinc-500 text-xs font-bold uppercase tracking-tight mb-8">Générez vos manifestes de traçabilité et rapports d'impact environnemental certifiés.</p>
                             <div className="flex gap-4">
-                                <button className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 rounded-[2rem] text-[10px] font-black uppercase tracking-widest">Traçabilité</button>
-                                <button className="flex-1 py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest">Export PDF</button>
+                                <button onClick={() => showToast("Génération du rapport de traçabilité...", "success")} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 rounded-[2rem] text-[10px] font-black uppercase tracking-widest">Traçabilité</button>
+                                <button onClick={() => window.print()} className="flex-1 py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest">Export PDF</button>
                             </div>
                         </div>
                     </motion.div>
@@ -443,7 +445,7 @@ function AgentCard({ agent }: any) {
                         <span className="text-[10px] bg-emerald-100 text-emerald-700 font-black uppercase px-2 py-0.5 rounded-lg tracking-widest">En Service</span>
                     </div>
                 </div>
-                <button className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"><MoreVertical className="w-5 h-5 text-zinc-400" /></button>
+                <button onClick={() => showToast("Options de l'agent", "success")} className="p-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors"><MoreVertical className="w-5 h-5 text-zinc-400" /></button>
             </div>
             
             <div className="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-2xl mb-6">
@@ -451,7 +453,7 @@ function AgentCard({ agent }: any) {
                  <p className="text-xs font-black dark:text-white italic">Collecte validée à Yopougon</p>
             </div>
 
-            <button className="w-full py-4 bg-primary text-[10px] font-black uppercase tracking-widest text-white rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all">
+            <button onClick={() => showToast("Chargement de l'historique des missions...", "success")} className="w-full py-4 bg-primary text-[10px] font-black uppercase tracking-widest text-white rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all">
                 Détails Missions
             </button>
         </div>

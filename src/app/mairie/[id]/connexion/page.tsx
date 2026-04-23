@@ -44,7 +44,7 @@ export default function MairieConnexionPage({ params }: { params: Promise<{ id: 
         // Pour l'instant on laisse passer si c'est réussi, le layout ou la page admin/mairie fera sûrement d'autres vérifications.
         showToast("Connexion validée, accès institutionnel autorisé", "success");
         
-        router.push(`/admin/mairie?id=${id}`);
+        router.push(`/city-os?id=${id}`);
         router.refresh();
     };
 

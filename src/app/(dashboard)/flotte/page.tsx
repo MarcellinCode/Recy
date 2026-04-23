@@ -329,7 +329,7 @@ function VehicleCard({ vehicle }: { vehicle: any }) {
                 </div>
             </div>
 
-            <button className="w-full mt-8 py-4 border-2 border-gray-100 dark:border-zinc-800 rounded-2xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 group-hover:bg-zinc-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-zinc-900 transition-all">
+            <button onClick={() => showToast('Détails de maintenance à venir', 'success')} className="w-full mt-8 py-4 border-2 border-gray-100 dark:border-zinc-800 rounded-2xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-2 group-hover:bg-zinc-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-zinc-900 transition-all">
                 Détails Maintenance
                 <ChevronRight className="w-3 h-3" />
             </button>

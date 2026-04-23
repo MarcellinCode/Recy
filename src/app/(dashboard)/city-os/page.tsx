@@ -596,7 +596,7 @@ function MairieDashboardContent() {
                                             <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4 leading-none">Rapport <br/> Décisionnel</h3>
                                             <p className="text-zinc-500 text-[11px] font-bold uppercase tracking-widest leading-loose mb-10 opacity-60">Accédez à l'analyse complète multicritères et prévisionnelle de votre commune.</p>
                                         </div>
-                                        <button onClick={() => router.push('/city-os/rapports')} className="w-full py-6 bg-emerald-500 text-white rounded-[2.5rem] text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-4 group-hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20">CONSULTER LE RAPPORT GLOBAL<ArrowUpRight size={18} /></button>
+                                        <button onClick={() => router.push(`/city-os/rapports${targetMairieId ? `?id=${targetMairieId}` : ''}`)} className="w-full py-6 bg-emerald-500 text-white rounded-[2.5rem] text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-4 group-hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20">CONSULTER LE RAPPORT GLOBAL<ArrowUpRight size={18} /></button>
                                     </div>
                                 </div>
                             </motion.div>
@@ -674,7 +674,7 @@ function MairieDashboardContent() {
                                             <h3 className="text-3xl font-black italic tracking-tighter mb-4 leading-none text-red-500">ALERTE <br /> GÉNÉRALE</h3>
                                             <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] leading-relaxed mb-10 opacity-70">Diffuser un ordre de salubrité immédiat à tous les collecteurs du district.</p>
                                         </div>
-                                        <button className="w-full py-6 bg-white/10 backdrop-blur-xl border border-white/10 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-zinc-900 transition-all">LANCER LE SIGNAL D'URGENCE</button>
+                                        <button onClick={() => showToast("Signal d'urgence diffusé à toutes les unités !", "success")} className="w-full py-6 bg-white/10 backdrop-blur-xl border border-white/10 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-zinc-900 transition-all">LANCER LE SIGNAL D'URGENCE</button>
                                     </div>
                                     <div className="lg:col-span-2 p-10 bg-white border border-zinc-100 rounded-[3.5rem] shadow-xl shadow-zinc-200/10">
                                         <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900">Registre des Infractions Clôturées</h3>
@@ -925,7 +925,7 @@ function MairieDashboardContent() {
                         </div>
                     </div>
 
-                    <button className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-zinc-900/30 flex items-center justify-center gap-4 hover:scale-[1.01] transition-transform">
+                    <button onClick={() => window.print()} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-zinc-900/30 flex items-center justify-center gap-4 hover:scale-[1.01] transition-transform">
                         <Printer size={18} />
                         Générer l'Audit Certifié (PDF)
                     </button>

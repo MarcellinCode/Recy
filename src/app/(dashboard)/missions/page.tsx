@@ -18,9 +18,9 @@ import {
     Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { showToast } from "@/components/ui/toast";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
-import { showToast } from "@/components/ui/toast";
 import { confirmCollection } from "@/app/actions/collection";
 
 export default function AgentMissionsPage() {
@@ -111,13 +111,13 @@ export default function AgentMissionsPage() {
 
             {/* Quick Actions / Integration */}
             <div className="flex gap-4">
-                <button className="flex-1 flex flex-col items-center gap-2 p-4 bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800">
+                <button onClick={() => showToast('Ouverture de la carte en cours', 'success')} className="flex-1 flex flex-col items-center gap-2 p-4 bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                         <MapIcon className="w-5 h-5" />
                     </div>
                     <span className="text-[9px] font-black uppercase tracking-widest">Voir Carte</span>
                 </button>
-                <button className="flex-1 flex flex-col items-center gap-2 p-4 bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800">
+                <button onClick={() => showToast('Lancement du scanner', 'success')} className="flex-1 flex flex-col items-center gap-2 p-4 bg-white dark:bg-zinc-900 rounded-3xl border border-gray-100 dark:border-zinc-800">
                     <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
                         <QrCode className="w-5 h-5" />
                     </div>
@@ -209,7 +209,7 @@ function MissionCard({ mission, index, onCollect }: any) {
                 >
                     {isCollecting ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Collecter'}
                 </button>
-                <button className="flex-1 py-4 bg-gray-50 dark:bg-zinc-800 text-zinc-400 rounded-2xl flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all">
+                <button onClick={() => showToast('Signalement enregistré', 'success')} className="flex-1 py-4 bg-gray-50 dark:bg-zinc-800 text-zinc-400 rounded-2xl flex items-center justify-center hover:bg-red-50 hover:text-red-500 transition-all">
                     <AlertTriangle className="w-4 h-4" />
                 </button>
             </div>

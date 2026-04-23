@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+import { showToast } from "@/components/ui/toast";
 
 export default function SellerWasteDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = use(params);
@@ -290,7 +291,7 @@ export default function SellerWasteDetailsPage({ params }: { params: Promise<{ i
 
                     <div className="bg-white dark:bg-zinc-900 rounded-[3rem] p-10 border border-gray-100 dark:border-zinc-800 shadow-sm space-y-4">
                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest text-center mb-4">Gestion de l'annonce</p>
-                        <button className="w-full py-4 bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-white font-black rounded-3xl hover:bg-gray-100 transition-all uppercase tracking-widest text-[10px]">
+                        <button onClick={() => showToast('Édition en cours de développement', 'success')} className="w-full py-4 bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-white font-black rounded-3xl hover:bg-gray-100 transition-all uppercase tracking-widest text-[10px]">
                             Modifier l'annonce
                         </button>
                         <button

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { TrendingUp, BarChart3, Info, ArrowUpRight, ArrowDownRight, Loader2, Package } from "lucide-react";
 import { createClient } from "@/lib/supabase";
+import { showToast } from "@/components/ui/toast";
 
 export default function BoursePage() {
     const supabase = createClient();
@@ -80,7 +81,7 @@ export default function BoursePage() {
                         Les prix affichés sont révisés quotidiennement en fonction du marché international des matières premières et des coûts logistiques locaux. Ces tarifs servent de base de calcul pour vos transactions sur la plateforme.
                     </p>
                 </div>
-                <button className="px-8 py-4 bg-amber-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-amber-600/20 hover:scale-[1.05] transition-all">
+                <button onClick={() => showToast('Détails de cotation à venir', 'success')} className="px-8 py-4 bg-amber-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-amber-600/20 hover:scale-[1.05] transition-all">
                     En savoir plus
                 </button>
             </div>

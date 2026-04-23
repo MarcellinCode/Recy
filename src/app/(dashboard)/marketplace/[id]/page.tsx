@@ -469,8 +469,8 @@ function WasteDetailsContent({ id }: { id: string }) {
                                     <button onClick={() => setShowRatingModal(true)} className="w-full mb-4 py-4 bg-amber-600 text-white font-black rounded-3xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px] shadow-lg shadow-amber-600/20">Noter le collecteur</button>
                                 )}
                                 <div className="grid grid-cols-2 gap-4">
-                                    <button className="py-4 bg-zinc-900 text-white dark:bg-zinc-700 font-black rounded-3xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px]">Modifier</button>
-                                    <button className="py-4 bg-red-50 text-red-600 font-black rounded-3xl hover:bg-red-100 transition-all uppercase tracking-widest text-[10px]">Supprimer</button>
+                                    <button onClick={() => showToast('Édition en cours de développement', 'success')} className="py-4 bg-zinc-900 text-white dark:bg-zinc-700 font-black rounded-3xl hover:opacity-90 transition-all uppercase tracking-widest text-[10px]">Modifier</button>
+                                    <button onClick={() => showToast('Suppression en cours de développement', 'success')} className="py-4 bg-red-50 text-red-600 font-black rounded-3xl hover:bg-red-100 transition-all uppercase tracking-widest text-[10px]">Supprimer</button>
                                 </div>
                             </div>
                         )}

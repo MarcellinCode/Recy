@@ -2,7 +2,7 @@ export const ROUTES = {
   HOME: '/',
   MARKETPLACE: '/marketplace',
   MARKETPLACE_DETAILS: (id: string) => `/marketplace/${id}`,
-  MARKETPLACE_PUBLISH: '/marketplace/publish',
+  MARKETPLACE_PUBLISH: '/mes-dechets/publier',
   
   WALLET: '/wallet',
   PROFILE: '/profil',

@@ -23,6 +23,7 @@ import { navigateSafe } from "@/utils/navigation";
 import { walletService } from "@/services/walletService";
 import { userService } from "@/services/userService";
 import { cn } from "@/lib/utils";
+import { showToast } from "@/components/ui/toast";
 
 export default function WalletPage() {
     const router = useRouter();
@@ -207,7 +208,7 @@ export default function WalletPage() {
                             <History className="w-6 h-6 text-primary" />
                             Activités Récentes
                         </h2>
-                        <button className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-1">
+                        <button onClick={() => showToast("Historique complet bientôt disponible", "success")} className="text-[10px] font-black text-primary uppercase tracking-widest hover:underline flex items-center gap-1">
                             Voir tout <ArrowRight className="w-3 h-3" />
                         </button>
                     </div>

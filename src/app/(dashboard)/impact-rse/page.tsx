@@ -147,7 +147,7 @@ export default function ImpactRSEPage() {
                         </p>
                     </div>
 
-                    <button className="w-full py-5 bg-white text-zinc-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all">
+                    <button onClick={() => window.print()} className="w-full py-5 bg-white text-zinc-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all">
                         Télécharger le PDF
                     </button>
                 </div>

@@ -103,11 +103,11 @@ function GlobalRapportContent() {
                         </div>
                     </div>
                     <div className="flex gap-4">
-                        <button className="flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white dark:bg-white dark:text-black rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all">
+                        <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white dark:bg-white dark:text-black rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all">
                             <Download size={14} />
                             Exporter PDF
                         </button>
-                        <button className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg shadow-primary/20">
+                        <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg shadow-primary/20">
                             <Printer size={14} />
                             Imprimer
                         </button>
@@ -222,7 +222,7 @@ function GlobalRapportContent() {
                             <h3 className="text-3xl font-black uppercase italic tracking-tighter leading-none">Votre Commune est sur la bonne voie.</h3>
                             <p className="text-white/70 text-sm font-bold uppercase tracking-widest max-w-xl">En continuant cette trajectoire, RecyCla estime une réduction de 45% des dépenses de voirie d'ici 2025.</p>
                         </div>
-                        <button className="px-10 py-5 bg-white text-primary rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl">Planifier une réunion</button>
+                        <button onClick={() => showToast("Redirection vers l'agenda...", "success")} className="px-10 py-5 bg-white text-primary rounded-full text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl">Planifier une réunion</button>
                     </div>
                 </div>
             </div>
