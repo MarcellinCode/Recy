@@ -46,7 +46,7 @@ function MairieLoginForm() {
                 throw new Error("Cet espace est strictement réservé aux institutions municipales. Accès refusé.");
             }
 
-            router.push("/admin/mairie");
+            router.push("/city-os");
             router.refresh();
         } catch (err: any) {
             setError(err.message || "Identifiants invalides.");

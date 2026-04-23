@@ -44,7 +44,7 @@ export async function addVehicle(name: string, type: string, regNumber: string, 
     if (error) return { success: false, error: error.message };
     
     revalidatePath('/organisation');
-    revalidatePath('/admin/mairie');
+    revalidatePath('/city-os');
     return { success: true, vehicle: data };
 }
 
@@ -79,6 +79,6 @@ export async function addMaintenanceLog(vehicleId: string, type: string, descrip
         last_maintenance_date: new Date().toISOString()
     }).eq("id", vehicleId);
 
-    revalidatePath('/admin/mairie');
+    revalidatePath('/city-os');
     return { success: true };
 }

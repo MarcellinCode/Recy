@@ -123,7 +123,7 @@ export default function DashboardPage() {
                 title: "Administration", 
                 description: "Gestion des zones & concessions", 
                 icon: Building2, 
-                href: "/admin/mairie", 
+                href: "/city-os", 
                 color: "bg-zinc-800" 
             }
         ] : []),

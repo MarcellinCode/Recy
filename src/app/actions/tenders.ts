@@ -32,7 +32,7 @@ export async function createTender(data: {
 
   if (error) return { success: false, error: error.message };
   
-  revalidatePath('/admin/mairie');
+  revalidatePath('/city-os');
   revalidatePath('/appels-offres');
   return { success: true };
 }
@@ -110,7 +110,7 @@ export async function awardTender(tenderId: string, bidId: string, organisationI
     'success'
   );
 
-  revalidatePath('/admin/mairie');
+  revalidatePath('/city-os');
   revalidatePath('/organisation');
   return { success: true };
 }

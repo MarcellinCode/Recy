@@ -294,7 +294,7 @@ export default function OrganizationsPage() {
                                             {org.role === 'mairie' && (
                                                 <>
                                                     <Link 
-                                                        href={`/admin/mairie?id=${org.id}`}
+                                                        href={`/city-os?id=${org.id}`}
                                                         className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 rounded-lg transition-colors"
                                                         title="Dashboard Interne"
                                                     >

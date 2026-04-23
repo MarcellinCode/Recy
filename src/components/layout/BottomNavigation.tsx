@@ -49,7 +49,7 @@ const NAV_CONFIG: Record<string, NavLink[]> = {
     ],
     mairie: [
         { href: "/dashboard",       label: "Hub",    icon: Home },
-        { href: "/admin/mairie",    label: "Admin",  icon: Building2 },
+        { href: "/city-os",         label: "Admin",  icon: Building2 },
         { href: "/profil",          label: "Profil", icon: UserCircle },
     ],
 };

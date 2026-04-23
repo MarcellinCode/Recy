@@ -80,7 +80,7 @@ function MairieJoinForm() {
             
             // Redirect after 3s
             setTimeout(() => {
-                router.push("/admin/mairie");
+                router.push("/city-os");
             }, 3000);
 
         } catch (err: any) {

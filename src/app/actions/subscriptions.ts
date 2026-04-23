@@ -80,7 +80,7 @@ export async function subscribeToPlatform(tier: string) {
     // 5. Revalidation des pages impactées
     revalidatePath('/abonnements');
     revalidatePath('/organisation');
-    revalidatePath('/admin/mairie');
+    revalidatePath('/city-os');
     revalidatePath('/wallet');
 
     return { success: true };
