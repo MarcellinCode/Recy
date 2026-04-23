@@ -1,6 +1,7 @@
 "use server";
  
 import { createClient } from "@/lib/supabase-server";
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from "next/cache";
 
 /**
@@ -17,25 +18,56 @@ export async function addAgent(formData: any) {
         return { success: false, error: "Accès refusé" };
     }
 
-    const agentData: any = {
-        full_name: formData.fullName,
-        phone: formData.phone,
-        email: formData.email,
-        app_pin: formData.pin, // Clé de connexion pour la version Agent mobile
-        role: formData.role, // 'collector' or 'driver'
-        organization_id: user.id,
-        city: formData.zoneId ? `Zone ${formData.zoneId}` : 'À définir'
-    };
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (formData.role === 'driver' && formData.vehicleId) {
-        agentData.assigned_vehicle_id = formData.vehicleId;
+    if (!supabaseUrl || !serviceRoleKey) {
+        return { success: false, error: "Configuration admin manquante." };
     }
 
-    const { data, error } = await supabase
-        .from('profiles')
-        .insert([agentData]);
+    const supabaseAdmin = createSupabaseClient(supabaseUrl, serviceRoleKey);
 
-    if (error) return { success: false, error: error.message };
+    try {
+        // 1. Création de l'utilisateur Auth
+        // Le mot de passe par défaut pour les agents d'organisation est souvent leur PIN ou un mot de passe standard
+        const defaultPassword = formData.pin ? `Agent${formData.pin}!` : "AgentCiticline2025!";
+        
+        const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+            email: formData.email,
+            password: defaultPassword,
+            email_confirm: true,
+            user_metadata: {
+                full_name: formData.fullName,
+                role: formData.role,
+                phone: formData.phone
+            }
+        });
+
+        if (authError) throw authError;
+
+        // 2. Mise à jour du profil (le trigger crée le profil basique, on ajoute les détails)
+        const agentData: any = {
+            app_pin: formData.pin,
+            organization_id: user.id,
+            city: formData.zoneId ? `Zone ${formData.zoneId}` : 'À définir',
+            status: 'Actif'
+        };
+
+        if (formData.role === 'driver' && formData.vehicleId) {
+            agentData.assigned_vehicle_id = formData.vehicleId;
+        }
+
+        const { error: profileError } = await supabaseAdmin
+            .from('profiles')
+            .update(agentData)
+            .eq('id', authData.user.id);
+
+        if (profileError) throw profileError;
+        
+    } catch (err: any) {
+        console.error('Error adding agent:', err);
+        return { success: false, error: err.message || "Erreur lors de la création de l'agent" };
+    }
     
     revalidatePath('/organisation');
     return { success: true };
