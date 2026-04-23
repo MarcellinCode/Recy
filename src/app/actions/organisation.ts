@@ -29,8 +29,9 @@ export async function addAgent(formData: any) {
 
     try {
         // 1. Création de l'utilisateur Auth
-        // Le mot de passe par défaut pour les agents d'organisation est souvent leur PIN ou un mot de passe standard
-        const defaultPassword = formData.pin ? `Agent${formData.pin}!` : "AgentCiticline2025!";
+        // On génère un mot de passe aléatoire sécurisé pour éviter les mots de passe en dur
+        const generatedPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).toUpperCase().slice(-2) + "!";
+        const defaultPassword = formData.pin ? `Agent${formData.pin}!` : generatedPassword;
         
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
             email: formData.email,
