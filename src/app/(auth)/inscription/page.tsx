@@ -467,7 +467,7 @@ function SignupForm() {
                                 <p className="text-sm font-medium text-gray-900 dark:text-white">{formData.email}</p>
                             </div>
                             <div className="space-y-1">
-                                <label htmlFor="password" readonly className="text-[10px] font-black uppercase tracking-widest text-gray-400">Définir un Mot de passe</label>
+                                <label htmlFor="password" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Définir un Mot de passe</label>
                                 <input
                                     id="password"
                                     type="password"

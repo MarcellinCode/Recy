@@ -113,7 +113,7 @@ function MairieLoginForm() {
 
                         <div className="space-y-2">
                             <div className="flex justify-between items-center ml-4 mr-2">
-                                <label htmlFor="officialPassword" readonly className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Mot de passe</label>
+                                <label htmlFor="officialPassword" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Mot de passe</label>
                                 <Link href="/mdp-oublie" className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-widest">
                                     Oublié ?
                                 </Link>

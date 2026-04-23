@@ -299,7 +299,7 @@ function MairieJoinForm() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label htmlFor="officialPassword" readonly className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Définir un mot de passe</label>
+                                        <label htmlFor="officialPassword" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Définir un mot de passe</label>
                                         <div className="relative group">
                                             <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
                                                 <Lock size={18} />
