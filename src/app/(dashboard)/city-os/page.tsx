@@ -229,6 +229,97 @@ function MairieDashboardContent() {
         } else showToast("Erreur lors de l'attribution", "error");
     };
 
+    const handleRevokeConcessionClick = async (concessionId: string, zoneId: string) => {
+        if (!confirm(`Révoquer la concession ?`)) return;
+        const res = await revokeConcession(concessionId, zoneId);
+        if (res.success) fetchMairieData();
+    };
+
+    const handleAddZoneSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        const { data: createdZone, error: zoneError } = await supabase.from('zones').insert([newZone]).select().single();
+        
+        if (zoneError) {
+            showToast("Erreur zone", "error");
+            setLoading(false);
+            return;
+        }
+
+        if (isAttributingDirectly && selectedOrgId) {
+            const assignRes = await assignConcessionDirectly({ 
+                zone_id: createdZone.id, 
+                organization_id: selectedOrgId, 
+                duration_months: concessionDuration 
+            });
+            if (assignRes.success) showToast("Concession attribuée", "success");
+        }
+
+        fetchMairieData();
+        setIsAddZoneModalOpen(false);
+        setLoading(false);
+    };
+
+    const handleIssueSanctionSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!sanctionForm.orgId) {
+            showToast("Veuillez choisir une organisation", "error");
+            return;
+        }
+        setLoading(true);
+        const res = await issueSanction(
+            sanctionForm.orgId, 
+            sanctionForm.type, 
+            sanctionForm.description, 
+            sanctionForm.severity, 
+            sanctionForm.amount
+        );
+        if (res.success) {
+            showToast("Sanction enregistrée et notifiée", "success");
+            setIsSanctionModalOpen(false);
+            fetchMairieData();
+        } else {
+            showToast("Erreur: " + res.error, "error");
+        }
+        setLoading(false);
+    };
+
+    const handleConvertInfractionToSanction = async () => {
+        if (!selectedInfraction) return;
+        setLoading(true);
+        const res = await convertInfractionToSanction(selectedInfraction.id, penaltyAmount);
+        if (res.success) {
+            showToast("Sanction appliquée avec succès", "success");
+            setIsInfractionDetailModalOpen(false);
+            fetchMairieData();
+        } else showToast(res.error, "error");
+        setLoading(false);
+    };
+
+    const handleResolveInfraction = async () => {
+        if (!selectedInfraction) return;
+        setLoading(true);
+        const res = await updateInfractionStatus(selectedInfraction.id, 'resolved');
+        if (res.success) {
+            showToast("Incident résolu", "success");
+            setIsInfractionDetailModalOpen(false);
+            fetchMairieData();
+        } else showToast(res.error, "error");
+        setLoading(false);
+    };
+
+    const handleRecruitAgent = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        const res = await createPoliceAgent(newAgent);
+        if (res.success) {
+            showToast("Officier recruté avec succès", "success");
+            setIsAddAgentModalOpen(false);
+            fetchMairieData();
+        } else showToast(res.error, "error");
+        setLoading(false);
+    };
+
     const totalWastes = wastes.length;
     const collectedWastes = wastes.filter(w => w.status === 'collected').length;
     const collectionRate = totalWastes > 0 ? Math.round((collectedWastes / totalWastes) * 100) : 0;
@@ -343,7 +434,7 @@ function MairieDashboardContent() {
                                                                 <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{zone.name}</p>
                                                             </div>
                                                         </div>
-                                                        <button onClick={async () => { if (confirm(`Révoquer la concession ?`)) { const res = await revokeConcession(concession.id, zone.id); if (res.success) fetchMairieData(); }}} className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"><XCircle size={18} /></button>
+                                                                                                                <button onClick={() => handleRevokeConcessionClick(concession.id, zone.id)} className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"><XCircle size={18} /></button>
                                                     </div>
                                                 );
                                             })}
@@ -762,17 +853,7 @@ function MairieDashboardContent() {
             </Modal>
 
             <Modal isOpen={isAddZoneModalOpen} onClose={() => setIsAddZoneModalOpen(false)} title="🏛️ CENTRE DE COMMANDE : NOUVELLE CONCESSION">
-                 <form onSubmit={async (e) => {
-                     e.preventDefault();
-                     setLoading(true);
-                     const { data: createdZone, error: zoneError } = await supabase.from('zones').insert([newZone]).select().single();
-                     if (zoneError) { showToast("Erreur zone", "error"); setLoading(false); return; }
-                     if (isAttributingDirectly && selectedOrgId) {
-                        const assignResult = await assignConcessionDirectly({ zone_id: createdZone.id, organization_id: selectedOrgId, duration_months: concessionDuration });
-                        if (assignResult.success) showToast("Concession attribuée", "success");
-                     }
-                     fetchMairieData(); setIsAddZoneModalOpen(false); setLoading(false);
-                 }} className="space-y-6">
+                 <form onSubmit={handleAddZoneSubmit} className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de la Zone</label><input required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Nom de la Zone" value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} /></div>
                         <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville</label><input required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Ville" value={newZone.city} onChange={(e) => setNewZone({...newZone, city: e.target.value})} /></div>
@@ -791,20 +872,7 @@ function MairieDashboardContent() {
             </Modal>
 
             <Modal isOpen={isSanctionModalOpen} onClose={() => setIsSanctionModalOpen(false)} title="⚖️ CENTRE DE SANCTION">
-                <form onSubmit={async (e) => {
-                    e.preventDefault();
-                    if (!sanctionForm.orgId) { showToast("Veuillez choisir une organisation", "error"); return; }
-                    setLoading(true);
-                    const res = await issueSanction(sanctionForm.orgId, sanctionForm.type, sanctionForm.description, sanctionForm.severity, sanctionForm.amount);
-                    if (res.success) {
-                        showToast("Sanction enregistrée et notifiée", "success");
-                        setIsSanctionModalOpen(false);
-                        fetchMairieData();
-                    } else {
-                        showToast("Erreur: " + res.error, "error");
-                    }
-                    setLoading(false);
-                }} className="space-y-6">
+                <form onSubmit={handleIssueSanctionSubmit} className="space-y-6">
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Organisation Cible</label>
                         <select 
@@ -980,16 +1048,7 @@ function MairieDashboardContent() {
                                         </div>
                                         
                                         <button 
-                                            onClick={async () => {
-                                                setLoading(true);
-                                                const res = await convertInfractionToSanction(selectedInfraction.id, penaltyAmount);
-                                                if (res.success) {
-                                                    showToast("Sanction appliquée avec succès", "success");
-                                                    setIsInfractionDetailModalOpen(false);
-                                                    fetchMairieData();
-                                                } else showToast(res.error, "error");
-                                                setLoading(false);
-                                            }}
+                                            onClick={handleConvertInfractionToSanction}
                                             disabled={loading || !selectedInfraction.responsible_org_id || selectedInfraction.status === 'sanctioned'}
                                             className="w-full py-5 bg-red-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-600/30 flex items-center justify-center gap-3 disabled:grayscale"
                                         >
@@ -997,16 +1056,7 @@ function MairieDashboardContent() {
                                         </button>
 
                                         <button 
-                                            onClick={async () => {
-                                                setLoading(true);
-                                                const res = await updateInfractionStatus(selectedInfraction.id, 'resolved');
-                                                if (res.success) {
-                                                    showToast("Incident résolu", "success");
-                                                    setIsInfractionDetailModalOpen(false);
-                                                    fetchMairieData();
-                                                } else showToast(res.error, "error");
-                                                setLoading(false);
-                                            }}
+                                            onClick={handleResolveInfraction}
                                             disabled={loading || selectedInfraction.status === 'resolved'}
                                             className="w-full py-5 bg-zinc-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 disabled:opacity-50"
                                         >
@@ -1027,17 +1077,7 @@ function MairieDashboardContent() {
             </Modal>
 
             <Modal isOpen={isAddAgentModalOpen} onClose={() => setIsAddAgentModalOpen(false)} title="📋 RECRUTEMENT DE NOUVEL AGENT (POLICE VERTE)">
-                <form onSubmit={async (e) => {
-                    e.preventDefault();
-                    setLoading(true);
-                    const res = await createPoliceAgent(newAgent);
-                    if (res.success) {
-                        showToast("Officier recruté avec succès", "success");
-                        setIsAddAgentModalOpen(false);
-                        fetchMairieData();
-                    } else showToast(res.error, "error");
-                    setLoading(false);
-                }} className="space-y-6">
+                <form onSubmit={handleRecruitAgent} className="space-y-6">
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom Complet de l'Officier</label>
                         <input required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.fullName} onChange={(e) => setNewAgent({...newAgent, fullName: e.target.value})} />

@@ -235,6 +235,43 @@ function ChatContainer() {
 
     // --- Realtime Subscriptions ---
 
+    const handlePresenceSync = useCallback((channel: any) => {
+        const newState = channel.presenceState();
+        const users = new Set<string>();
+        for (const id in newState) users.add(id);
+        setOnlineUsers(users);
+    }, []);
+
+    const handleTypingBroadcast = useCallback((payload: any) => {
+        if (!currentUser) return;
+        if (payload.payload.user_id !== currentUser.id) {
+            setIsTyping(true);
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
+        }
+    }, [currentUser]);
+
+    const handleMessageInsert = useCallback((payload: any) => {
+        if (!selectedConv || !currentUser) return;
+        const msg = payload.new as Message;
+        const otherUserId = selectedConv.seller_id === currentUser.id ? selectedConv.collector_id : selectedConv.seller_id;
+        
+        const isExactMatch = msg.waste_id === selectedConv.id;
+        const isFallbackMatch = !msg.waste_id && otherUserId && (msg.sender_id === otherUserId || msg.receiver_id === otherUserId);
+        
+        if (isExactMatch || isFallbackMatch) {
+            appendMessage(msg);
+        }
+    }, [selectedConv, currentUser, appendMessage]);
+
+    const handleMessageUpdate = useCallback((payload: any) => {
+        setMessages(prev => prev.map(msg => 
+            msg.id.toString() === payload.new.id.toString() 
+                ? { ...msg, ...payload.new } 
+                : msg
+        ));
+    }, []);
+
     useEffect(() => {
         if (!selectedConv || !currentUser) return;
 
@@ -245,7 +282,6 @@ function ChatContainer() {
             let query = supabase.from('messages').select('*').order('created_at', { ascending: true });
             
             if (otherUserId) {
-                // Fetch messages for this waste_id OR messages without waste_id exchanged with the other user
                 query = query.or(`waste_id.eq.${selectedConv.id},and(waste_id.is.null,or(sender_id.eq.${otherUserId},receiver_id.eq.${otherUserId}))`);
             } else {
                 query = query.eq('waste_id', selectedConv.id);
@@ -261,32 +297,10 @@ function ChatContainer() {
 
         const channel = supabase
             .channel(`waste_${selectedConv.id}`, { config: { presence: { key: currentUser.id } } })
-            .on('presence', { event: 'sync' }, () => {
-                const newState = channel.presenceState();
-                const users = new Set<string>();
-                for (const id in newState) users.add(id);
-                setOnlineUsers(users);
-            })
-            .on('broadcast', { event: 'typing' }, (payload: any) => {
-                if (payload.payload.user_id !== currentUser.id) {
-                    setIsTyping(true);
-                    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-                    typingTimeoutRef.current = setTimeout(() => setIsTyping(false), 3000);
-                }
-            })
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, (payload: any) => {
-                const msg = payload.new as Message;
-                const otherUserId = selectedConv.seller_id === currentUser.id ? selectedConv.collector_id : selectedConv.seller_id;
-                
-                const isExactMatch = msg.waste_id === selectedConv.id;
-                const isFallbackMatch = !msg.waste_id && otherUserId && (msg.sender_id === otherUserId || msg.receiver_id === otherUserId);
-                
-                if (!isExactMatch && !isFallbackMatch) return;
-                appendMessage(msg);
-            })
-            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload: any) => {
-                setMessages(prev => prev.map(msg => msg.id.toString() === payload.new.id.toString() ? { ...msg, ...payload.new } : msg));
-            });
+            .on('presence', { event: 'sync' }, () => handlePresenceSync(channel))
+            .on('broadcast', { event: 'typing' }, handleTypingBroadcast)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, handleMessageInsert)
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, handleMessageUpdate);
 
         channel.subscribe(async (status: any) => {
             if (status === 'SUBSCRIBED') await channel.track({ online_at: new Date().toISOString() });
@@ -297,7 +311,7 @@ function ChatContainer() {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [selectedConv, currentUser, supabase, appendMessage, scrollToBottom]);
+    }, [selectedConv, currentUser, supabase, handlePresenceSync, handleTypingBroadcast, handleMessageInsert, handleMessageUpdate, scrollToBottom]);
 
     // Dedicated effect to MARK AS READ all incoming messages
     useEffect(() => {
