@@ -4,7 +4,6 @@ import { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Leaf, User, Truck, ArrowRight, Loader2, Building2, ShieldCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { validateInvitation, consumeInvitation } from "@/app/actions/invitations";
 
@@ -69,12 +68,16 @@ function SignupForm() {
         setError(null);
 
         try {
+            let fullName = formData.fullName;
+            if (role === 'mairie') fullName = formData.municipalityName;
+            else if (role === 'organisation_admin') fullName = formData.orgName;
+
             const { data, error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
                 options: {
                     data: {
-                        full_name: role === 'mairie' ? formData.municipalityName : (role === 'organisation_admin' ? formData.orgName : formData.fullName),
+                        full_name: fullName,
                         role: role,
                         phone: formData.phone,
                         // Role specific metadata
@@ -214,8 +217,9 @@ function SignupForm() {
                              {role === "vendeur" && (
                                 <>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom Complet</label>
+                                        <label htmlFor="fullName" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom Complet</label>
                                         <input
+                                            id="fullName"
                                             type="text"
                                             value={formData.fullName}
                                             onChange={(e) => setFormData({...formData, fullName: e.target.value})}
@@ -224,8 +228,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email Personnel</label>
+                                        <label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email Personnel</label>
                                         <input
+                                            id="email"
                                             type="email"
                                             value={formData.email}
                                             onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -234,8 +239,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Numéro de Téléphone</label>
+                                        <label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Numéro de Téléphone</label>
                                         <input
+                                            id="phone"
                                             type="tel"
                                             value={formData.phone}
                                             onChange={(e) => setFormData({...formData, phone: e.target.value})}
@@ -244,8 +250,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Quartier / Adresse</label>
+                                        <label htmlFor="district" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Quartier / Adresse</label>
                                         <input
+                                            id="district"
                                             type="text"
                                             value={formData.district}
                                             onChange={(e) => setFormData({...formData, district: e.target.value})}
@@ -259,8 +266,9 @@ function SignupForm() {
                              {role === "collecteur" && (
                                 <>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom Complet</label>
+                                        <label htmlFor="fullName" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom Complet</label>
                                         <input
+                                            id="fullName"
                                             type="text"
                                             value={formData.fullName}
                                             onChange={(e) => setFormData({...formData, fullName: e.target.value})}
@@ -269,8 +277,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email Professionnel</label>
+                                        <label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email Professionnel</label>
                                         <input
+                                            id="email"
                                             type="email"
                                             value={formData.email}
                                             onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -279,8 +288,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Numéro de Téléphone</label>
+                                        <label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Numéro de Téléphone</label>
                                         <input
+                                            id="phone"
                                             type="tel"
                                             value={formData.phone}
                                             onChange={(e) => setFormData({...formData, phone: e.target.value})}
@@ -289,8 +299,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Type de Véhicule</label>
+                                        <label htmlFor="vehicleType" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Type de Véhicule</label>
                                         <select
+                                            id="vehicleType"
                                             value={formData.vehicleType}
                                             onChange={(e) => setFormData({...formData, vehicleType: e.target.value})}
                                             className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
@@ -303,8 +314,9 @@ function SignupForm() {
                                         </select>
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">N° Pièce d'Identité (CNI/Passport)</label>
+                                        <label htmlFor="idNumber" className="text-[10px] font-black uppercase tracking-widest text-gray-400">N° Pièce d'Identité (CNI/Passport)</label>
                                         <input
+                                            id="idNumber"
                                             type="text"
                                             value={formData.idNumber}
                                             onChange={(e) => setFormData({...formData, idNumber: e.target.value})}
@@ -318,8 +330,9 @@ function SignupForm() {
                              {role === "organisation_admin" && (
                                 <>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom de l'Organisation</label>
+                                        <label htmlFor="orgName" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom de l'Organisation</label>
                                         <input
+                                            id="orgName"
                                             type="text"
                                             value={formData.orgName}
                                             onChange={(e) => setFormData({...formData, orgName: e.target.value})}
@@ -328,8 +341,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email Professionnel</label>
+                                        <label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email Professionnel</label>
                                         <input
+                                            id="email"
                                             type="email"
                                             value={formData.email}
                                             onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -338,8 +352,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom du Responsable</label>
+                                        <label htmlFor="contactPerson" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom du Responsable</label>
                                         <input
+                                            id="contactPerson"
                                             type="text"
                                             value={formData.contactPerson}
                                             onChange={(e) => setFormData({...formData, contactPerson: e.target.value})}
@@ -348,8 +363,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Numéro RCCM / IFU</label>
+                                        <label htmlFor="rccm" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Numéro RCCM / IFU</label>
                                         <input
+                                            id="rccm"
                                             type="text"
                                             value={formData.rccm}
                                             onChange={(e) => setFormData({...formData, rccm: e.target.value})}
@@ -358,8 +374,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Téléphone Siège</label>
+                                        <label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Téléphone Siège</label>
                                         <input
+                                            id="phone"
                                             type="tel"
                                             value={formData.phone}
                                             onChange={(e) => setFormData({...formData, phone: e.target.value})}
@@ -368,8 +385,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nombre d'Agents Estimé</label>
+                                        <label htmlFor="agentCount" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nombre d'Agents Estimé</label>
                                         <input
+                                            id="agentCount"
                                             type="number"
                                             value={formData.agentCount}
                                             onChange={(e) => setFormData({...formData, agentCount: e.target.value})}
@@ -387,8 +405,9 @@ function SignupForm() {
                                          <p className="text-[10px] text-emerald-800 font-bold uppercase tracking-tight italic">Inscription Officielle Validée</p>
                                      </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom de la Commune</label>
+                                        <label htmlFor="municipalityName" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom de la Commune</label>
                                         <input
+                                            id="municipalityName"
                                             type="text"
                                             value={formData.municipalityName}
                                             onChange={(e) => setFormData({...formData, municipalityName: e.target.value})}
@@ -397,8 +416,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email Officiel (.gouv / .ci)</label>
+                                        <label htmlFor="email" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Email Officiel (.gouv / .ci)</label>
                                         <input
+                                            id="email"
                                             type="email"
                                             value={formData.email}
                                             onChange={(e) => setFormData({...formData, email: e.target.value})}
@@ -407,8 +427,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Service / Direction Référent</label>
+                                        <label htmlFor="officialDepartment" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Service / Direction Référent</label>
                                         <input
+                                            id="officialDepartment"
                                             type="text"
                                             value={formData.officialDepartment}
                                             onChange={(e) => setFormData({...formData, officialDepartment: e.target.value})}
@@ -417,8 +438,9 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Téléphone Administrateur</label>
+                                        <label htmlFor="phone" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Téléphone Administrateur</label>
                                         <input
+                                            id="phone"
                                             type="tel"
                                             value={formData.phone}
                                             onChange={(e) => setFormData({...formData, phone: e.target.value})}
@@ -445,8 +467,9 @@ function SignupForm() {
                                 <p className="text-sm font-medium text-gray-900 dark:text-white">{formData.email}</p>
                             </div>
                             <div className="space-y-1">
-                                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400">Définir un Mot de passe</label>
+                                <label htmlFor="password" readonly className="text-[10px] font-black uppercase tracking-widest text-gray-400">Définir un Mot de passe</label>
                                 <input
+                                    id="password"
                                     type="password"
                                     value={formData.password}
                                     onChange={(e) => setFormData({...formData, password: e.target.value})}

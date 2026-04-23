@@ -7,18 +7,14 @@ import {
     Zap, 
     Calendar, 
     CheckCircle2, 
-    AlertTriangle, 
     Trash2, 
     ArrowRight,
     Loader2,
     Building2,
-    Truck,
-    MapPin,
-    AlertCircle
+    Truck
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase";
-import { cn } from "@/lib/utils";
+import { showToast } from "@/components/ui/toast";
 import { showToast } from "@/components/ui/toast";
 import { forceSimulateSubscription } from "@/app/actions/subscriptions";
 
@@ -27,10 +23,6 @@ export default function SubscriptionPage() {
     const [loading, setLoading] = useState(true);
     const [subscription, setSubscription] = useState<any>(null);
     const [availablePlans, setAvailablePlans] = useState<any[]>([]);
-    const [zone, setZone] = useState<any>(null);
-    const [isAlerting, setIsAlerting] = useState(false);
-    const [location, setLocation] = useState<{lat: number, lng: number} | null>(null);
-    const [isLocating, setIsLocating] = useState(false);
     const [isSimulatingId, setIsSimulatingId] = useState<string | null>(null);
 
     useEffect(() => {
@@ -45,8 +37,6 @@ export default function SubscriptionPage() {
                 .select('*, zones(*)')
                 .eq('id', user.id)
                 .single();
-            
-            setZone(profile?.zones);
 
             // 2. Fetch Active Subscription
             const { data: sub } = await supabase
@@ -94,10 +84,7 @@ export default function SubscriptionPage() {
         fetchSubscriptionData();
     }, []);
 
-    const handleAlert = () => {
-        setIsAlerting(true);
-        setTimeout(() => setIsAlerting(false), 3000);
-    };
+
 
     const handleSubscribe = async (plan: any) => {
         setIsSimulatingId(plan.id);
@@ -150,9 +137,15 @@ export default function SubscriptionPage() {
         mairie: "Pour les mairies et collectivités territoriales."
     };
 
-    const currentCatalog = availablePlans[0]?.id?.startsWith('m') ? 'mairie' : 
-                         availablePlans[0]?.id?.startsWith('o') ? 'organisation_admin' : 
-                         availablePlans[0]?.id?.startsWith('c') ? 'collecteur' : 'vendeur';
+    let currentCatalog = 'vendeur';
+    const firstPlanId = availablePlans[0]?.id;
+    if (firstPlanId?.startsWith('m')) {
+        currentCatalog = 'mairie';
+    } else if (firstPlanId?.startsWith('o')) {
+        currentCatalog = 'organisation_admin';
+    } else if (firstPlanId?.startsWith('c')) {
+        currentCatalog = 'collecteur';
+    }
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12 mb-20">
@@ -169,56 +162,7 @@ export default function SubscriptionPage() {
                 </div>
             </header>
 
-            {!subscription ? (
-                /* Discovery Flow */
-                <div className="space-y-16">
-                    <div className="text-center space-y-4">
-                        <h2 className="text-4xl font-black uppercase italic tracking-tighter dark:text-white">
-                            {(titles as any)[currentCatalog]}
-                        </h2>
-                        <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">
-                            {(subtitles as any)[currentCatalog]}
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center max-w-5xl mx-auto">
-                        {availablePlans.map((plan) => (
-                            <PlanCard 
-                                key={plan.id} 
-                                plan={plan} 
-                                onSubscribe={handleSubscribe} 
-                                isSimulating={isSimulatingId === plan.id}
-                            />
-                        ))}
-                    </div>
-
-                    <div className="pt-16 border-t border-zinc-100 dark:border-white/5">
-                        <h2 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white mb-10">Avantages Exclusifs</h2>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-                            <BenefitItem 
-                                icon={Calendar} 
-                                title="Planification Optimisée" 
-                                desc={currentCatalog === 'vendeur' ? "Passages réguliers 1 à 3 fois par semaine." : "Optimisation des tournées via IA."} 
-                            />
-                            <BenefitItem 
-                                icon={ShieldCheck} 
-                                title="Certifications" 
-                                desc={currentCatalog === 'vendeur' ? "Points éco-citoyens et certificats de tri." : "Rapports d'impact RSE certifiés."} 
-                            />
-                            <BenefitItem 
-                                icon={Truck} 
-                                title="Gestion de Flotte" 
-                                desc={currentCatalog === 'vendeur' ? "Collecteurs géo-localisés en temps réel." : "Carnet d'entretien numérique complet."} 
-                            />
-                            <BenefitItem 
-                                icon={Zap} 
-                                title="Support B2B" 
-                                desc="Assistance prioritaire 7j/7 par nos experts." 
-                            />
-                        </div>
-                    </div>
-                </div>
-            ) : (
+            {subscription ? (
                 /* Active Subscription View */
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                     <div className="space-y-8">
@@ -273,6 +217,55 @@ export default function SubscriptionPage() {
                         </div>
                     </div>
                 </div>
+            ) : (
+                /* Discovery Flow */
+                <div className="space-y-16">
+                    <div className="text-center space-y-4">
+                        <h2 className="text-4xl font-black uppercase italic tracking-tighter dark:text-white">
+                            {(titles as any)[currentCatalog]}
+                        </h2>
+                        <p className="text-zinc-500 font-bold uppercase tracking-widest text-[10px]">
+                            {(subtitles as any)[currentCatalog]}
+                        </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center max-w-5xl mx-auto">
+                        {availablePlans.map((plan) => (
+                            <PlanCard 
+                                key={plan.id} 
+                                plan={plan} 
+                                onSubscribe={handleSubscribe} 
+                                isSimulating={isSimulatingId === plan.id}
+                            />
+                        ))}
+                    </div>
+
+                    <div className="pt-16 border-t border-zinc-100 dark:border-white/5">
+                        <h2 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white mb-10">Avantages Exclusifs</h2>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+                            <BenefitItem 
+                                icon={Calendar} 
+                                title="Planification Optimisée" 
+                                desc={currentCatalog === 'vendeur' ? "Passages réguliers 1 à 3 fois par semaine." : "Optimisation des tournées via IA."} 
+                            />
+                            <BenefitItem 
+                                icon={ShieldCheck} 
+                                title="Certifications" 
+                                desc={currentCatalog === 'vendeur' ? "Points éco-citoyens et certificats de tri." : "Rapports d'impact RSE certifiés."} 
+                            />
+                            <BenefitItem 
+                                icon={Truck} 
+                                title="Gestion de Flotte" 
+                                desc={currentCatalog === 'vendeur' ? "Collecteurs géo-localisés en temps réel." : "Carnet d'entretien numérique complet."} 
+                            />
+                            <BenefitItem 
+                                icon={Zap} 
+                                title="Support B2B" 
+                                desc="Assistance prioritaire 7j/7 par nos experts." 
+                            />
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );
@@ -309,7 +302,7 @@ function PlanCard({ plan, onSubscribe, isSimulating }: any) {
     );
 }
 
-function BenefitSmall({ text }: { text: string }) {
+function BenefitSmall({ text }: { readonly text: string }) {
     return (
         <div className="flex items-center gap-2">
             <CheckCircle2 className="w-3 h-3 text-emerald-500" />

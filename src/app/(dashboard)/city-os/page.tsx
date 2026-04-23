@@ -78,6 +78,31 @@ const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
     loading: () => <div className="w-full h-[60vh] bg-gray-50 dark:bg-zinc-900 rounded-[3rem] animate-pulse border border-gray-100 flex items-center justify-center"><p className="text-[10px] font-black uppercase tracking-widest text-gray-300">Chargement de la carte...</p></div>
 });
 
+// --- Helpers to reduce nesting ---
+const enrichZonesData = (zonesData: any[], concessionsData: any[], profilesData: any[]) => {
+    return zonesData?.map((zone: any) => ({
+        ...zone,
+        concessions: concessionsData
+            ?.filter((c: any) => c.zone_id === zone.id)
+            .map((c: any) => ({
+                ...c,
+                profiles: profilesData?.find((p: any) => p.id === c.organization_id)
+            }))
+    })) || [];
+};
+
+const enrichTendersData = (tendersData: any[], bidsData: any[], profilesData: any[]) => {
+    return tendersData?.map((t: any) => ({
+        ...t,
+        tender_bids: bidsData
+            ?.filter((b: any) => b.tender_id === t.id)
+            .map((b: any) => ({
+                ...b,
+                profiles: profilesData?.find((p: any) => p.id === b.organization_id)
+            }))
+    })) || [];
+};
+
 function MairieDashboardContent() {
     const searchParams = useSearchParams();
     const targetMairieId = searchParams.get('id');
@@ -152,14 +177,6 @@ function MairieDashboardContent() {
 
             const { data: profilesData } = await supabase.from('profiles').select('id, full_name, role').in('id', profileIds);
 
-            const enrichedZones = zonesData?.map((zone: any) => ({
-                ...zone,
-                concessions: concessionsData?.filter((c: any) => c.zone_id === zone.id).map((c: any) => ({
-                    ...c,
-                    profiles: profilesData?.find((p: any) => p.id === c.organization_id)
-                }))
-            })) || [];
-
             const { data: wastesData } = await supabase.from('wastes').select('id, status, created_at, estimated_weight');
             const { data: tendersData } = await supabase.from('tenders').select('*').eq('mairie_id', mairieId);
             const { data: bidsData } = await supabase.from('tender_bids').select('*');
@@ -167,13 +184,8 @@ function MairieDashboardContent() {
             const { data: sanctionsData } = await supabase.from('sanctions').select('*, profiles:organization_id(full_name)').order('created_at', { ascending: false });
             const { data: infractionsData } = await supabase.from('environmental_infractions').select('*, profiles:reporter_id(full_name), zones:zone_id(name)').order('created_at', { ascending: false });
 
-            const enrichedTenders = tendersData?.map((t: any) => ({
-                ...t,
-                tender_bids: bidsData?.filter((b: any) => b.tender_id === t.id).map((b: any) => ({
-                    ...b,
-                    profiles: profilesData?.find((p: any) => p.id === b.organization_id)
-                }))
-            })) || [];
+            const enrichedZones = enrichZonesData(zonesData || [], concessionsData || [], profilesData || []);
+            const enrichedTenders = enrichTendersData(tendersData || [], bidsData || [], profilesData || []);
 
             setZones(enrichedZones);
             setWastes(wastesData || []);
@@ -836,17 +848,17 @@ function MairieDashboardContent() {
             <Modal isOpen={isAddTenderModalOpen} onClose={() => setIsAddTenderModalOpen(false)} title="Lancer une Mise en Concurrence">
                 <form onSubmit={handleCreateTender} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Zone Stratégique</label>
-                        <select required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" value={newTender.zone_id} onChange={(e) => setNewTender({...newTender, zone_id: e.target.value})}>
+                        <label htmlFor="tenderZone" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Zone Stratégique</label>
+                        <select id="tenderZone" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" value={newTender.zone_id} onChange={(e) => setNewTender({...newTender, zone_id: e.target.value})}>
                             <option value="">Sélectionner une zone...</option>
                             {zones.filter(z => z.status === 'available').map(z => (<option key={z.id} value={z.id}>{z.name}</option>))}
                         </select>
                     </div>
-                    <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Titre du Marché</label><input required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Titre du Marché" value={newTender.title} onChange={(e) => setNewTender({...newTender, title: e.target.value})} /></div>
-                    <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Description technique</label><textarea required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium min-h-[100px] outline-none" placeholder="Détails techniques..." value={newTender.description} onChange={(e) => setNewTender({...newTender, description: e.target.value})} /></div>
+                    <div className="space-y-2"><label htmlFor="tenderTitle" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Titre du Marché</label><input id="tenderTitle" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Titre du Marché" value={newTender.title} onChange={(e) => setNewTender({...newTender, title: e.target.value})} /></div>
+                    <div className="space-y-2"><label htmlFor="tenderDesc" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Description technique</label><textarea id="tenderDesc" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium min-h-[100px] outline-none" placeholder="Détails techniques..." value={newTender.description} onChange={(e) => setNewTender({...newTender, description: e.target.value})} /></div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Budget (CFA)</label><input type="number" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="CFA" value={newTender.budget_estimate} onChange={(e) => setNewTender({...newTender, budget_estimate: parseInt(e.target.value)})} /></div>
-                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Clôture</label><input type="date" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" value={newTender.end_date} onChange={(e) => setNewTender({...newTender, end_date: e.target.value})} /></div>
+                        <div className="space-y-2"><label htmlFor="tenderBudget" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Budget (CFA)</label><input id="tenderBudget" type="number" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="CFA" value={newTender.budget_estimate} onChange={(e) => setNewTender({...newTender, budget_estimate: parseInt(e.target.value)})} /></div>
+                        <div className="space-y-2"><label htmlFor="tenderEndDate" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Clôture</label><input id="tenderEndDate" type="date" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" value={newTender.end_date} onChange={(e) => setNewTender({...newTender, end_date: e.target.value})} /></div>
                     </div>
                     <button type="submit" className="w-full py-5 bg-emerald-500 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.01] transition-all">Diffuser l'Appel d'Offres</button>
                 </form>
@@ -855,15 +867,17 @@ function MairieDashboardContent() {
             <Modal isOpen={isAddZoneModalOpen} onClose={() => setIsAddZoneModalOpen(false)} title="🏛️ CENTRE DE COMMANDE : NOUVELLE CONCESSION">
                  <form onSubmit={handleAddZoneSubmit} className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de la Zone</label><input required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Nom de la Zone" value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} /></div>
-                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville</label><input required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Ville" value={newZone.city} onChange={(e) => setNewZone({...newZone, city: e.target.value})} /></div>
+                        <div className="space-y-2"><label htmlFor="zoneName" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de la Zone</label><input id="zoneName" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Nom de la Zone" value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} /></div>
+                        <div className="space-y-2"><label htmlFor="zoneCity" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville</label><input id="zoneCity" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Ville" value={newZone.city} onChange={(e) => setNewZone({...newZone, city: e.target.value})} /></div>
                     </div>
                     <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-[2rem] space-y-4">
                         <div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Attribution Directe</span><button type="button" onClick={() => setIsAttributingDirectly(!isAttributingDirectly)} className={cn("w-12 h-6 rounded-full p-1 transition-all", isAttributingDirectly ? "bg-emerald-500" : "bg-gray-200")}><div className={cn("bg-white w-4 h-4 rounded-full shadow-sm transition-all", isAttributingDirectly ? "ml-6" : "ml-0")} /></button></div>
                         {isAttributingDirectly && (
                             <div className="space-y-4 pt-4 border-t border-emerald-100">
-                                <select className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none" value={selectedOrgId} onChange={(e) => setSelectedOrgId(e.target.value)} required={isAttributingDirectly}><option value="">Choisir une organisation...</option>{organizations.map(org => (<option key={org.id} value={org.id}>{org.full_name} — Score: {org.performanceScore}/5</option>))}</select>
-                                <select className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none" value={concessionDuration} onChange={(e) => setConcessionDuration(parseInt(e.target.value))}><option value={6}>6 mois</option><option value={12}>12 mois</option><option value={24}>24 mois</option></select>
+                                <label htmlFor="directOrg" className="sr-only">Organisation</label>
+                                <select id="directOrg" className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none" value={selectedOrgId} onChange={(e) => setSelectedOrgId(e.target.value)} required={isAttributingDirectly}><option value="">Choisir une organisation...</option>{organizations.map(org => (<option key={org.id} value={org.id}>{org.full_name} — Score: {org.performanceScore}/5</option>))}</select>
+                                <label htmlFor="directDuration" className="sr-only">Durée</label>
+                                <select id="directDuration" className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none" value={concessionDuration} onChange={(e) => setConcessionDuration(parseInt(e.target.value))}><option value={6}>6 mois</option><option value={12}>12 mois</option><option value={24}>24 mois</option></select>
                             </div>
                         )}
                     </div>
@@ -874,8 +888,9 @@ function MairieDashboardContent() {
             <Modal isOpen={isSanctionModalOpen} onClose={() => setIsSanctionModalOpen(false)} title="⚖️ CENTRE DE SANCTION">
                 <form onSubmit={handleIssueSanctionSubmit} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Organisation Cible</label>
+                        <label htmlFor="sanctionOrg" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Organisation Cible</label>
                         <select 
+                            id="sanctionOrg"
                             required 
                             className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none"
                             value={sanctionForm.orgId}
@@ -888,8 +903,9 @@ function MairieDashboardContent() {
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Type de Litige</label>
+                            <label htmlFor="sanctionType" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Type de Litige</label>
                             <select 
+                                id="sanctionType"
                                 className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black outline-none"
                                 value={sanctionForm.type}
                                 onChange={(e) => setSanctionForm({...sanctionForm, type: e.target.value})}
@@ -901,8 +917,9 @@ function MairieDashboardContent() {
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Gravité</label>
+                            <label htmlFor="sanctionSeverity" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Gravité</label>
                             <select 
+                                id="sanctionSeverity"
                                 className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black outline-none"
                                 value={sanctionForm.severity}
                                 onChange={(e) => setSanctionForm({...sanctionForm, severity: e.target.value})}
@@ -916,8 +933,9 @@ function MairieDashboardContent() {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Pénalité (CFA)</label>
+                        <label htmlFor="sanctionAmount" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Pénalité (CFA)</label>
                         <input 
+                            id="sanctionAmount"
                             type="number"
                             className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none"
                             placeholder="Montant en CFA"
@@ -927,8 +945,9 @@ function MairieDashboardContent() {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Description / Justification</label>
+                        <label htmlFor="sanctionJustification" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Description / Justification</label>
                         <textarea 
+                            id="sanctionJustification"
                             required
                             className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium min-h-[80px] outline-none"
                             placeholder="Détails du manquement..."
@@ -1079,17 +1098,17 @@ function MairieDashboardContent() {
             <Modal isOpen={isAddAgentModalOpen} onClose={() => setIsAddAgentModalOpen(false)} title="📋 RECRUTEMENT DE NOUVEL AGENT (POLICE VERTE)">
                 <form onSubmit={handleRecruitAgent} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom Complet de l'Officier</label>
-                        <input required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.fullName} onChange={(e) => setNewAgent({...newAgent, fullName: e.target.value})} />
+                        <label htmlFor="agentName" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom Complet de l'Officier</label>
+                        <input id="agentName" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.fullName} onChange={(e) => setNewAgent({...newAgent, fullName: e.target.value})} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Email Professionnel</label><input type="email" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.email} onChange={(e) => setNewAgent({...newAgent, email: e.target.value})} /></div>
-                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Mot de Passe Initial</label><input type="password" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.password} onChange={(e) => setNewAgent({...newAgent, password: e.target.value})} /></div>
+                        <div className="space-y-2"><label htmlFor="agentEmail" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Email Professionnel</label><input id="agentEmail" type="email" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.email} onChange={(e) => setNewAgent({...newAgent, email: e.target.value})} /></div>
+                        <div className="space-y-2"><label htmlFor="agentPass" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Mot de Passe Initial</label><input id="agentPass" type="password" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.password} onChange={(e) => setNewAgent({...newAgent, password: e.target.value})} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Numéro de Téléphone</label><input required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.phone} onChange={(e) => setNewAgent({...newAgent, phone: e.target.value})} /></div>
-                        <div className="space-y-2"><label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Zone d'Affectation</label>
-                            <select className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black uppercase outline-none" value={newAgent.zoneId} onChange={(e) => setNewAgent({...newAgent, zoneId: e.target.value})}>
+                        <div className="space-y-2"><label htmlFor="agentPhone" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Numéro de Téléphone</label><input id="agentPhone" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.phone} onChange={(e) => setNewAgent({...newAgent, phone: e.target.value})} /></div>
+                        <div className="space-y-2"><label htmlFor="agentZone" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Zone d'Affectation</label>
+                            <select id="agentZone" className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black uppercase outline-none" value={newAgent.zoneId} onChange={(e) => setNewAgent({...newAgent, zoneId: e.target.value})}>
                                 <option value="">Choisir une zone...</option>
                                 {zones.map(z => (<option key={z.id} value={z.id}>{z.name}</option>))}
                             </select>

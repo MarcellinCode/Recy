@@ -117,6 +117,39 @@ function ChatContainer() {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // --- Helpers to reduce nesting ---
+    const isDuplicateOrMerged = (prev: Message[], msg: Message) => {
+        const msgIdStr = msg.id.toString();
+        const existsById = prev.some(m => m.id.toString() === msgIdStr);
+        if (existsById) return { type: 'duplicate' };
+
+        const msgContentNormalized = msg.content.trim();
+        const msgTime = new Date(msg.created_at).getTime();
+
+        const optimisticIndex = prev.findIndex(m => 
+            m.id.toString().startsWith('optimistic-') &&
+            m.sender_id === msg.sender_id &&
+            m.content.trim() === msgContentNormalized &&
+            Math.abs(new Date(m.created_at).getTime() - msgTime) < 120000 
+        );
+
+        if (optimisticIndex !== -1) {
+            return { type: 'merge', index: optimisticIndex };
+        }
+
+        const isBroadlyDuplicate = prev.some(m => 
+            m.sender_id === msg.sender_id && 
+            m.content.trim() === msgContentNormalized &&
+            Math.abs(new Date(m.created_at).getTime() - msgTime) < 2000 
+        );
+
+        if (isBroadlyDuplicate && !msgIdStr.startsWith('optimistic-')) {
+            return { type: 'duplicate' };
+        }
+
+        return { type: 'new' };
+    };
+
     // --- Data Fetching ---
 
     useEffect(() => {
@@ -184,43 +217,18 @@ function ChatContainer() {
 
     const appendMessage = useCallback((msg: Message) => {
         setMessages(prev => {
-            const msgIdStr = msg.id.toString();
+            const check = isDuplicateOrMerged(prev, msg);
             
-            // 1. Precise ID check (normalize 100% to string)
-            const existsById = prev.some(m => m.id.toString() === msgIdStr);
-            if (existsById) return prev;
-
-            // 2. Fuzzy match for optimistic/real merging (Sender side only)
-            // We only look for optimistic messages that match the content/sender/timing
-            const msgContentNormalized = msg.content.trim();
-            const msgTime = new Date(msg.created_at).getTime();
-
-            const optimisticIndex = prev.findIndex(m => 
-                m.id.toString().startsWith('optimistic-') &&
-                m.sender_id === msg.sender_id &&
-                m.content.trim() === msgContentNormalized &&
-                Math.abs(new Date(m.created_at).getTime() - msgTime) < 120000 
-            );
-
-            if (optimisticIndex !== -1) {
-                // If the incoming message is "real" (database), replace the optimistic one
-                if (!msgIdStr.startsWith('optimistic-')) {
+            if (check.type === 'duplicate') return prev;
+            
+            if (check.type === 'merge' && check.index !== undefined) {
+                if (!msg.id.toString().startsWith('optimistic-')) {
                     const newMessages = [...prev];
-                    newMessages[optimisticIndex] = msg;
+                    newMessages[check.index] = msg;
                     return newMessages;
                 }
-                // If both are optimistic, keep existing
                 return prev;
             }
-
-            // 3. Prevent receiver duplicates IF the message already exists via another event
-            // (Strictly defensive for edge cases)
-            const isBroadlyDuplicate = prev.some(m => 
-                m.sender_id === msg.sender_id && 
-                m.content.trim() === msgContentNormalized &&
-                Math.abs(new Date(m.created_at).getTime() - msgTime) < 2000 // Very tight window for real duplicates
-            );
-            if (isBroadlyDuplicate && !msgIdStr.startsWith('optimistic-')) return prev;
 
             return [...prev, msg];
         });

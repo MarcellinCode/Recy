@@ -75,10 +75,11 @@ function LoginForm() {
 
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+                        <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
                         <div className="relative">
                             <Mail className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
                             <input
+                                id="email"
                                 type="email"
                                 required
                                 value={formData.email}
@@ -89,10 +90,11 @@ function LoginForm() {
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mot de passe</label>
+                        <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Mot de passe</label>
                         <div className="relative">
                             <Lock className="absolute left-3 top-3.5 w-5 h-5 text-gray-400" />
                             <input
+                                id="password"
                                 type="password"
                                 required
                                 value={formData.password}

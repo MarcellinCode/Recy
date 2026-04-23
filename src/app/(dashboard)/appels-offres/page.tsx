@@ -10,7 +10,6 @@ import {
     ChevronRight,
     Loader2,
     Info,
-    CheckCircle2,
     Clock
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
@@ -128,8 +127,9 @@ export default function BulkMarketplacePage() {
                 <div className="bg-white dark:bg-zinc-900 border-2 border-primary/20 rounded-[3rem] p-10 mb-16 animate-in slide-in-from-top duration-500">
                     <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Matière demandée</label>
+                            <label htmlFor="wasteType" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Matière demandée</label>
                             <select
+                                id="wasteType"
                                 required
                                 value={newRequest.waste_type_id}
                                 onChange={(e) => setNewRequest({ ...newRequest, waste_type_id: e.target.value })}
@@ -143,10 +143,11 @@ export default function BulkMarketplacePage() {
                         </div>
 
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Quantité (kg)</label>
+                            <label htmlFor="quantity" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Quantité (kg)</label>
                             <div className="relative">
                                 <Weight className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
+                                    id="quantity"
                                     type="number"
                                     required
                                     placeholder="Ex: 5000"
@@ -158,10 +159,11 @@ export default function BulkMarketplacePage() {
                         </div>
 
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Prix Target (Optionnel)</label>
+                            <label htmlFor="targetPrice" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Prix Target (Optionnel)</label>
                             <div className="relative">
                                 <DollarSign className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
+                                    id="targetPrice"
                                     type="number"
                                     placeholder="Prix au kg"
                                     value={newRequest.target_price}
@@ -172,10 +174,11 @@ export default function BulkMarketplacePage() {
                         </div>
 
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date limite de collecte</label>
+                            <label htmlFor="deadline" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Date limite de collecte</label>
                             <div className="relative">
                                 <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                 <input
+                                    id="deadline"
                                     type="date"
                                     required
                                     value={newRequest.deadline}
@@ -186,8 +189,9 @@ export default function BulkMarketplacePage() {
                         </div>
 
                         <div className="md:col-span-2 space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Détails / Specifications techniques</label>
+                            <label htmlFor="details" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Détails / Specifications techniques</label>
                             <input
+                                id="details"
                                 type="text"
                                 placeholder="Couleur, pureté, emballage souhaité..."
                                 value={newRequest.description}

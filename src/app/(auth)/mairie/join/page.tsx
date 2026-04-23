@@ -211,12 +211,13 @@ function MairieJoinForm() {
                             >
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Nom Officiel de la Commune</label>
+                                        <label htmlFor="municipalityName" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Nom Officiel de la Commune</label>
                                         <div className="relative group">
                                             <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
                                                 <Building size={18} />
                                             </div>
                                             <input
+                                                id="municipalityName"
                                                 required
                                                 value={formData.municipalityName}
                                                 onChange={(e) => setFormData({ ...formData, municipalityName: e.target.value })}
@@ -227,12 +228,13 @@ function MairieJoinForm() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Département Référent</label>
+                                        <label htmlFor="officialDepartment" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Département Référent</label>
                                         <div className="relative group">
                                             <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
                                                 <ShieldCheck size={18} />
                                             </div>
                                             <input
+                                                id="officialDepartment"
                                                 required
                                                 value={formData.officialDepartment}
                                                 onChange={(e) => setFormData({ ...formData, officialDepartment: e.target.value })}
@@ -243,12 +245,13 @@ function MairieJoinForm() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Téléphone de l'Instance</label>
+                                        <label htmlFor="phone" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Téléphone de l'Instance</label>
                                         <div className="relative group">
                                             <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
                                                 <Phone size={18} />
                                             </div>
                                             <input
+                                                id="phone"
                                                 type="tel"
                                                 required
                                                 value={formData.phone}
@@ -278,12 +281,13 @@ function MairieJoinForm() {
                             >
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Email Officiel (Identifiant)</label>
+                                        <label htmlFor="officialEmail" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Email Officiel (Identifiant)</label>
                                         <div className="relative group">
                                             <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
                                                 <Mail size={18} />
                                             </div>
                                             <input
+                                                id="officialEmail"
                                                 type="email"
                                                 required
                                                 value={formData.email}
@@ -295,12 +299,13 @@ function MairieJoinForm() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Définir un mot de passe</label>
+                                        <label htmlFor="officialPassword" readonly className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Définir un mot de passe</label>
                                         <div className="relative group">
                                             <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
                                                 <Lock size={18} />
                                             </div>
                                             <input
+                                                id="officialPassword"
                                                 type="password"
                                                 required
                                                 value={formData.password}

@@ -94,12 +94,13 @@ function MairieLoginForm() {
 
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Email Officiel</label>
+                            <label htmlFor="officialEmail" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Email Officiel</label>
                             <div className="relative group">
                                 <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-zinc-500 group-focus-within:text-emerald-400 transition-colors">
                                     <Mail size={18} />
                                 </div>
                                 <input
+                                    id="officialEmail"
                                     type="email"
                                     required
                                     value={formData.email}
@@ -112,7 +113,7 @@ function MairieLoginForm() {
 
                         <div className="space-y-2">
                             <div className="flex justify-between items-center ml-4 mr-2">
-                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Mot de passe</label>
+                                <label htmlFor="officialPassword" readonly className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Mot de passe</label>
                                 <Link href="/mdp-oublie" className="text-[10px] font-bold text-emerald-400 hover:text-emerald-300 transition-colors uppercase tracking-widest">
                                     Oublié ?
                                 </Link>
@@ -122,6 +123,7 @@ function MairieLoginForm() {
                                     <Lock size={18} />
                                 </div>
                                 <input
+                                    id="officialPassword"
                                     type="password"
                                     required
                                     value={formData.password}
