@@ -15,7 +15,6 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
-import { showToast } from "@/components/ui/toast";
 import { forceSimulateSubscription } from "@/app/actions/subscriptions";
 
 export default function SubscriptionPage() {
