@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase-server";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from "next/cache";
+import crypto from "crypto";
 
 /**
  * ACTIONS POUR LES ORGANISATIONS (B2B)
@@ -29,8 +30,8 @@ export async function addAgent(formData: any) {
 
     try {
         // 1. Création de l'utilisateur Auth
-        // On génère un mot de passe aléatoire sécurisé pour éviter les mots de passe en dur
-        const generatedPassword = Math.random().toString(36).slice(-10) + Math.random().toString(36).toUpperCase().slice(-2) + "!";
+        // On génère un mot de passe aléatoire sécurisé (cryptographique) pour éviter les mots de passe en dur
+        const generatedPassword = crypto.randomBytes(12).toString('hex') + "!";
         const defaultPassword = formData.pin ? `Agent${formData.pin}!` : generatedPassword;
         
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
