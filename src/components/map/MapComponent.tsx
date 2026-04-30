@@ -26,6 +26,7 @@ interface WasteMarker {
     };
     estimated_weight: number;
     location: string;
+    images?: string[];
     created_at?: string;
 }
 
