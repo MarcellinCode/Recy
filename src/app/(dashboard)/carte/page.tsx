@@ -3,6 +3,8 @@
 import dynamic from "next/dynamic";
 import { MapPin, Info, Layers } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase";
 
 // Import map dynamically to avoid SSR issues with Leaflet
 const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
@@ -10,6 +12,20 @@ const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
 });
 
 export default function CartePage() {
+    const supabase = createClient();
+    const [profile, setProfile] = useState<any>(null);
+
+    useEffect(() => {
+        const fetchProfile = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+                setProfile(data);
+            }
+        };
+        fetchProfile();
+    }, []);
+
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
             <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-12">
@@ -31,7 +47,11 @@ export default function CartePage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 <div className="lg:col-span-3">
-                    <MapComponent />
+                    <MapComponent 
+                        isMairie={profile?.role === 'mairie' || profile?.role === 'organisation_admin'} 
+                        targetCity={profile?.city} 
+                        mairieId={profile?.id}
+                    />
                 </div>
 
                 <div className="space-y-6">

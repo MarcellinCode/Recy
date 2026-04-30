@@ -9,6 +9,15 @@ import { revalidatePath } from "next/cache";
 export async function adjustWallet(userId: string, amount: number, isAddition: boolean) {
     const supabase = await createClient();
     
+    // 🛡️ SÉCURISATION : Vérification de l'identité et du rôle Super Admin
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Non authentifié");
+
+    const { data: adminProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (!adminProfile || adminProfile.role !== 'super_admin') {
+        throw new Error("Action non autorisée. Réservée aux Super Admins.");
+    }
+    
     // 1. Get current balance
     const { data: profile, error: fetchError } = await supabase
         .from('profiles')
@@ -47,6 +56,21 @@ export async function adjustWallet(userId: string, amount: number, isAddition: b
  */
 export async function updateSystemRole(userId: string, newRole: string) {
     const supabase = await createClient();
+    
+    // 🛡️ SÉCURISATION : Vérification de l'identité et du rôle Super Admin
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("Non authentifié");
+
+    const { data: adminProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (!adminProfile || adminProfile.role !== 'super_admin') {
+        throw new Error("Action non autorisée. Réservée aux Super Admins.");
+    }
+
+    // 🛡️ ANTI-MUTINERIE : Empêcher de dégrader un autre Super Admin
+    const { data: targetProfile } = await supabase.from('profiles').select('role').eq('id', userId).single();
+    if (targetProfile && targetProfile.role === 'super_admin' && newRole !== 'super_admin') {
+        throw new Error("Action interdite : Vous ne pouvez pas rétrograder un autre Super Admin.");
+    }
     
     const { error } = await supabase
         .from('profiles')

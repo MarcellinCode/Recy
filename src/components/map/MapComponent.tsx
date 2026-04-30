@@ -157,23 +157,56 @@ function RadarScanner() {
     );
 }
 
-export default function MapComponent({ isMairie = false }: { isMairie?: boolean }) {
+const CITY_COORDINATES: Record<string, [number, number]> = {
+    "Abidjan": [5.3484, -4.0197],
+    "Bouaké": [7.6894, -5.0303],
+    "Yamoussoukro": [6.8276, -5.2893],
+    "San-Pédro": [4.7485, -6.6363],
+    "Korhogo": [9.4580, -5.6295],
+    "Daloa": [6.8773, -6.4502],
+};
+
+export default function MapComponent({ 
+    isMairie = false, 
+    targetCity, 
+    mairieId 
+}: { 
+    isMairie?: boolean;
+    targetCity?: string;
+    mairieId?: string;
+}) {
     const supabase = createClient();
     const [wastes, setWastes] = useState<WasteMarker[]>([]);
     const [agents, setAgents] = useState<AgentMarker[]>([]);
     const [zones, setZones] = useState<ZoneMarker[]>([]);
+    const [infractions, setInfractions] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [showUserLocation, setShowUserLocation] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
-            // 1. Récupérer les déchets et types
-            const { data: wastesData } = await supabase
+            setLoading(true);
+            // 1. Récupérer les déchets et types avec filtrage par ville
+            let wastesQuery = supabase
                 .from('wastes')
-                .select('*, waste_types(*)')
+                .select('*, waste_types(*), profiles!seller_id(city)')
                 .in('status', ['published', 'reserved'])
                 .not('latitude', 'is', null)
                 .not('longitude', 'is', null);
+
+            if (targetCity) {
+                wastesQuery = wastesQuery.filter('profiles.city', 'eq', targetCity);
+            }
+
+            const { data: wastesData } = await wastesQuery;
+
+            // Ajout fetch infractions
+            if (isMairie) {
+                const { data: infractionsData } = await supabase
+                    .from('environmental_infractions')
+                    .select('*, profiles:reporter_id(full_name)');
+                setInfractions(infractionsData || []);
+            }
 
             // 2. Récupérer les positions en temps réel
             const { data: trackingData } = await supabase
@@ -210,11 +243,19 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                 setAgents(enrichedAgents as AgentMarker[]);
             }
 
-            // 5. Récupérer les Zones et Concessions pour la Mairie
+            // 5. Récupérer les Zones et Concessions pour la Mairie (filtrées)
             if (isMairie) {
-                const { data: zonesData } = await supabase
+                let zonesQuery = supabase
                     .from('zones')
                     .select('*, concessions(*, profiles(full_name))');
+                
+                if (mairieId) {
+                    zonesQuery = zonesQuery.eq('created_by', mairieId);
+                } else if (targetCity) {
+                    zonesQuery = zonesQuery.eq('city', targetCity);
+                }
+
+                const { data: zonesData } = await zonesQuery;
                 setZones(zonesData || []);
             }
 
@@ -278,8 +319,8 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
         <div className="w-full h-[70vh] rounded-[3rem] overflow-hidden border-4 border-white dark:border-zinc-800 shadow-2xl relative z-0 group">
             <RadarScanner />
             <MapContainer
-                center={[5.3484, -4.0197]} // Abidjan, Côte d'Ivoire
-                zoom={12}
+                center={targetCity && CITY_COORDINATES[targetCity] ? CITY_COORDINATES[targetCity] : [5.3484, -4.0197]} // Centrage dynamique
+                zoom={targetCity ? 13 : 12}
                 style={{ height: "100%", width: "100%" }}
                 scrollWheelZoom={true}
                 zoomControl={false}
@@ -309,15 +350,26 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                                 <div className="p-1 min-w-[220px] bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
                                     <div className={`flex items-center gap-3 mb-4 p-2 rounded-xl ${isHotspot ? 'bg-red-50 dark:bg-red-900/20' : 'bg-gray-50 dark:bg-zinc-800'}`}>
                                         <div className="text-3xl bg-white dark:bg-zinc-900 p-2 rounded-lg shadow-sm">
-                                            {waste.waste_types.emoji}
-                                        </div>
-                                        <div>
-                                            <h3 className="font-black text-gray-900 dark:text-white uppercase text-xs tracking-tight italic">
-                                                {waste.waste_types.name}
-                                            </h3>
-                                            <p className={`text-[9px] font-bold uppercase tracking-widest ${isHotspot ? 'text-red-600' : 'text-primary'}`}>
-                                                {isHotspot ? 'POINT NOIR (SLA >48h)' : (waste.status === 'reserved' ? 'Réservé' : 'Disponible')}
-                                            </p>
+                                    <div className="flex flex-col gap-3">
+                                        {waste.images && waste.images.length > 0 && (
+                                            <div className="w-full h-24 rounded-xl overflow-hidden mb-2">
+                                                <img 
+                                                    src={waste.images[0]} 
+                                                    alt="Aperçu déchet" 
+                                                    className="w-full h-full object-cover"
+                                                />
+                                            </div>
+                                        )}
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl flex items-center justify-center text-xl">
+                                                {waste.waste_types?.emoji || '🗑️'}
+                                            </div>
+                                            <div>
+                                                <div className="text-[10px] font-black uppercase text-zinc-900 dark:text-white leading-tight mb-0.5">{waste.waste_types?.name}</div>
+                                                <p className={`text-[9px] font-bold uppercase tracking-widest ${isHotspot ? 'text-red-600' : 'text-primary'}`}>
+                                                    {isHotspot ? 'POINT NOIR (SLA >48h)' : (waste.status === 'reserved' ? 'Réservé' : 'Disponible')}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -384,9 +436,67 @@ export default function MapComponent({ isMairie = false }: { isMairie?: boolean 
                                             <span className="text-[9px] font-black dark:text-gray-400">85%</span>
                                         </div>
                                         <div className="flex-1 p-2 bg-gray-50 dark:bg-zinc-800 rounded-xl flex items-center gap-2">
-                                            <Package size={10} className="text-blue-500" />
-                                            <span className="text-[9px] font-black dark:text-gray-400">20%</span>
+                                            <div className="w-full h-1 bg-emerald-500 rounded-full mt-3 overflow-hidden">
+                                                <motion.div initial={{ width: 0 }} animate={{ width: '100%' }} transition={{ duration: 1 }} className="h-full bg-emerald-600" />
+                                            </div>
                                         </div>
+                                    </div>
+                                </div>
+                            </Popup>
+                        </Marker>
+                    ))}
+
+                    {isMairie && infractions.map((infraction) => (
+                        <Marker 
+                            key={`infraction-${infraction.id}`} 
+                            position={[infraction.latitude, infraction.longitude]}
+                            icon={L.divIcon({
+                                className: 'custom-div-icon',
+                                html: `<div class="w-10 h-10 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-red-600/30 border-2 border-white animate-pulse"><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-triangle"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></div>`,
+                                iconSize: [40, 40],
+                                iconAnchor: [20, 20]
+                            })}
+                        >
+                            <Popup className="premium-popup">
+                                <div className="p-4 min-w-[220px] bg-white dark:bg-zinc-950 rounded-[2rem]">
+                                    {infraction.images && infraction.images.length > 0 && (
+                                        <div className="w-full h-32 rounded-2xl overflow-hidden mb-4 border border-zinc-100">
+                                            <img 
+                                                src={infraction.images[0]} 
+                                                alt="Preuve infraction" 
+                                                className="w-full h-full object-cover scale-110 hover:scale-100 transition-transform duration-500"
+                                            />
+                                        </div>
+                                    )}
+                                    <div className="mb-4">
+                                        <div className="flex items-center gap-2 mb-1">
+                                            <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${
+                                                infraction.severity === 'critical' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
+                                            }`}>
+                                                {infraction.severity}
+                                            </span>
+                                            <span className="text-[8px] font-black px-2 py-0.5 bg-zinc-100 text-zinc-500 rounded-full uppercase tracking-widest">
+                                                {infraction.status}
+                                            </span>
+                                        </div>
+                                        <h4 className="text-[11px] font-black uppercase italic tracking-tighter text-zinc-900 dark:text-white leading-tight">
+                                            {infraction.type}
+                                        </h4>
+                                        <p className="text-[9px] font-medium text-zinc-500 mt-1 line-clamp-2">
+                                            {infraction.description || "Aucune description fournie."}
+                                        </p>
+                                    </div>
+
+                                    <div className="pt-4 border-t border-zinc-100 flex items-center justify-between">
+                                        <div className="flex flex-col">
+                                            <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Signalé par</span>
+                                            <span className="text-[9px] font-black uppercase text-zinc-900 dark:text-white truncate max-w-[100px]">
+                                                {infraction.profiles?.full_name || "Agent Anonyme"}
+                                            </span>
+                                        </div>
+                                        <button className="p-2 bg-zinc-900 text-white rounded-lg hover:bg-red-600 transition-colors">
+                                            <Gavel size={14} />
+                                        </button>
                                     </div>
                                 </div>
                             </Popup>

@@ -82,15 +82,44 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/dashboard', request.url))
     }
 
-    // Admin role check (Strictly Super Admin for /admin)
-    if (user && pathname.startsWith('/admin')) {
+    // Role-based access control — single profile fetch shared across all checks
+    const needsRoleCheck =
+        pathname.startsWith('/admin') ||
+        pathname.startsWith('/city-os') ||
+        pathname.startsWith('/organisation') ||
+        pathname.startsWith('/flotte')
+
+    if (user && needsRoleCheck) {
         const { data: profile } = await supabase
             .from('profiles')
             .select('role')
             .eq('id', user.id)
             .single()
 
-        if (profile?.role !== 'super_admin') {
+        const role = profile?.role
+
+        // 🔴 Super Admin only
+        if (pathname.startsWith('/admin') && role !== 'super_admin') {
+            return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
+
+        // 🏛️ Mairie or Super Admin only
+        if (
+            pathname.startsWith('/city-os') &&
+            role !== 'mairie' &&
+            role !== 'super_admin'
+        ) {
+            return NextResponse.redirect(new URL('/dashboard', request.url))
+        }
+
+        // 🏢 Organisation Admin, Mairie, or Super Admin only
+        // entreprise / collecteur / vendeur → redirigé vers /dashboard
+        if (
+            (pathname.startsWith('/organisation') || pathname.startsWith('/flotte')) &&
+            role !== 'organisation_admin' &&
+            role !== 'mairie' &&
+            role !== 'super_admin'
+        ) {
             return NextResponse.redirect(new URL('/dashboard', request.url))
         }
     }

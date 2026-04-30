@@ -10,12 +10,29 @@ import { showToast } from "@/components/ui/toast";
 import { MarketplaceSkeleton } from "@/components/ui/Skeleton";
 
 export default function MarketplacePage() {
-    const supabase = createClient();
+    const supabase = useMemo(() => createClient(), []);
 
     const [wastes, setWastes] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [userLoc, setUserLoc] = useState<{lat: number, lng: number} | null>(null);
     const [filterByDistance, setFilterByDistance] = useState(false);
+
+    const fetchMarketplace = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('wastes')
+                .select('*, waste_types(name, emoji), profiles!seller_id(full_name)')
+                .eq('status', 'published')
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            setWastes(data || []);
+        } catch (err) {
+            console.error("Error fetching marketplace:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     useEffect(() => {
         // Get user location for geofencing
@@ -26,25 +43,22 @@ export default function MarketplacePage() {
             );
         }
 
-        const fetchMarketplace = async () => {
-            setLoading(true);
-            try {
-                const { data, error } = await supabase
-                    .from('wastes')
-                    .select('*, waste_types(name, emoji), profiles!seller_id(full_name)')
-                    .eq('status', 'published')
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-                setWastes(data || []);
-            } catch (err) {
-                console.error("Error fetching marketplace:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
+        // Initial fetch
         fetchMarketplace();
+
+        // ✅ Realtime sync — lot publié depuis mobile → visible immédiatement sur web
+        const channel = supabase
+            .channel('marketplace-realtime')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'wastes' },
+                () => fetchMarketplace()
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, []);
 
     const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
