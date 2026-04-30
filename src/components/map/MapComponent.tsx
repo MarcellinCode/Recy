@@ -1,6 +1,6 @@
 "use client";
 
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, Polygon } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { useEffect, useState, useCallback } from "react";
@@ -12,6 +12,7 @@ import MarkerClusterGroup from "react-leaflet-cluster";
 import { cn } from "@/lib/utils";
 import { dispatchEmergencyAgent } from "@/app/actions/mairie";
 import { showToast } from "@/components/ui/toast";
+import { getMunicipalityGeo } from "@/lib/geoIntelligence";
 
 // Custom interface for Waste markers
 interface WasteMarker {
@@ -158,14 +159,7 @@ function RadarScanner() {
     );
 }
 
-const CITY_COORDINATES: Record<string, [number, number]> = {
-    "Abidjan": [5.3484, -4.0197],
-    "Bouaké": [7.6894, -5.0303],
-    "Yamoussoukro": [6.8276, -5.2893],
-    "San-Pédro": [4.7485, -6.6363],
-    "Korhogo": [9.4580, -5.6295],
-    "Daloa": [6.8773, -6.4502],
-};
+// Les coordonnées sont maintenant gérées dynamiquement par getMunicipalityGeo dans lib/geoIntelligence.ts
 
 export default function MapComponent({ 
     isMairie = false, 
@@ -316,12 +310,19 @@ export default function MapComponent({
         </div>
     );
 
+    // Calcul du centre et du zoom par défaut
+    const defaultGeo = targetCity ? getMunicipalityGeo(targetCity) : getMunicipalityGeo("Abidjan");
+    const mapCenter: [number, number] = zones.length > 0 && zones[0].latitude && zones[0].longitude 
+        ? [zones[0].latitude, zones[0].longitude] 
+        : defaultGeo.center;
+    const mapZoom = zones.length > 0 ? 13 : defaultGeo.zoom;
+
     return (
         <div className="w-full h-[70vh] rounded-[3rem] overflow-hidden border-4 border-white dark:border-zinc-800 shadow-2xl relative z-0 group">
             <RadarScanner />
             <MapContainer
-                center={targetCity && CITY_COORDINATES[targetCity] ? CITY_COORDINATES[targetCity] : [5.3484, -4.0197]} // Centrage dynamique
-                zoom={targetCity ? 13 : 12}
+                center={mapCenter}
+                zoom={mapZoom}
                 style={{ height: "100%", width: "100%" }}
                 scrollWheelZoom={true}
                 zoomControl={false}
@@ -332,6 +333,38 @@ export default function MapComponent({
                 />
 
                 {showUserLocation && <LocationMarker />}
+
+                {/* Affichage des polygones de zone */}
+                {zones.map((zone) => {
+                    if (!zone.boundaries || !zone.boundaries.geometry || !zone.boundaries.geometry.coordinates) return null;
+                    
+                    const isOccupied = zone.status === 'occupied' || zone.status === 'rented';
+                    const zoneColor = isOccupied ? "#3b82f6" : "#22c55e";
+
+                    // Inversion [lng, lat] -> [lat, lng] pour Leaflet
+                    const pathOptions = {
+                        fillColor: zoneColor,
+                        fillOpacity: 0.15,
+                        color: zoneColor,
+                        weight: 3,
+                        dashArray: '10, 10',
+                        dashOffset: '0',
+                    };
+
+                    const positions = zone.boundaries.geometry.type === "MultiPolygon"
+                        ? zone.boundaries.geometry.coordinates.map((poly: any) => 
+                            poly[0].map((coord: [number, number]) => [coord[1], coord[0]])
+                          )
+                        : [zone.boundaries.geometry.coordinates[0].map((coord: [number, number]) => [coord[1], coord[0]])];
+
+                    return (
+                        <Polygon 
+                            key={`poly-${zone.id}`}
+                            positions={positions}
+                            pathOptions={pathOptions}
+                        />
+                    );
+                })}
 
                 <MarkerClusterGroup
                     chunkedLoading

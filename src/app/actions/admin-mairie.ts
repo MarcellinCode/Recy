@@ -1,6 +1,8 @@
 "use server";
 
 import { createClient } from '@supabase/supabase-js'
+import { fetchCommuneData } from '@/lib/geoService';
+import { getMunicipalityGeo } from '@/lib/geoIntelligence';
 
 // Action serveur pour créer un compte Mairie via l'Admin
 // On initialise le client seulement au moment de l'appel pour éviter les erreurs au build
@@ -62,25 +64,44 @@ export async function createMairieAccount(formData: {
         if (profileError) {
             console.error('Profile Sync Error:', profileError);
         } else {
-            // 🟢 NOUVEAU : Création automatique d'une zone territoriale par défaut pour la mairie
-            await supabaseAdmin.from('zones').insert({
-                name: `ZONE INITIALE - ${formData.municipalityName}`,
-                city: formData.city,
-                created_by: authData.user.id,
-                status: 'available',
-                boundaries: {
+            // 🟢 NOUVEAU : Intelligence Totale - Récupération dynamique des frontières OSM
+            const osmData = await fetchCommuneData(formData.city);
+            
+            let boundaries: any;
+            let lat: number;
+            let lng: number;
+
+            if (osmData && osmData.isValidGeometry) {
+                // On a trouvé les vraies frontières sur OpenStreetMap
+                lat = osmData.center[0];
+                lng = osmData.center[1];
+                boundaries = {
+                    type: "Feature",
+                    geometry: osmData.geojson,
+                    properties: { display_name: osmData.displayName }
+                };
+            } else {
+                // Fallback sur le dictionnaire local ou valeur par défaut
+                const geoInfo = getMunicipalityGeo(formData.city || formData.municipalityName);
+                lat = geoInfo.center[0];
+                lng = geoInfo.center[1];
+                boundaries = {
                     type: "Feature",
                     geometry: {
                         type: "Polygon",
-                        coordinates: [[
-                            [-4.0197 - 0.05, 5.3484 - 0.05],
-                            [-4.0197 + 0.05, 5.3484 - 0.05],
-                            [-4.0197 + 0.05, 5.3484 + 0.05],
-                            [-4.0197 - 0.05, 5.3484 + 0.05],
-                            [-4.0197 - 0.05, 5.3484 - 0.05]
-                        ]]
+                        coordinates: [geoInfo.boundaries]
                     }
-                }
+                };
+            }
+            
+            await supabaseAdmin.from('zones').insert({
+                name: `TERRITOIRE OFFICIEL - ${formData.municipalityName}`,
+                city: formData.city,
+                created_by: authData.user.id,
+                status: 'available',
+                latitude: lat,
+                longitude: lng,
+                boundaries: boundaries
             });
         }
 
