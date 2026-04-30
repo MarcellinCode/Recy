@@ -15,6 +15,7 @@ export default function MyWastePage() {
     const router = useRouter();
 
     const [wastes, setWastes] = useState<any[]>([]);
+    const [userId, setUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState("published");
     const [userProfile, setUserProfile] = useState<any>(null);
@@ -25,62 +26,73 @@ export default function MyWastePage() {
         { id: "collected", label: "Collectés" },
     ];
 
+    // Extracted fetch function so it can be reused by realtime callback
+    const fetchWastes = async (uid?: string) => {
+        try {
+            const resolvedUid = uid ?? userId;
+            if (!resolvedUid) return;
+
+            const { data, error } = await supabase
+                .from('wastes')
+                .select('*, waste_types(name, emoji)')
+                .or(`seller_id.eq.${resolvedUid},collector_id.eq.${resolvedUid}`)
+                .order('created_at', { ascending: false });
+
+            if (error) throw error;
+            setWastes(data || []);
+        } catch (err: any) {
+            console.error("Error in fetchWastes:", err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const fetchWastes = async () => {
+        const init = async () => {
             setLoading(true);
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                const user = session?.user;
+            const { data: { session } } = await supabase.auth.getSession();
+            const user = session?.user;
 
-                if (!user) {
-                    console.warn("No user session found in mes-dechets.");
-                    setLoading(false);
-                    return;
-                }
-
-                console.log("Fetching wastes for user:", user.id);
-
-                // Check if profile exists
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('id, role')
-                    .eq('id', user.id)
-                    .maybeSingle();
-
-                setUserProfile(profile);
-
-                const { data, error } = await supabase
-                    .from('wastes')
-                    .select('*, waste_types(name, emoji)')
-                    .or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`)
-                    .order('created_at', { ascending: false });
-
-                if (error) throw error;
-
-                console.log("Wastes fetched successfully:", data?.length, "items found.");
-                if (data && data.length > 0) {
-                    console.log("First item status:", data[0].status);
-                    console.log("First item collector_id:", data[0].collector_id);
-                }
-
-                setWastes(data || []);
-            } catch (err: any) {
-                console.error("Error in fetchWastes:", err);
-            } finally {
+            if (!user) {
                 setLoading(false);
+                return;
             }
+
+            setUserId(user.id);
+
+            // Fetch profile
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('id, role')
+                .eq('id', user.id)
+                .maybeSingle();
+
+            setUserProfile(profile);
+
+            // Initial fetch
+            await fetchWastes(user.id);
+
+            // ✅ Realtime sync — mise à jour auto sans refresh
+            const channel = supabase
+                .channel('mes-dechets-realtime')
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'wastes' },
+                    () => fetchWastes(user.id)
+                )
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
         };
 
-        fetchWastes();
+        init();
     }, []);
 
     const filteredWastes = wastes.filter(w => w.status === activeTab);
 
-    // Debug helper
-    useEffect(() => {
-        console.log("Current active tab:", activeTab);
-        console.log("Number of filtered wastes:", filteredWastes.length);
-    }, [activeTab, filteredWastes]);
+
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

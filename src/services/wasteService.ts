@@ -39,7 +39,8 @@ export const wasteService = {
       }
     }
     
-    // 2. Mettre à jour le statut du lot
+    // 2. Mettre à jour le statut du lot — filtre sur status='published'
+    //    pour éviter la race condition (deux collecteurs simultanés)
     const { data, error: reserveError } = await supabase
       .from('wastes')
       .update({
@@ -48,10 +49,14 @@ export const wasteService = {
         reserved_at: new Date().toISOString()
       })
       .eq('id', id)
+      .eq('status', 'published')   // ← verrou optimiste : échoue si déjà réservé
       .select()
       .single();
 
-    if (reserveError) throw reserveError;
+    // Si reserveError ou data null → le lot était déjà pris au moment de l'UPDATE
+    if (reserveError || !data) {
+      throw new Error("Ce lot vient d'être réservé par un autre collecteur. Veuillez en choisir un autre.");
+    }
 
     // 3. Créer les notifications
     if (data) {

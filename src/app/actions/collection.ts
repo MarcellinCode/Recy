@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
+import { getFiscalConfig } from "@/lib/fiscalConfig";
 
 export async function confirmCollection(wasteId: string, finalWeight: number) {
     const supabase = await createClient();
@@ -26,7 +27,10 @@ export async function confirmCollection(wasteId: string, finalWeight: number) {
 
         const pricePerKg = waste.waste_types.price_per_kg;
         const totalAmount = Number(finalWeight) * Number(pricePerKg);
-        const commission = totalAmount * 0.10;
+
+        // 📊 Taux fiscaux configurables (platform_settings ou valeurs par défaut)
+        const { commissionRate, ecoTaxRate } = await getFiscalConfig();
+        const commission   = totalAmount * commissionRate;
         const sellerAmount = totalAmount - commission;
 
         // 3. Mise à jour du lot
@@ -58,9 +62,9 @@ export async function confirmCollection(wasteId: string, finalWeight: number) {
             }).eq('id', waste.collector_id);
         }
 
-        // 5. Recherche de la Mairie (super_admin) pour l'Éco-Taxe (Phase 3 - City OS)
-        const ecoTax = totalAmount * 0.02; // 2% de taxe urbaine
-        const { data: mairies } = await supabase.from('profiles').select('id, wallet_balance, push_token').eq('role', 'super_admin').limit(1);
+        // 5. Recherche de la Mairie (rôle 'mairie') pour l'Éco-Taxe configurable
+        const ecoTax = totalAmount * ecoTaxRate;
+        const { data: mairies } = await supabase.from('profiles').select('id, wallet_balance, push_token').eq('role', 'mairie').limit(1);
         const mairie = mairies?.[0];
 
         if (mairie) {

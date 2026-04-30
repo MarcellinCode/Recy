@@ -51,6 +51,7 @@ export default function OrganizationDashboard() {
     const [selectedTender, setSelectedTender] = useState<any>(null);
     const [bidAmount, setBidAmount] = useState(0);
     const [topUpAmount, setTopUpAmount] = useState(50000);
+    const [activeMissions, setActiveMissions] = useState<any[]>([]); // NEW
     
     useEffect(() => {
         fetchData();
@@ -87,6 +88,18 @@ export default function OrganizationDashboard() {
                     .select('*, profiles(*), subscription_plans(*, concessions(*))')
                     .in('subscription_plans.concession_id', concessions.map((c: any) => c.id));
                 setSubscriptions(subsData || []);
+            }
+
+            // Fetch active missions for these agents
+            if (agents.length > 0) {
+                const agentIds = agents.map((a: any) => a.id);
+                const { data: missionsData } = await supabase
+                    .from('wastes')
+                    .select('*, profiles!wastes_seller_id_fkey(*)')
+                    .in('assigned_agent_id', agentIds)
+                    .in('status', ['reserved', 'in_progress', 'collected'])
+                    .order('updated_at', { ascending: false });
+                setActiveMissions(missionsData || []);
             }
         }
         setLoading(false);
@@ -237,6 +250,35 @@ export default function OrganizationDashboard() {
                                             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Aucun agent actif</p>
                                         </div>
                                     )}
+                                </div>
+                                
+                                <h2 className="text-2xl font-black uppercase italic tracking-tighter mt-12 mb-6 dark:text-white">Missions en cours (Live)</h2>
+                                <div className="space-y-4">
+                                    {activeMissions.length === 0 && (
+                                        <div className="py-12 text-center border-2 border-dashed border-gray-100 dark:border-zinc-800 rounded-[2rem]">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Aucune mission sur le terrain</p>
+                                        </div>
+                                    )}
+                                    {activeMissions.map(mission => (
+                                        <div key={mission.id} className="flex items-center justify-between p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm">
+                                            <div>
+                                                <div className="flex items-center gap-3 mb-1">
+                                                    <p className="text-sm font-black uppercase italic dark:text-white">{mission.profiles?.full_name || 'Client Inconnu'}</p>
+                                                    <span className={cn(
+                                                        "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest",
+                                                        mission.status === 'in_progress' ? "bg-amber-100 text-amber-600" :
+                                                        mission.status === 'collected' ? "bg-emerald-100 text-emerald-600" : "bg-blue-100 text-blue-600"
+                                                    )}>
+                                                        {mission.status === 'in_progress' ? 'EN COURS' : mission.status === 'collected' ? 'TERMINÉ' : 'EN ATTENTE'}
+                                                    </span>
+                                                </div>
+                                                <p className="text-[10px] text-zinc-400 font-bold uppercase">{mission.mission_type === 'subscription_pickup' ? 'Abonnement' : 'Marketplace'} • Agent: {agents.find(a => a.id === mission.assigned_agent_id)?.full_name || 'Inconnu'}</p>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-sm font-black text-primary">{mission.final_weight || mission.estimated_weight} KG</p>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
                             <div className="space-y-8">
