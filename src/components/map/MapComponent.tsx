@@ -347,10 +347,8 @@ export default function MapComponent({
                             icon={createCustomIcon(waste.waste_types.emoji, waste.status === 'published' ? '#22c55e' : '#f59e0b', isHotspot)}
                         >
                             <Popup className="premium-popup">
-                                <div className="p-1 min-w-[220px] bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
-                                    <div className={`flex items-center gap-3 mb-4 p-2 rounded-xl ${isHotspot ? 'bg-red-50 dark:bg-red-900/20' : 'bg-gray-50 dark:bg-zinc-800'}`}>
-                                        <div className="text-3xl bg-white dark:bg-zinc-900 p-2 rounded-lg shadow-sm">
-                                    <div className="flex flex-col gap-3">
+                                <div className="p-2 min-w-[220px] bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
+                                    <div className="flex flex-col gap-3 mb-4">
                                         {waste.images && waste.images.length > 0 && (
                                             <div className="w-full h-24 rounded-xl overflow-hidden mb-2">
                                                 <img 
