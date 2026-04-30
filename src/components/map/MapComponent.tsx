@@ -6,7 +6,7 @@ import "leaflet/dist/leaflet.css";
 import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import Link from "next/link";
-import { Truck, MapPin, Package, Navigation, Loader2, Zap } from "lucide-react";
+import { Truck, MapPin, Package, Navigation, Loader2, Zap, Gavel } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { cn } from "@/lib/utils";
