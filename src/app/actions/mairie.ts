@@ -79,6 +79,16 @@ export async function issueSanction(organizationId: string, type: string, descri
     );
 
     try {
+        // 🛡️ Guard : empêcher de sanctionner un super_admin
+        const { data: targetProfile } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', organizationId)
+            .single();
+        if (targetProfile?.role === 'super_admin') {
+            return { success: false, error: "Impossible de sanctionner un administrateur système." };
+        }
+
         // Enregistrement dans la table sanctions
         const { error: sanctionError } = await supabase
             .from('sanctions')

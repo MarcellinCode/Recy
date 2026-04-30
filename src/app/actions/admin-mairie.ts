@@ -61,7 +61,27 @@ export async function createMairieAccount(formData: {
 
         if (profileError) {
             console.error('Profile Sync Error:', profileError);
-            // On ne stoppe pas forcément si l'auth a réussi, car le trigger peut avoir fonctionné
+        } else {
+            // 🟢 NOUVEAU : Création automatique d'une zone territoriale par défaut pour la mairie
+            await supabase.from('zones').insert({
+                name: `ZONE INITIALE - ${formData.municipalityName}`,
+                city: formData.city,
+                created_by: authData.user.id,
+                status: 'available',
+                boundaries: {
+                    type: "Feature",
+                    geometry: {
+                        type: "Polygon",
+                        coordinates: [[
+                            [-4.0197 - 0.05, 5.3484 - 0.05],
+                            [-4.0197 + 0.05, 5.3484 - 0.05],
+                            [-4.0197 + 0.05, 5.3484 + 0.05],
+                            [-4.0197 - 0.05, 5.3484 + 0.05],
+                            [-4.0197 - 0.05, 5.3484 - 0.05]
+                        ]]
+                    }
+                }
+            });
         }
 
         return { success: true, userId: authData.user.id };

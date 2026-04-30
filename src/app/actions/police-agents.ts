@@ -1,6 +1,7 @@
 "use server";
 
-import { createClient } from '@supabase/supabase-js'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
+import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 
 /**
@@ -24,8 +25,18 @@ export async function createPoliceAgent(formData: {
         };
     }
 
-    // Client admin pour la gestion des utilisateurs
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+    // 🛡️ VÉRIFICATION D'AUTHENTIFICATION ET DE RÔLE (Protection Escalade Privilèges)
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Action non autorisée. Utilisateur non authentifié." };
+
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (!profile || (profile.role !== 'mairie' && profile.role !== 'super_admin')) {
+        return { success: false, error: "Action non autorisée. Rôle Mairie ou Super Admin requis." };
+    }
+
+    // Client admin pour la gestion des utilisateurs (uniquement après vérification)
+    const supabaseAdmin = createAdminClient(supabaseUrl, serviceRoleKey);
 
     try {
         // 1. Création du compte Auth (Confirmé automatiquement)
@@ -71,7 +82,17 @@ export async function getPoliceAgents() {
 
     if (!supabaseUrl || !serviceRoleKey) return { success: false, error: "Config missing" };
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+    // 🛡️ VÉRIFICATION D'AUTHENTIFICATION ET DE RÔLE (Protection Fuite de Données)
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Action non autorisée. Utilisateur non authentifié." };
+
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    if (!profile || (profile.role !== 'mairie' && profile.role !== 'super_admin')) {
+        return { success: false, error: "Action non autorisée. Rôle Mairie ou Super Admin requis." };
+    }
+
+    const supabaseAdmin = createAdminClient(supabaseUrl, serviceRoleKey);
 
     try {
         const { data: agents, error } = await supabaseAdmin

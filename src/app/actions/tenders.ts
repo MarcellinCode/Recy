@@ -83,6 +83,21 @@ export async function awardTender(tenderId: string, bidId: string, organisationI
     return { success: false, error: "Action réservée aux Mairies Elite." };
   }
   
+  // 🛡️ VÉRIFICATION DE LA PROPRIÉTÉ DU TENDER (Protection IDOR) ET DE L'ÉTAT DU MARCHÉ
+  const { data: tender } = await supabase.from('tenders').select('mairie_id, status').eq('id', tenderId).single();
+  
+  if (!tender || tender.mairie_id !== user.id) {
+    return { success: false, error: "Action non autorisée. Ce marché n'appartient pas à votre juridiction." };
+  }
+
+  if (tender.status === 'cancelled') {
+    return { success: false, error: "Action impossible : Ce marché a été annulé." };
+  }
+
+  if (tender.status === 'awarded') {
+    return { success: false, error: "Action impossible : Ce marché a déjà été attribué." };
+  }
+  
   // 1. Accepter le bid
   await supabase.from('tender_bids').update({ status: 'accepted' }).eq('id', bidId);
   

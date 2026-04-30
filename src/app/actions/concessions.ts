@@ -21,6 +21,12 @@ export async function assignConcessionDirectly(data: {
         return { success: false, error: "Seule la Mairie peut attribuer des concessions directes." };
     }
 
+    // 🛡️ VÉRIFICATION DE LA PROPRIÉTÉ DE LA ZONE (Protection IDOR)
+    const { data: zone } = await supabase.from('zones').select('created_by').eq('id', data.zone_id).single();
+    if (!zone || zone.created_by !== user.id) {
+        return { success: false, error: "Action non autorisée. Cette zone n'appartient pas à votre juridiction." };
+    }
+
     const rent_end = new Date();
     rent_end.setMonth(rent_end.getMonth() + data.duration_months);
 
@@ -53,6 +59,12 @@ export async function revokeConcession(concessionId: string, zoneId: string) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: "Non authentifié" };
+
+    // 🛡️ VÉRIFICATION DE LA PROPRIÉTÉ DE LA ZONE (Protection IDOR)
+    const { data: zone } = await supabase.from('zones').select('created_by').eq('id', zoneId).single();
+    if (!zone || zone.created_by !== user.id) {
+        return { success: false, error: "Action non autorisée. Cette zone n'appartient pas à votre juridiction." };
+    }
 
     // 1. Mettre à jour le statut de la concession
     const { error: concessionError } = await supabase

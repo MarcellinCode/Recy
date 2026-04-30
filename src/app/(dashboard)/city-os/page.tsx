@@ -60,6 +60,7 @@ import {
     convertInfractionToSanction, 
     getInfractionStats 
 } from "@/app/actions/police-verte";
+import { getFiscalConfig, saveFiscalConfig } from "@/lib/fiscalConfig";
 import { 
     NeonCard, 
     HoloGauge, 
@@ -109,7 +110,7 @@ function MairieDashboardContent() {
     const router = useRouter();
     
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'overview' | 'tenders' | 'sovereignty' | 'fleet' | 'police' | 'rapports'>('overview');
+    const [mairieCity, setMairieCity] = useState("");
     const [zones, setZones] = useState<any[]>([]);
     const [pendingConcessions, setPendingConcessions] = useState<any[]>([]);
     const [wastes, setWastes] = useState<any[]>([]);
@@ -127,6 +128,7 @@ function MairieDashboardContent() {
     const [isSanctionModalOpen, setIsSanctionModalOpen] = useState(false);
     const [isInfractionDetailModalOpen, setIsInfractionDetailModalOpen] = useState(false);
     const [isAddAgentModalOpen, setIsAddAgentModalOpen] = useState(false);
+    const [isFiscalModalOpen, setIsFiscalModalOpen] = useState(false);
     
     const [infractions, setInfractions] = useState<any[]>([]);
     const [policeAgents, setPoliceAgents] = useState<any[]>([]);
@@ -140,6 +142,7 @@ function MairieDashboardContent() {
     const [isAttributingDirectly, setIsAttributingDirectly] = useState(false);
     const [selectedOrgId, setSelectedOrgId] = useState("");
     const [concessionDuration, setConcessionDuration] = useState(12);
+    const [fiscalRates, setFiscalRates] = useState({ commissionRate: 0.10, ecoTaxRate: 0.02 });
     
     const [newTender, setNewTender] = useState({ zone_id: "", title: "", description: "", end_date: "", budget_estimate: 0 });
     const [liveEvents, setLiveEvents] = useState<any[]>([
@@ -164,11 +167,33 @@ function MairieDashboardContent() {
             if (!user) return;
 
             let mairieId = user.id;
-            const { data: currentUserProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-            if (currentUserProfile?.role === 'super_admin' && targetMairieId) mairieId = targetMairieId;
+            const { data: currentUserProfile } = await supabase.from('profiles').select('role, city').eq('id', user.id).single();
+            
+            if (currentUserProfile?.role === 'super_admin' && targetMairieId) {
+                mairieId = targetMairieId;
+                const { data: targetProfile } = await supabase.from('profiles').select('city').eq('id', targetMairieId).single();
+                setMairieCity(targetProfile?.city || "Abidjan");
+            } else {
+                setMairieCity(currentUserProfile?.city || "Abidjan");
+            }
 
-            const { data: zonesData } = await supabase.from('zones').select('*');
-            const { data: concessionsData } = await supabase.from('concessions').select('*');
+            let zonesQuery = supabase.from('zones').select('*');
+            if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
+                zonesQuery = zonesQuery.eq('created_by', mairieId);
+            }
+            const { data: zonesData } = await zonesQuery;
+            
+            const zoneIds = zonesData?.map(z => z.id) || [];
+            
+            let concessionsQuery = supabase.from('concessions').select('*');
+            if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
+                if (zoneIds.length > 0) {
+                    concessionsQuery = concessionsQuery.in('zone_id', zoneIds);
+                } else {
+                    concessionsQuery = concessionsQuery.eq('id', 'NO_DATA_PREVENT_FETCH');
+                }
+            }
+            const { data: concessionsData } = await concessionsQuery;
             
             const profileIds = [...new Set([
                 ...(concessionsData?.map((c: any) => c.organization_id) || []),
@@ -199,6 +224,9 @@ function MairieDashboardContent() {
 
             const infractionStatsRes = await getInfractionStats();
             if (infractionStatsRes.success) setInfractionStats(infractionStatsRes.stats);
+
+            const fetchedRates = await getFiscalConfig();
+            setFiscalRates(fetchedRates);
 
             const orgsResult = await getOrganizationsForConcession();
             if (orgsResult.success) {
@@ -332,6 +360,20 @@ function MairieDashboardContent() {
         setLoading(false);
     };
 
+    const handleSaveFiscalConfig = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        const res = await saveFiscalConfig(fiscalRates);
+        if (res.success) {
+            showToast("Taux fiscaux mis à jour avec succès", "success");
+            setIsFiscalModalOpen(false);
+            fetchMairieData();
+        } else {
+            showToast("Erreur: " + res.error, "error");
+        }
+        setLoading(false);
+    };
+
     const totalWastes = wastes.length;
     const collectedWastes = wastes.filter(w => w.status === 'collected').length;
     const collectionRate = totalWastes > 0 ? Math.round((collectedWastes / totalWastes) * 100) : 0;
@@ -418,7 +460,7 @@ function MairieDashboardContent() {
                             <motion.div key="overview" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} className="space-y-8">
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                     <div className="lg:col-span-2 relative h-[550px] rounded-[3.5rem] overflow-hidden border border-zinc-200 bg-white shadow-2xl shadow-zinc-200/50 group">
-                                        <div className="absolute inset-0 z-0"><MapComponent isMairie={true} /></div>
+                                        <div className="absolute inset-0 z-0"><MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} /></div>
                                         <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(255,255,255,0.2)_100%)]" />
                                     </div>
                                     <div className="space-y-8 overflow-y-auto pr-2 no-scrollbar">
@@ -535,7 +577,10 @@ function MairieDashboardContent() {
                                             <h2 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none mb-4">Régie <br />Financière</h2>
                                             <p className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Surveillance temps réel des flux fiscaux et des redevances territoriales.</p>
                                         </div>
-                                        <button onClick={() => setIsAuditModalOpen(true)} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-zinc-900/30 hover:scale-[1.01] transition-transform relative z-10">LANCER L'AUDIT FISCAL COMPLET</button>
+                                        <div className="flex flex-col gap-3 relative z-10">
+                                            <button onClick={() => setIsFiscalModalOpen(true)} className="w-full py-4 bg-zinc-100 text-zinc-900 border border-zinc-200 rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest hover:bg-zinc-200 transition-colors">CONFIGURER LA FISCALITÉ</button>
+                                            <button onClick={() => setIsAuditModalOpen(true)} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-zinc-900/30 hover:scale-[1.01] transition-transform">LANCER L'AUDIT FISCAL COMPLET</button>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -622,7 +667,7 @@ function MairieDashboardContent() {
                             <motion.div key="fleet" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
                                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                                     <div className="lg:col-span-3 relative h-[600px] rounded-[4rem] overflow-hidden border border-zinc-200 bg-white shadow-2xl shadow-zinc-200/20">
-                                        <div className="absolute inset-0 z-0"><MapComponent isMairie={true} /></div>
+                                        <div className="absolute inset-0 z-0"><MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} /></div>
                                         {isIAOptimizing && <RouteOptimizationOverlay />}
                                         <div className="absolute top-8 left-8 z-20 flex gap-4">
                                             <div className="px-6 py-3 bg-white/90 backdrop-blur-md rounded-2xl border border-zinc-100 shadow-xl flex items-center gap-3">
@@ -709,7 +754,7 @@ function MairieDashboardContent() {
                             <motion.div key="police" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="space-y-10">
                                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                                     <div className="lg:col-span-3 h-[600px] rounded-[4rem] overflow-hidden border border-zinc-200 bg-white relative shadow-2xl shadow-zinc-200/20">
-                                        <div className="absolute inset-0 z-0"><MapComponent isMairie={true} /></div>
+                                        <div className="absolute inset-0 z-0"><MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} /></div>
                                         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
                                             <div className="w-[500px] h-[500px] border border-red-500/10 rounded-full animate-ping opacity-20" />
                                             <div className="absolute w-[300px] h-[300px] border border-red-500/20 rounded-full animate-pulse opacity-20" />
@@ -1118,6 +1163,58 @@ function MairieDashboardContent() {
                         {loading ? "Génération du badge..." : "CRÉER LE COMPTE AGENT"}
                     </button>
                     <p className="text-[8px] font-bold text-center text-zinc-400 uppercase tracking-widest">L'agent pourra se connecter sur l'app mobile immédiatement avec ces identifiants.</p>
+                </form>
+            </Modal>
+
+            <Modal isOpen={isFiscalModalOpen} onClose={() => setIsFiscalModalOpen(false)} title="⚖️ CONFIGURATION DE LA FISCALITÉ URBAINE">
+                <form onSubmit={handleSaveFiscalConfig} className="space-y-8">
+                    <div className="p-8 bg-zinc-50 border border-zinc-100 rounded-[3rem] space-y-6">
+                        <div className="flex items-center gap-4 mb-4">
+                            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-zinc-900 shadow-sm">
+                                <DollarSign size={24} />
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Taux de Prélèvement</h4>
+                                <p className="text-[10px] font-bold text-zinc-500">Ajustez les pourcentages applicables sur chaque collecte validée.</p>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Commission CITICLINE (%)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.1"
+                                    min="0"
+                                    max="100"
+                                    required 
+                                    className="w-full px-6 py-4 bg-white border border-zinc-200 rounded-2xl text-sm font-black outline-none focus:border-zinc-900" 
+                                    value={fiscalRates.commissionRate * 100} 
+                                    onChange={(e) => setFiscalRates({...fiscalRates, commissionRate: parseFloat(e.target.value) / 100})} 
+                                />
+                                <p className="text-[8px] text-zinc-400 italic px-4">Taux par défaut : 10%</p>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Éco-Taxe Municipale (%)</label>
+                                <input 
+                                    type="number" 
+                                    step="0.1"
+                                    min="0"
+                                    max="100"
+                                    required 
+                                    className="w-full px-6 py-4 bg-white border border-zinc-200 rounded-2xl text-sm font-black outline-none focus:border-zinc-900" 
+                                    value={fiscalRates.ecoTaxRate * 100} 
+                                    onChange={(e) => setFiscalRates({...fiscalRates, ecoTaxRate: parseFloat(e.target.value) / 100})} 
+                                />
+                                <p className="text-[8px] text-zinc-400 italic px-4">Taux par défaut : 2%</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" disabled={loading} className="w-full py-5 bg-zinc-900 text-white rounded-[2.5rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-zinc-900/20 hover:scale-[1.02] transition-transform">
+                        {loading ? "APPLICATION EN COURS..." : "APPLIQUER LA NOUVELLE FISCALITÉ"}
+                    </button>
                 </form>
             </Modal>
 
