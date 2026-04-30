@@ -1,3 +1,5 @@
+"use server";
+
 /**
  * fiscalConfig.ts — Taux fiscaux configurables par la Mairie
  * 
