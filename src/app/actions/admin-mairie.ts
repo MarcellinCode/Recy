@@ -63,7 +63,7 @@ export async function createMairieAccount(formData: {
             console.error('Profile Sync Error:', profileError);
         } else {
             // 🟢 NOUVEAU : Création automatique d'une zone territoriale par défaut pour la mairie
-            await supabase.from('zones').insert({
+            await supabaseAdmin.from('zones').insert({
                 name: `ZONE INITIALE - ${formData.municipalityName}`,
                 city: formData.city,
                 created_by: authData.user.id,
