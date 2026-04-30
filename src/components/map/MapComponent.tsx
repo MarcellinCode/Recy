@@ -46,6 +46,7 @@ interface ZoneMarker {
     status: string;
     latitude?: number;
     longitude?: number;
+    boundaries?: any;
     concessions?: {
         profiles?: { full_name: string }
     }[];
