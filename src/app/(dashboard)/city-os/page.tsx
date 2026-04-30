@@ -183,7 +183,7 @@ function MairieDashboardContent() {
             }
             const { data: zonesData } = await zonesQuery;
             
-            const zoneIds = zonesData?.map(z => z.id) || [];
+            const zoneIds = zonesData?.map((z: any) => z.id) || [];
             
             let concessionsQuery = supabase.from('concessions').select('*');
             if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
