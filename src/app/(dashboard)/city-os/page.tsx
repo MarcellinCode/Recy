@@ -110,6 +110,7 @@ function MairieDashboardContent() {
     const router = useRouter();
     
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState('overview');
     const [mairieCity, setMairieCity] = useState("");
     const [zones, setZones] = useState<any[]>([]);
     const [pendingConcessions, setPendingConcessions] = useState<any[]>([]);
