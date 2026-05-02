@@ -99,14 +99,12 @@ export function Header() {
         ],
     };
 
-    const desktopLinks = loading 
-        ? [] 
-        : (user
-            ? (role ? roleLinks[role] : roleLinks.vendeur) ?? roleLinks.vendeur
-            : [
-                { href: "/#features", label: "Fonctionnalités" },
-                { href: "/#impact",   label: "Notre Impact" },
-              ]);
+    const desktopLinks = user
+        ? (role ? roleLinks[role] : roleLinks.vendeur) ?? roleLinks.vendeur
+        : [
+            { href: "/#features", label: "Fonctionnalités" },
+            { href: "/#impact",   label: "Notre Impact" },
+          ];
 
     const isDarkRole = ['mairie', 'entreprise', 'organisation_admin'].includes(role || '');
 
