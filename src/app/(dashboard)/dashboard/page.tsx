@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { 
     BarChart3, 
     Leaf, 
@@ -27,6 +28,7 @@ import { cn } from "@/lib/utils";
 import { useUnreadBadges } from "@/hooks/useUnreadBadges";
 
 export default function DashboardPage() {
+    const router = useRouter();
     const supabase = createClient();
     const { unreadMessages, unreadReservations } = useUnreadBadges();
     
@@ -96,10 +98,9 @@ export default function DashboardPage() {
     // Redirection automatique pour la Mairie
     useEffect(() => {
         if (!loading && profile?.role === 'mairie') {
-            const router = require('next/navigation').useRouter();
             router.push('/city-os');
         }
-    }, [loading, profile]);
+    }, [loading, profile, router]);
 
     if (loading) {
         return (
