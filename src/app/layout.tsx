@@ -12,10 +12,10 @@ const inter = Inter({
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.citicline.com"),
   title: {
-    default: "CITICLINE - Valorisez vos déchets recyclables & Gagnez de l'argent",
+    default: "CITICLINE - Recyclage Intelligent & Valorisation des Déchets en Afrique",
     template: "%s | CITICLINE"
   },
-  description: "Rejoignez l'intelligence urbaine. CITICLINE transforme vos déchets en ressources. Marketplace de collecte, suivi d'impact écologique et paiements sécurisés.",
+  description: "CITICLINE (CityCline, CityClean) est la plateforme leader en Côte d'Ivoire pour transformer vos déchets en ressources. Marketplace de collecte, suivi d'impact écologique à Abidjan et partout en Afrique. Gagnez de l'argent en recyclant.",
   manifest: "/manifest.json",
   alternates: {
     canonical: '/',
@@ -31,11 +31,24 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  keywords: ["recyclage", "écologie", "déchets", "marketplace", "économie circulaire", "CITICLINE", "city clean"],
+  keywords: [
+    "CITICLINE", 
+    "Citicline", 
+    "CityCline", 
+    "City Cline", 
+    "CityClean", 
+    "recyclage Côte d'Ivoire", 
+    "gestion déchets Abidjan", 
+    "écologie Afrique", 
+    "marketplace recyclage", 
+    "économie circulaire Afrique", 
+    "valorisation déchets",
+    "gagner argent recyclage"
+  ],
   authors: [{ name: "CITICLINE Team" }],
   openGraph: {
-    title: "CITICLINE - L'Intelligence Urbaine au service du tri",
-    description: "Vendez vos déchets recyclables, trouvez des points de collecte et suivez votre impact sur l'environnement.",
+    title: "CITICLINE - L'Intelligence Urbaine au service du tri en Afrique",
+    description: "Vendez vos déchets recyclables à Abidjan, trouvez des points de collecte et suivez votre impact écologique avec CITICLINE (CityCline).",
     url: "https://www.citicline.com",
     siteName: "CITICLINE",
     images: [
@@ -43,7 +56,7 @@ export const metadata: Metadata = {
         url: "/logo.png",
         width: 1200,
         height: 630,
-        alt: "CITICLINE Logo",
+        alt: "CITICLINE - Intelligence Urbaine",
       },
     ],
     locale: "fr_FR",
@@ -51,8 +64,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "CITICLINE - Valorisez vos déchets",
-    description: "La plateforme citoyenne pour un monde plus propre et plus rentable.",
+    title: "CITICLINE (CityCline) - Valorisez vos déchets en Côte d'Ivoire",
+    description: "La plateforme citoyenne pour un monde plus propre et plus rentable en Afrique de l'Ouest.",
     images: ["/logo.png"],
   },
   icons: {
