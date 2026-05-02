@@ -139,11 +139,19 @@ function MairieDashboardContent() {
     
     const [newAgent, setNewAgent] = useState({ fullName: "", email: "", password: "", phone: "", city: "Abidjan", zoneId: "" });
     const [sanctionForm, setSanctionForm] = useState({ orgId: "", type: "RETARD COLLECTE", description: "", amount: 0, severity: "medium" as any });
-    const [newZone, setNewZone] = useState({ name: "", city: "Abidjan", status: "available", description: "" });
+    const [newZone, setNewZone] = useState({ name: "", city: "", status: "available", description: "" });
     const [isAttributingDirectly, setIsAttributingDirectly] = useState(false);
     const [selectedOrgId, setSelectedOrgId] = useState("");
     const [concessionDuration, setConcessionDuration] = useState(12);
     const [fiscalRates, setFiscalRates] = useState({ commissionRate: 0.10, ecoTaxRate: 0.02 });
+
+    // Sync forms with mairie location
+    useEffect(() => {
+        if (mairieCity) {
+            setNewZone(prev => ({ ...prev, city: mairieCity }));
+            setNewAgent(prev => ({ ...prev, city: mairieCity }));
+        }
+    }, [mairieCity]);
     
     const [newTender, setNewTender] = useState({ zone_id: "", title: "", description: "", end_date: "", budget_estimate: 0 });
     const [liveEvents, setLiveEvents] = useState<any[]>([
