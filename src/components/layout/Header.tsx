@@ -92,16 +92,29 @@ export function Header() {
             { href: "/#impact",   label: "Notre Impact" },
           ];
 
+    const isDarkRole = ['mairie', 'entreprise', 'organisation_admin'].includes(role || '');
+
     return (
-        <header className="sticky top-0 z-50 w-full border-b border-gray-100 bg-white/80 backdrop-blur-md dark:border-zinc-800 dark:bg-zinc-950/80">
+        <header className={cn(
+            "sticky top-0 z-50 w-full border-b backdrop-blur-md transition-all duration-500",
+            isDarkRole 
+                ? "border-white/5 bg-zinc-950/80 text-white shadow-2xl" 
+                : "border-gray-100 bg-white/80 dark:border-zinc-800 dark:bg-zinc-950/80"
+        )}>
             <div className="flex items-center justify-between h-16 px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
 
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
-                    <div className="flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-white text-primary group-hover:scale-105 transition-all shadow-md overflow-hidden">
+                    <div className={cn(
+                        "flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl group-hover:scale-105 transition-all shadow-md overflow-hidden",
+                        isDarkRole ? "bg-zinc-900 border border-white/10" : "bg-white"
+                    )}>
                         <img src="/logo.png" alt="CITICLINE Logo" className="w-full h-full object-cover" />
                     </div>
-                    <span className="text-xl sm:text-3xl font-black tracking-tighter text-gray-900 dark:text-white uppercase italic leading-none">
+                    <span className={cn(
+                        "text-xl sm:text-3xl font-black tracking-tighter uppercase italic leading-none",
+                        isDarkRole ? "text-white" : "text-gray-900 dark:text-white"
+                    )}>
                         CITI<span className="text-primary tracking-tighter">CLINE</span>
                     </span>
                 </Link>
@@ -114,9 +127,9 @@ export function Header() {
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                className={cn(
+                                 className={cn(
                                     "text-sm font-bold uppercase tracking-widest transition-colors hover:text-primary relative flex items-center gap-1.5",
-                                    isActive ? "text-primary" : "text-gray-500 dark:text-gray-400"
+                                    isActive ? "text-primary" : (isDarkRole ? "text-zinc-400" : "text-gray-500 dark:text-gray-400")
                                 )}
                             >
                                 {link.label}
