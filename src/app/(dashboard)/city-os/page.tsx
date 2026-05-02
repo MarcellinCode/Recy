@@ -201,14 +201,20 @@ function MairieDashboardContent() {
                 ...(concessionsData?.map((c: any) => c.profiles?.id) || [])
             ].filter(Boolean))];
 
-            const { data: profilesData } = await supabase.from('profiles').select('id, full_name, role').in('id', profileIds);
+            let profilesData = [];
+            if (profileIds.length > 0) {
+                const { data } = await supabase.from('profiles').select('id, full_name, role').in('id', profileIds);
+                profilesData = data || [];
+            }
 
             const { data: wastesData } = await supabase.from('wastes').select('id, status, created_at, estimated_weight');
             const { data: tendersData } = await supabase.from('tenders').select('*').eq('mairie_id', mairieId);
             const { data: bidsData } = await supabase.from('tender_bids').select('*');
             const { data: txData } = await supabase.from('transactions').select('*').eq('profile_id', mairieId).order('created_at', { ascending: false });
-            const { data: sanctionsData } = await supabase.from('sanctions').select('*, profiles:organization_id(full_name)').order('created_at', { ascending: false });
-            const { data: infractionsData } = await supabase.from('environmental_infractions').select('*, profiles:reporter_id(full_name), zones:zone_id(name)').order('created_at', { ascending: false });
+            
+            // Correction des jointures Supabase (Syntaxe PostgREST propre)
+            const { data: sanctionsData } = await supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false });
+            const { data: infractionsData } = await supabase.from('environmental_infractions').select('*, zones(name)').order('created_at', { ascending: false });
 
             const enrichedZones = enrichZonesData(zonesData || [], concessionsData || [], profilesData || []);
             const enrichedTenders = enrichTendersData(tendersData || [], bidsData || [], profilesData || []);
@@ -279,7 +285,21 @@ function MairieDashboardContent() {
     const handleAddZoneSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        const { data: createdZone, error: zoneError } = await supabase.from('zones').insert([newZone]).select().single();
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+            showToast("Session expirée", "error");
+            setLoading(false);
+            return;
+        }
+
+        // On s'assure que la zone est liée à la mairie actuelle
+        const zoneToCreate = {
+            ...newZone,
+            created_by: targetMairieId || user.id
+        };
+
+        const { data: createdZone, error: zoneError } = await supabase.from('zones').insert([zoneToCreate]).select().single();
         
         if (zoneError) {
             showToast("Erreur zone", "error");
