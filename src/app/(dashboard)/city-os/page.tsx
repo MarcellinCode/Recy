@@ -891,68 +891,94 @@ function MairieDashboardContent() {
                 </div>
             </main>
 
-            <Modal isOpen={isAddTenderModalOpen} onClose={() => setIsAddTenderModalOpen(false)} title="Lancer une Mise en Concurrence">
+            <Modal isOpen={isAddTenderModalOpen} onClose={() => setIsAddTenderModalOpen(false)} title="⚖️ LANCER UNE MISE EN CONCURRENCE">
                 <form onSubmit={handleCreateTender} className="space-y-6">
                     <div className="space-y-2">
-                        <label htmlFor="tenderZone" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Zone Stratégique</label>
-                        <select id="tenderZone" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" value={newTender.zone_id} onChange={(e) => setNewTender({...newTender, zone_id: e.target.value})}>
+                        <label htmlFor="tenderZone" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Zone Stratégique</label>
+                        <select id="tenderZone" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black uppercase outline-none text-zinc-900" value={newTender.zone_id} onChange={(e) => setNewTender({...newTender, zone_id: e.target.value})}>
                             <option value="">Sélectionner une zone...</option>
-                            {zones.filter(z => z.status === 'available').map(z => (<option key={z.id} value={z.id}>{z.name}</option>))}
+                            {zones.filter(z => z.status === 'available').map(z => (<option key={z.id} value={z.id} className="text-zinc-900">{z.name}</option>))}
                         </select>
                     </div>
-                    <div className="space-y-2"><label htmlFor="tenderTitle" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Titre du Marché</label><input id="tenderTitle" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Titre du Marché" value={newTender.title} onChange={(e) => setNewTender({...newTender, title: e.target.value})} /></div>
-                    <div className="space-y-2"><label htmlFor="tenderDesc" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Description technique</label><textarea id="tenderDesc" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium min-h-[100px] outline-none" placeholder="Détails techniques..." value={newTender.description} onChange={(e) => setNewTender({...newTender, description: e.target.value})} /></div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><label htmlFor="tenderBudget" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Budget (CFA)</label><input id="tenderBudget" type="number" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="CFA" value={newTender.budget_estimate} onChange={(e) => setNewTender({...newTender, budget_estimate: parseInt(e.target.value)})} /></div>
-                        <div className="space-y-2"><label htmlFor="tenderEndDate" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Clôture</label><input id="tenderEndDate" type="date" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" value={newTender.end_date} onChange={(e) => setNewTender({...newTender, end_date: e.target.value})} /></div>
+                    <div className="space-y-2">
+                        <label htmlFor="tenderTitle" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Titre du Marché</label>
+                        <input id="tenderTitle" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black uppercase outline-none text-zinc-900 placeholder:text-zinc-300" placeholder="Titre du Marché" value={newTender.title} onChange={(e) => setNewTender({...newTender, title: e.target.value})} />
                     </div>
-                    <button type="submit" className="w-full py-5 bg-emerald-500 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.01] transition-all">Diffuser l'Appel d'Offres</button>
+                    <div className="space-y-2">
+                        <label htmlFor="tenderDesc" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Description technique</label>
+                        <textarea id="tenderDesc" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-medium min-h-[100px] outline-none text-zinc-900 placeholder:text-zinc-300" placeholder="Détails techniques..." value={newTender.description} onChange={(e) => setNewTender({...newTender, description: e.target.value})} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2"><label htmlFor="tenderBudget" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Budget (CFA)</label><input id="tenderBudget" type="number" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900" placeholder="CFA" value={newTender.budget_estimate} onChange={(e) => setNewTender({...newTender, budget_estimate: parseInt(e.target.value)})} /></div>
+                        <div className="space-y-2"><label htmlFor="tenderEndDate" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Clôture</label><input id="tenderEndDate" type="date" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900" value={newTender.end_date} onChange={(e) => setNewTender({...newTender, end_date: e.target.value})} /></div>
+                    </div>
+                    <button type="submit" disabled={loading} className="w-full py-5 bg-emerald-500 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.01] transition-all disabled:opacity-50">
+                        {loading ? "Diffusion..." : "DIFFUSER L'APPEL D'OFFRES"}
+                    </button>
                 </form>
             </Modal>
 
-            <Modal isOpen={isAddZoneModalOpen} onClose={() => setIsAddZoneModalOpen(false)} title="🏛️ CENTRE DE COMMANDE : NOUVELLE CONCESSION">
+            <Modal isOpen={isAddZoneModalOpen} onClose={() => setIsAddZoneModalOpen(false)} title="🏛️ CENTRE DE COMMANDE : NOUVELLE ZONE">
                  <form onSubmit={handleAddZoneSubmit} className="space-y-6">
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><label htmlFor="zoneName" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de la Zone</label><input id="zoneName" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Nom de la Zone" value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} /></div>
-                        <div className="space-y-2"><label htmlFor="zoneCity" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville</label><input id="zoneCity" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black uppercase outline-none" placeholder="Ville" value={newZone.city} onChange={(e) => setNewZone({...newZone, city: e.target.value})} /></div>
+                        <div className="space-y-2">
+                            <label htmlFor="zoneName" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Nom de la Zone</label>
+                            <input id="zoneName" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black uppercase outline-none text-zinc-900 placeholder:text-zinc-300" placeholder="Ex: Cocody Centre..." value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} />
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="zoneCity" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Ville</label>
+                            <input id="zoneCity" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black uppercase outline-none text-zinc-900" placeholder="Ville" value={newZone.city} onChange={(e) => setNewZone({...newZone, city: e.target.value})} />
+                        </div>
                     </div>
-                    <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-[2rem] space-y-4">
-                        <div className="flex items-center justify-between"><span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Attribution Directe</span><button type="button" onClick={() => setIsAttributingDirectly(!isAttributingDirectly)} className={cn("w-12 h-6 rounded-full p-1 transition-all", isAttributingDirectly ? "bg-emerald-500" : "bg-gray-200")}><div className={cn("bg-white w-4 h-4 rounded-full shadow-sm transition-all", isAttributingDirectly ? "ml-6" : "ml-0")} /></button></div>
+                    <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-[2.5rem] space-y-4 shadow-sm">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Attribution Directe</span>
+                            <button type="button" onClick={() => setIsAttributingDirectly(!isAttributingDirectly)} className={cn("w-14 h-8 rounded-full p-1 transition-all shadow-inner", isAttributingDirectly ? "bg-emerald-500" : "bg-zinc-200")}>
+                                <div className={cn("bg-white w-6 h-6 rounded-full shadow-md transition-all", isAttributingDirectly ? "ml-6" : "ml-0")} />
+                            </button>
+                        </div>
                         {isAttributingDirectly && (
-                            <div className="space-y-4 pt-4 border-t border-emerald-100">
-                                <label htmlFor="directOrg" className="sr-only">Organisation</label>
-                                <select id="directOrg" className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none" value={selectedOrgId} onChange={(e) => setSelectedOrgId(e.target.value)} required={isAttributingDirectly}><option value="">Choisir une organisation...</option>{organizations.map(org => (<option key={org.id} value={org.id}>{org.full_name} — Score: {org.performanceScore}/5</option>))}</select>
-                                <label htmlFor="directDuration" className="sr-only">Durée</label>
-                                <select id="directDuration" className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none" value={concessionDuration} onChange={(e) => setConcessionDuration(parseInt(e.target.value))}><option value={6}>6 mois</option><option value={12}>12 mois</option><option value={24}>24 mois</option></select>
+                            <div className="space-y-4 pt-4 border-t border-emerald-100 animate-in fade-in slide-in-from-top-2">
+                                <select id="directOrg" className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900" value={selectedOrgId} onChange={(e) => setSelectedOrgId(e.target.value)} required={isAttributingDirectly}>
+                                    <option value="">Choisir une entreprise...</option>
+                                    {organizations.map(org => (<option key={org.id} value={org.id}>{org.full_name}</option>))}
+                                </select>
+                                <select id="directDuration" className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900" value={concessionDuration} onChange={(e) => setConcessionDuration(parseInt(e.target.value))}>
+                                    <option value={6}>Contrat : 6 mois</option>
+                                    <option value={12}>Contrat : 12 mois</option>
+                                    <option value={24}>Contrat : 24 mois</option>
+                                </select>
                             </div>
                         )}
                     </div>
-                    <button type="submit" disabled={loading} className="w-full py-5 bg-zinc-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest disabled:opacity-50 hover:scale-[1.01] transition-all">{loading ? "Traitement..." : "Valider la Concession"}</button>
+                    <button type="submit" disabled={loading || !newZone.name} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-[0.3em] shadow-2xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all">
+                        {loading ? "Déploiement..." : "VALIDER LA CONCESSION"}
+                    </button>
                  </form>
             </Modal>
 
             <Modal isOpen={isSanctionModalOpen} onClose={() => setIsSanctionModalOpen(false)} title="⚖️ CENTRE DE SANCTION">
                 <form onSubmit={handleIssueSanctionSubmit} className="space-y-6">
                     <div className="space-y-2">
-                        <label htmlFor="sanctionOrg" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Organisation Cible</label>
+                        <label htmlFor="sanctionOrg" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Organisation Cible</label>
                         <select 
                             id="sanctionOrg"
                             required 
-                            className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none"
+                            className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900"
                             value={sanctionForm.orgId}
                             onChange={(e) => setSanctionForm({...sanctionForm, orgId: e.target.value})}
                         >
-                            <option value="">Sélectionner...</option>
+                            <option value="">Sélectionner une entreprise...</option>
                             {organizations.map(org => (<option key={org.id} value={org.id}>{org.full_name}</option>))}
                         </select>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label htmlFor="sanctionType" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Type de Litige</label>
+                            <label htmlFor="sanctionType" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Type de Litige</label>
                             <select 
                                 id="sanctionType"
-                                className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black outline-none"
+                                className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-[10px] font-black outline-none text-zinc-900"
                                 value={sanctionForm.type}
                                 onChange={(e) => setSanctionForm({...sanctionForm, type: e.target.value})}
                             >
@@ -963,10 +989,10 @@ function MairieDashboardContent() {
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label htmlFor="sanctionSeverity" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Gravité</label>
+                            <label htmlFor="sanctionSeverity" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Gravité</label>
                             <select 
                                 id="sanctionSeverity"
-                                className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black outline-none"
+                                className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-[10px] font-black outline-none text-zinc-900"
                                 value={sanctionForm.severity}
                                 onChange={(e) => setSanctionForm({...sanctionForm, severity: e.target.value})}
                             >
@@ -979,11 +1005,11 @@ function MairieDashboardContent() {
                     </div>
 
                     <div className="space-y-2">
-                        <label htmlFor="sanctionAmount" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Pénalité (CFA)</label>
+                        <label htmlFor="sanctionAmount" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Pénalité (CFA)</label>
                         <input 
                             id="sanctionAmount"
                             type="number"
-                            className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none"
+                            className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900"
                             placeholder="Montant en CFA"
                             value={sanctionForm.amount}
                             onChange={(e) => setSanctionForm({...sanctionForm, amount: parseInt(e.target.value)})}
@@ -991,11 +1017,11 @@ function MairieDashboardContent() {
                     </div>
 
                     <div className="space-y-2">
-                        <label htmlFor="sanctionJustification" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Description / Justification</label>
+                        <label htmlFor="sanctionJustification" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Description / Justification</label>
                         <textarea 
                             id="sanctionJustification"
                             required
-                            className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-medium min-h-[80px] outline-none"
+                            className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-medium min-h-[100px] outline-none text-zinc-900 placeholder:text-zinc-300"
                             placeholder="Détails du manquement..."
                             value={sanctionForm.description}
                             onChange={(e) => setSanctionForm({...sanctionForm, description: e.target.value})}
@@ -1004,10 +1030,10 @@ function MairieDashboardContent() {
 
                     <button 
                         type="submit" 
-                        disabled={loading}
-                        className="w-full py-5 bg-red-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-600/20 disabled:opacity-50"
+                        disabled={loading || !sanctionForm.orgId}
+                        className="w-full py-5 bg-red-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-red-600/20 disabled:opacity-50 hover:scale-[1.01] transition-all"
                     >
-                        {loading ? "Traitement..." : "Appliquer la Sanction"}
+                        {loading ? "Traitement..." : "APPLIQUER LA SANCTION"}
                     </button>
                 </form>
             </Modal>
@@ -1144,39 +1170,49 @@ function MairieDashboardContent() {
             <Modal isOpen={isAddAgentModalOpen} onClose={() => setIsAddAgentModalOpen(false)} title="📋 RECRUTEMENT DE NOUVEL AGENT (POLICE VERTE)">
                 <form onSubmit={handleRecruitAgent} className="space-y-6">
                     <div className="space-y-2">
-                        <label htmlFor="agentName" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Nom Complet de l'Officier</label>
-                        <input id="agentName" required className="w-full px-6 py-4 bg-zinc-900 border border-white/5 rounded-2xl text-sm font-black outline-none text-white focus:border-emerald-500/50 transition-all" value={newAgent.fullName} onChange={(e) => setNewAgent({...newAgent, fullName: e.target.value})} />
+                        <label htmlFor="agentName" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Nom Complet de l'Officier</label>
+                        <input id="agentName" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900 placeholder:text-zinc-300 focus:border-emerald-500/50 transition-all" value={newAgent.fullName} onChange={(e) => setNewAgent({...newAgent, fullName: e.target.value})} placeholder="Ex: Florent Domigo..." />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><label htmlFor="agentEmail" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Email Professionnel</label><input id="agentEmail" type="email" required className="w-full px-6 py-4 bg-zinc-900 border border-white/5 rounded-2xl text-sm font-black outline-none text-white focus:border-emerald-500/50 transition-all" value={newAgent.email} onChange={(e) => setNewAgent({...newAgent, email: e.target.value})} /></div>
-                        <div className="space-y-2"><label htmlFor="agentPass" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Mot de Passe Initial</label><input id="agentPass" type="password" required className="w-full px-6 py-4 bg-zinc-900 border border-white/5 rounded-2xl text-sm font-black outline-none text-white focus:border-emerald-500/50 transition-all" value={newAgent.password} onChange={(e) => setNewAgent({...newAgent, password: e.target.value})} /></div>
+                        <div className="space-y-2">
+                            <label htmlFor="agentEmail" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Email Professionnel</label>
+                            <input id="agentEmail" type="email" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900 placeholder:text-zinc-300 focus:border-emerald-500/50 transition-all" value={newAgent.email} onChange={(e) => setNewAgent({...newAgent, email: e.target.value})} placeholder="nom@citicline.com" />
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="agentPass" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Mot de Passe Initial</label>
+                            <input id="agentPass" type="password" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900 focus:border-emerald-500/50 transition-all" value={newAgent.password} onChange={(e) => setNewAgent({...newAgent, password: e.target.value})} />
+                        </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><label htmlFor="agentPhone" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Numéro de Téléphone</label><input id="agentPhone" required className="w-full px-6 py-4 bg-zinc-900 border border-white/5 rounded-2xl text-sm font-black outline-none text-white focus:border-emerald-500/50 transition-all" value={newAgent.phone} onChange={(e) => setNewAgent({...newAgent, phone: e.target.value})} /></div>
-                        <div className="space-y-2"><label htmlFor="agentZone" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Zone d'Affectation</label>
-                            <select id="agentZone" className="w-full px-6 py-4 bg-zinc-900 border border-white/5 rounded-2xl text-[10px] font-black uppercase outline-none text-white focus:border-emerald-500/50 transition-all" value={newAgent.zoneId} onChange={(e) => setNewAgent({...newAgent, zoneId: e.target.value})}>
-                                <option value="" className="bg-zinc-900">Choisir une zone...</option>
-                                {zones.map(z => (<option key={z.id} value={z.id} className="bg-zinc-900">{z.name}</option>))}
+                        <div className="space-y-2">
+                            <label htmlFor="agentPhone" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Numéro de Téléphone</label>
+                            <input id="agentPhone" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900 focus:border-emerald-500/50 transition-all" value={newAgent.phone} onChange={(e) => setNewAgent({...newAgent, phone: e.target.value})} />
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="agentZone" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Zone d'Affectation</label>
+                            <select id="agentZone" className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900 focus:border-emerald-500/50 transition-all appearance-none" value={newAgent.zoneId} onChange={(e) => setNewAgent({...newAgent, zoneId: e.target.value})}>
+                                <option value="">Choisir une zone...</option>
+                                {zones.map(z => (<option key={z.id} value={z.id} className="text-zinc-900">{z.name}</option>))}
                             </select>
                         </div>
                     </div>
-                    <button type="submit" disabled={loading} className="w-full py-5 bg-emerald-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20">
+                    <button type="submit" disabled={loading || !newAgent.fullName || !newAgent.email} className="w-full py-5 bg-emerald-600 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.01] active:scale-95 transition-all disabled:opacity-50">
                         {loading ? "Génération du badge..." : "CRÉER LE COMPTE AGENT"}
                     </button>
-                    <p className="text-[8px] font-bold text-center text-zinc-400 uppercase tracking-widest">L'agent pourra se connecter sur l'app mobile immédiatement avec ces identifiants.</p>
+                    <p className="text-[8px] font-bold text-center text-zinc-400 uppercase tracking-[0.2em] italic">L'agent pourra se connecter sur l'app mobile immédiatement.</p>
                 </form>
             </Modal>
 
             <Modal isOpen={isFiscalModalOpen} onClose={() => setIsFiscalModalOpen(false)} title="⚖️ CONFIGURATION DE LA FISCALITÉ URBAINE">
                 <form onSubmit={handleSaveFiscalConfig} className="space-y-8">
-                    <div className="p-8 bg-zinc-900 border border-white/5 rounded-[3rem] space-y-6 shadow-inner">
+                    <div className="p-8 bg-zinc-50 border border-zinc-100 rounded-[3rem] space-y-6 shadow-inner">
                         <div className="flex items-center gap-4 mb-4">
-                            <div className="w-14 h-14 rounded-2xl bg-zinc-800 border border-white/10 flex items-center justify-center text-emerald-500 shadow-xl">
+                            <div className="w-14 h-14 rounded-2xl bg-white border border-zinc-100 flex items-center justify-center text-emerald-500 shadow-sm">
                                 <DollarSign size={28} />
                             </div>
                             <div>
-                                <h4 className="text-lg font-black text-white uppercase tracking-widest leading-none">Taux de Prélèvement</h4>
-                                <p className="text-[10px] font-bold text-zinc-500 mt-2">Ajustez les pourcentages applicables sur chaque collecte validée.</p>
+                                <h4 className="text-lg font-black text-zinc-900 uppercase tracking-widest leading-none">Taux de Prélèvement</h4>
+                                <p className="text-[10px] font-bold text-zinc-400 mt-2">Ajustez les pourcentages applicables sur chaque collecte.</p>
                             </div>
                         </div>
 
@@ -1189,11 +1225,11 @@ function MairieDashboardContent() {
                                     min="0"
                                     max="100"
                                     required 
-                                    className="w-full px-6 py-4 bg-zinc-950 border border-white/5 rounded-2xl text-sm font-black outline-none text-white focus:border-emerald-500/50 transition-all" 
+                                    className="w-full px-6 py-4 bg-white border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900 focus:border-emerald-500/50 transition-all" 
                                     value={fiscalRates.commissionRate * 100} 
                                     onChange={(e) => setFiscalRates({...fiscalRates, commissionRate: parseFloat(e.target.value) / 100})} 
                                 />
-                                <p className="text-[8px] text-zinc-500 italic px-4 uppercase tracking-widest">Taux standard préconisé : 10%</p>
+                                <p className="text-[8px] text-zinc-400 italic px-4 uppercase tracking-widest">Taux standard : 10%</p>
                             </div>
 
                             <div className="space-y-2">
@@ -1204,17 +1240,17 @@ function MairieDashboardContent() {
                                     min="0"
                                     max="100"
                                     required 
-                                    className="w-full px-6 py-4 bg-zinc-950 border border-white/5 rounded-2xl text-sm font-black outline-none text-white focus:border-emerald-500/50 transition-all" 
+                                    className="w-full px-6 py-4 bg-white border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900 focus:border-emerald-500/50 transition-all" 
                                     value={fiscalRates.ecoTaxRate * 100} 
                                     onChange={(e) => setFiscalRates({...fiscalRates, ecoTaxRate: parseFloat(e.target.value) / 100})} 
                                 />
-                                <p className="text-[8px] text-zinc-500 italic px-4 uppercase tracking-widest">Taux standard préconisé : 2%</p>
+                                <p className="text-[8px] text-zinc-400 italic px-4 uppercase tracking-widest">Taux standard : 2%</p>
                             </div>
                         </div>
                     </div>
 
-                    <button type="submit" disabled={loading} className="w-full py-5 bg-zinc-900 text-white rounded-[2.5rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-zinc-900/20 hover:scale-[1.02] transition-transform">
-                        {loading ? "APPLICATION EN COURS..." : "APPLIQUER LA NOUVELLE FISCALITÉ"}
+                    <button type="submit" disabled={loading} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all">
+                        {loading ? "APPLICATION..." : "APPLIQUER LA NOUVELLE FISCALITÉ"}
                     </button>
                 </form>
             </Modal>
