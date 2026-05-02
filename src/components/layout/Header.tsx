@@ -193,7 +193,7 @@ export function Header() {
                                 <span className="xs:hidden">Login</span>
                             </Link>
                         )
-                    )}
+                    }
 
                     {/* Menu Mobile */}
                     <button
