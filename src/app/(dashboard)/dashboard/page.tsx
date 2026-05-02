@@ -196,7 +196,8 @@ export default function DashboardPage() {
     ];
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 min-h-screen pb-24">
+        <div className="bg-zinc-950 min-h-screen">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pb-24">
             {/* Header section with User emphasis */}
             <motion.header 
                 initial={{ opacity: 0, y: -20 }}
@@ -209,10 +210,10 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                     <div>
-                        <h1 className="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter leading-none dark:text-white">
+                        <h1 className="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter leading-none text-white">
                             Bonjour, <span className="text-primary">{profile?.full_name?.split(' ')[0] || "Eco-Guerrier"}</span>
                         </h1>
-                        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-2">
+                        <p className="text-sm font-medium text-zinc-500 mt-2">
                             {activeSub?.plan?.name?.toLowerCase().includes('usine') 
                                 ? "Tableau de bord industriel Citicline" 
                                 : activeSub?.plan?.name?.toLowerCase().includes('entreprise')
@@ -222,13 +223,13 @@ export default function DashboardPage() {
                     </div>
                     
                     {/* Quick Wallet Summary */}
-                    <Link href="/wallet" className="group flex items-center gap-4 bg-zinc-900 dark:bg-white p-4 rounded-[2rem] border border-white/10 dark:border-zinc-200 shadow-xl self-start sm:self-auto transition-all hover:scale-105">
+                    <Link href="/wallet" className="group flex items-center gap-4 bg-zinc-900 p-4 rounded-[2rem] border border-white/5 shadow-2xl self-start sm:self-auto transition-all hover:scale-105">
                         <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
                             <CircleDollarSign className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 dark:text-zinc-500">Solde Actuel</p>
-                            <p className="text-lg font-black text-white dark:text-zinc-900 italic tracking-tighter">{profile?.wallet_balance?.toLocaleString()} F CFA</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Solde Actuel</p>
+                            <p className="text-lg font-black text-white italic tracking-tighter">{profile?.wallet_balance?.toLocaleString()} F CFA</p>
                         </div>
                         <ArrowUpRight className="w-5 h-5 text-zinc-600 group-hover:text-primary transition-colors ml-2" />
                     </Link>
@@ -275,7 +276,7 @@ export default function DashboardPage() {
                     >
                         <Link 
                             href={card.href}
-                            className="group relative flex flex-col p-8 bg-white dark:bg-zinc-900 rounded-[2.5rem] border-2 border-zinc-50 dark:border-zinc-800 shadow-lg shadow-zinc-200/50 dark:shadow-none hover:border-primary/20 dark:hover:border-primary/30 transition-all overflow-hidden"
+                            className="group relative flex flex-col p-8 bg-zinc-900 rounded-[2.5rem] border border-white/5 shadow-xl hover:border-primary/30 transition-all overflow-hidden"
                         >
                             <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-zinc-200/20 relative", card.color)}>
                                 <card.icon className="w-7 h-7 text-white" />
@@ -286,16 +287,16 @@ export default function DashboardPage() {
                                 ) : null}
                             </div>
                             
-                            <h4 className="text-xl font-black uppercase italic tracking-tighter dark:text-white mb-2">{card.title}</h4>
-                            <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">{card.description}</p>
+                            <h4 className="text-xl font-black uppercase italic tracking-tighter text-white mb-2">{card.title}</h4>
+                            <p className="text-xs font-medium text-zinc-500">{card.description}</p>
 
                             <div className="mt-8 flex items-center text-[10px] font-black uppercase tracking-widest text-primary gap-2 group-hover:gap-3 transition-all">
                                 Explorer <ArrowUpRight className="w-3.5 h-3.5" />
                             </div>
 
                             {/* Background Pattern */}
-                            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-zinc-50 dark:bg-zinc-800/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <card.icon className="w-16 h-16 text-zinc-100 dark:text-zinc-800" />
+                            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-white/5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <card.icon className="w-16 h-16 text-white/5" />
                             </div>
                         </Link>
                     </motion.div>
@@ -310,9 +311,9 @@ export default function DashboardPage() {
                     viewport={{ once: true }}
                     className="mt-12 p-1 bg-gradient-to-r from-primary/40 to-emerald-500/40 rounded-[3rem]"
                 >
-                    <div className="bg-white dark:bg-zinc-900 rounded-[2.9rem] p-8 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8">
+                    <div className="bg-zinc-900 rounded-[2.9rem] p-8 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 border border-white/5">
                         <div className="text-center lg:text-left">
-                            <h3 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tighter mb-2 dark:text-white">Devenez un <span className="text-primary italic">Partenaire Certifié</span></h3>
+                            <h3 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tighter mb-2 text-white">Devenez un <span className="text-primary italic">Partenaire Certifié</span></h3>
                             <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-xl">Boostez votre visibilité et accédez à des lots premium en passant au forfait Business.</p>
                         </div>
                         <Link href="/abonnements" className="px-10 py-5 bg-primary text-white font-black uppercase tracking-widest text-[10px] rounded-full shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
@@ -331,14 +332,14 @@ function MiniStat({ label, value, icon: Icon, delay }: any) {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay }}
-            className="p-4 bg-zinc-50 dark:bg-zinc-800/50 rounded-3xl border border-zinc-100 dark:border-zinc-800 flex items-center gap-3 sm:gap-4"
+            className="p-4 bg-zinc-900 rounded-3xl border border-white/5 flex items-center gap-3 sm:gap-4"
         >
-            <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-900 flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center shadow-sm">
                 <Icon className="w-4 h-4 text-primary" />
             </div>
             <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">{label}</p>
-                <p className="text-sm sm:text-base font-black italic tracking-tighter dark:text-white">{value}</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">{label}</p>
+                <p className="text-sm sm:text-base font-black italic tracking-tighter text-white">{value}</p>
             </div>
         </motion.div>
     );

@@ -382,17 +382,18 @@ function MairieDashboardContent() {
     const slaBreaches = wastes.filter(w => w.status === 'published' && (now - new Date(w.created_at).getTime() > 48 * 3600 * 1000)).length;
 
     return (
-        <div className="flex h-screen w-full bg-slate-50 text-zinc-900 overflow-hidden select-none">
+    return (
+        <div className="flex h-screen w-full bg-zinc-950 text-white overflow-hidden select-none">
             {/* Sidebar : Live Intel Feed */}
-            <aside className="w-[320px] hidden lg:flex flex-col border-r border-zinc-200 bg-white/40 backdrop-blur-3xl p-6">
+            <aside className="w-[320px] hidden lg:flex flex-col border-r border-white/5 bg-zinc-900/50 backdrop-blur-3xl p-6">
                 <div className="mb-10">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 bg-emerald-50 border border-emerald-100 rounded-2xl flex items-center justify-center">
+                        <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center">
                             <ShieldCheck className="text-emerald-500" size={20} />
                         </div>
                         <div>
-                            <h1 className="text-lg font-black italic tracking-tighter uppercase leading-none text-zinc-900 text-shadow-glow-emerald">City OS</h1>
-                            <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-1">Souveraineté Numérique</p>
+                            <h1 className="text-lg font-black italic tracking-tighter uppercase leading-none text-white text-shadow-glow-emerald">City OS</h1>
+                            <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mt-1">Souveraineté Numérique</p>
                         </div>
                     </div>
                 </div>
@@ -401,7 +402,7 @@ function MairieDashboardContent() {
                     <LiveTicker events={liveEvents} />
                 </div>
 
-                <div className="pt-6 border-t border-zinc-100 space-y-4">
+                <div className="pt-6 border-t border-white/5 space-y-4">
                     <StatusIndicator label="Système Radar" status="active" />
                     <StatusIndicator label="Collecte Live" status="active" />
                     <StatusIndicator label="Signalements" status={slaBreaches > 0 ? "warning" : "active"} />
@@ -414,7 +415,7 @@ function MairieDashboardContent() {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-blue-500/[0.03] blur-[100px] rounded-full pointer-events-none" />
 
                 <header className="p-8 flex items-center justify-between z-50">
-                    <nav className="flex gap-2 p-1.5 bg-white/70 backdrop-blur-xl border border-zinc-200 rounded-2xl shadow-sm">
+                    <nav className="flex gap-2 p-1.5 bg-zinc-900/50 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl">
                         {[
                             { id: 'overview', label: 'RADAR CENTRAL', icon: Activity },
                             { id: 'tenders', label: 'APPELS D\'OFFRES', icon: Gavel },
@@ -430,7 +431,7 @@ function MairieDashboardContent() {
                                     "px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-3 transition-all",
                                     activeTab === tab.id 
                                         ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-105" 
-                                        : "text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50"
+                                        : "text-zinc-500 hover:text-white hover:bg-white/5"
                                 )}
                             >
                                 <tab.icon size={14} />
@@ -460,12 +461,12 @@ function MairieDashboardContent() {
                         {activeTab === 'overview' && (
                             <motion.div key="overview" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} className="space-y-8">
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    <div className="lg:col-span-2 relative h-[550px] rounded-[3.5rem] overflow-hidden border border-zinc-200 bg-white shadow-2xl shadow-zinc-200/50 group">
+                                    <div className="lg:col-span-2 relative h-[550px] rounded-[3.5rem] overflow-hidden border border-white/5 bg-zinc-900 shadow-2xl group">
                                         <div className="absolute inset-0 z-0"><MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} /></div>
-                                        <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(255,255,255,0.2)_100%)]" />
+                                        <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
                                     </div>
                                     <div className="space-y-8 overflow-y-auto pr-2 no-scrollbar">
-                                        <div className="flex justify-center bg-white/70 backdrop-blur-xl border border-zinc-100 rounded-[3rem] py-8 shadow-xl shadow-zinc-200/10">
+                                        <div className="flex justify-center bg-zinc-900/50 backdrop-blur-xl border border-white/5 rounded-[3rem] py-8 shadow-2xl">
                                             <HoloGauge value={collectionRate} label="SALUBRITÉ COMMUNE" />
                                         </div>
                                         <NeonCard title="SIGNALEMENTS ACTIFS" value={totalWastes} icon={AlertTriangle} color="blue" trend="+12 AUJOURD'HUI" />
@@ -475,18 +476,18 @@ function MairieDashboardContent() {
                                 </div>
 
                                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                                    <div className="bg-white/70 backdrop-blur-xl rounded-[3rem] border border-zinc-100 p-8 shadow-xl shadow-zinc-200/20 relative overflow-hidden group">
-                                        <h2 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900">SOUVERAINETÉ & CONCESSIONS</h2>
+                                    <div className="bg-zinc-900/50 backdrop-blur-xl rounded-[3rem] border border-white/5 p-8 shadow-2xl relative overflow-hidden group">
+                                        <h2 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-white">SOUVERAINETÉ & CONCESSIONS</h2>
                                         <div className="space-y-4 relative z-10">
                                             {zones.filter(z => z.status === 'occupied').map((zone) => {
                                                 const concession = zone.concessions?.[0];
                                                 return (
-                                                    <div key={zone.id} className="flex items-center justify-between p-5 bg-zinc-50 border border-zinc-100 rounded-[2.5rem] hover:border-emerald-500/30 transition-all">
+                                                    <div key={zone.id} className="flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-[2.5rem] hover:border-emerald-500/30 transition-all">
                                                         <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 rounded-2xl bg-white border border-zinc-200 flex items-center justify-center text-emerald-500 shadow-sm"><Building2 size={24} /></div>
+                                                            <div className="w-12 h-12 rounded-2xl bg-zinc-800 border border-white/5 flex items-center justify-center text-emerald-500 shadow-sm"><Building2 size={24} /></div>
                                                             <div>
-                                                                <p className="font-black italic uppercase text-lg text-zinc-900 leading-none mb-1">{concession?.profiles?.full_name || "MUNICIPAL"}</p>
-                                                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{zone.name}</p>
+                                                                <p className="font-black italic uppercase text-lg text-white leading-none mb-1">{concession?.profiles?.full_name || "MUNICIPAL"}</p>
+                                                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{zone.name}</p>
                                                             </div>
                                                         </div>
                                                                                                                 <button onClick={() => handleRevokeConcessionClick(concession.id, zone.id)} className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"><XCircle size={18} /></button>
@@ -500,7 +501,7 @@ function MairieDashboardContent() {
                                             )}
                                         </div>
                                     </div>
-                                    <div className="bg-zinc-900 rounded-[3rem] p-8 flex flex-col justify-between overflow-hidden shadow-2xl shadow-zinc-900/30 relative">
+                                    <div className="bg-zinc-900 rounded-[3rem] p-8 flex flex-col justify-between overflow-hidden shadow-2xl shadow-zinc-900/30 relative border border-white/5">
                                         <TrendingUp className="absolute -right-4 -top-4 text-white/5 w-48 h-48" />
                                         <div className="relative z-10">
                                             <h3 className="text-3xl font-black italic tracking-tighter text-white mb-2 leading-none">AUDIT <br /> TERRITORIAL</h3>
@@ -522,11 +523,11 @@ function MairieDashboardContent() {
                                             <p className="text-zinc-500 text-[10px] font-bold mb-10 line-clamp-3 uppercase tracking-wider">{tender.description}</p>
                                             
                                             <div className="space-y-4">
-                                                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Offres Reçues ({tender.tender_bids?.length || 0})</p>
+                                                <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Offres Reçues ({tender.tender_bids?.length || 0})</p>
                                                 {tender.tender_bids?.map((bid: any) => (
-                                                    <div key={bid.id} className="p-5 bg-zinc-50 rounded-2xl flex items-center justify-between border border-zinc-100 hover:border-emerald-500/30 transition-all">
+                                                    <div key={bid.id} className="p-5 bg-white/5 rounded-2xl flex items-center justify-between border border-white/5 hover:border-emerald-500/30 transition-all">
                                                         <div>
-                                                            <p className="text-[10px] font-black text-zinc-900 italic uppercase">{bid.profiles?.full_name}</p>
+                                                            <p className="text-[10px] font-black text-white italic uppercase">{bid.profiles?.full_name}</p>
                                                             <p className="text-[8px] font-bold text-emerald-500">SCORE: {bid.profiles?.performanceScore || '4.8'}/5</p>
                                                         </div>
                                                         <button 
@@ -547,12 +548,12 @@ function MairieDashboardContent() {
                                     ))}
                                     <button 
                                         onClick={() => setIsAddTenderModalOpen(true)} 
-                                        className="aspect-square bg-white border-2 border-dashed border-zinc-200 rounded-[3.5rem] flex flex-col items-center justify-center gap-6 hover:border-emerald-500/50 hover:bg-emerald-50/20 transition-all group shadow-xl shadow-zinc-200/20"
+                                        className="aspect-square bg-zinc-900 border-2 border-dashed border-white/10 rounded-[3.5rem] flex flex-col items-center justify-center gap-6 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group shadow-2xl"
                                     >
-                                        <div className="w-20 h-20 rounded-[2rem] bg-zinc-50 flex items-center justify-center text-zinc-400 group-hover:text-emerald-500 transition-all shadow-inner"><Plus size={40} /></div>
+                                        <div className="w-20 h-20 rounded-[2rem] bg-zinc-800 flex items-center justify-center text-zinc-600 group-hover:text-emerald-500 transition-all shadow-inner"><Plus size={40} /></div>
                                         <div>
-                                            <p className="text-[12px] font-black text-zinc-900 uppercase tracking-widest text-center">Nouveau Marché</p>
-                                            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] mt-1">Appel d'offres public</p>
+                                            <p className="text-[12px] font-black text-white uppercase tracking-widest text-center">Nouveau Marché</p>
+                                            <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mt-1">Appel d'offres public</p>
                                         </div>
                                     </button>
                                 </div>
@@ -560,26 +561,25 @@ function MairieDashboardContent() {
                         )}
 
                         {activeTab === 'sovereignty' && (
-                            <motion.div key="sovereignty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
-                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                    <div className="bg-white border border-zinc-100 p-12 rounded-[4rem] shadow-2xl shadow-zinc-200/20 flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
+                            <motion.div key="sovereignty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0,                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                    <div className="bg-zinc-900 border border-white/5 p-12 rounded-[4rem] shadow-2xl flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
                                         <AlertOctagon className="absolute -right-12 -top-12 text-red-500/5 w-64 h-64 rotate-12 transition-transform group-hover:scale-110" />
                                         <div className="relative z-10">
-                                            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><ShieldAlert size={32} /></div>
-                                            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none mb-4">Unités de <br />Sanction</h2>
-                                            <p className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Gestion stricte des litiges, retards de collecte et pénalités contractuelles.</p>
-                                        </div>
+                                            <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><ShieldAlert size={32} /></div>
+                                            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white leading-none mb-4">Unités de <br />Sanction</h2>
+                                            <p className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Gestion stricte des litiges, retards de collecte et pénalités contractuelles.</p>
+                                        </div>                                </div>
                                         <button onClick={() => setIsSanctionModalOpen(true)} className="w-full py-7 bg-red-600 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-red-600/30 hover:scale-[1.01] transition-transform relative z-10">ÉMETTRE UNE SANCTION</button>
                                     </div>
-                                    <div className="bg-white border border-zinc-100 p-12 rounded-[4rem] shadow-2xl shadow-zinc-200/20 flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
+                                    <div className="bg-zinc-900 border border-white/5 p-12 rounded-[4rem] shadow-2xl flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
                                         <DollarSign className="absolute -right-12 -top-12 text-emerald-500/5 w-64 h-64 -rotate-12 transition-transform group-hover:scale-110" />
                                         <div className="relative z-10">
-                                            <div className="w-16 h-16 bg-emerald-50 text-emerald-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><Activity size={32} /></div>
-                                            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none mb-4">Régie <br />Financière</h2>
-                                            <p className="text-[11px] font-black text-zinc-400 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Surveillance temps réel des flux fiscaux et des redevances territoriales.</p>
+                                            <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><Activity size={32} /></div>
+                                            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white leading-none mb-4">Régie <br />Financière</h2>
+                                            <p className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Surveillance temps réel des flux fiscaux et des redevances territoriales.</p>
                                         </div>
                                         <div className="flex flex-col gap-3 relative z-10">
-                                            <button onClick={() => setIsFiscalModalOpen(true)} className="w-full py-4 bg-zinc-100 text-zinc-900 border border-zinc-200 rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest hover:bg-zinc-200 transition-colors">CONFIGURER LA FISCALITÉ</button>
+                                            <button onClick={() => setIsFiscalModalOpen(true)} className="w-full py-4 bg-zinc-800 text-white border border-white/5 rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest hover:bg-zinc-700 transition-colors">CONFIGURER LA FISCALITÉ</button>
                                             <button onClick={() => setIsAuditModalOpen(true)} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-zinc-900/30 hover:scale-[1.01] transition-transform">LANCER L'AUDIT FISCAL COMPLET</button>
                                         </div>
                                     </div>
@@ -587,19 +587,18 @@ function MairieDashboardContent() {
 
                                 <div className="bg-white/70 backdrop-blur-xl rounded-[3rem] border border-zinc-100 p-10 shadow-xl shadow-zinc-200/20">
                                     <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900">Registre des Sanctions Administratives</h3>
-                                    <div className="space-y-4">
-                                        {sanctions.map((s) => (
-                                            <div key={s.id} className="flex items-center justify-between p-6 bg-white border border-zinc-50 rounded-[2rem] hover:shadow-lg transition-all">
+                                                              {sanctions.map((s) => (
+                                            <div key={s.id} className="flex items-center justify-between p-6 bg-zinc-900 border border-white/5 rounded-[2rem] hover:border-red-500/30 transition-all">
                                                 <div className="flex items-center gap-6">
                                                     <div className={cn(
                                                         "w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xs",
-                                                        s.severity === 'high' || s.severity === 'critical' ? "bg-red-50 text-red-600" : "bg-zinc-50 text-zinc-500"
+                                                        s.severity === 'high' || s.severity === 'critical' ? "bg-red-500/10 text-red-600" : "bg-zinc-800 text-zinc-500"
                                                     )}>!</div>
                                                     <div>
-                                                        <p className="font-black italic uppercase text-zinc-900">{s.profiles?.full_name || "Organisation"}</p>
-                                                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{s.type} — {new Date(s.created_at).toLocaleDateString()}</p>
+                                                        <p className="font-black italic uppercase text-white">{s.profiles?.full_name || "Organisation"}</p>
+                                                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{s.type} — {new Date(s.created_at).toLocaleDateString()}</p>
                                                     </div>
-                                                </div>
+                                                </div>                                       </div>
                                                 <div className="text-right">
                                                     <p className="text-sm font-black text-red-500">-{s.penalty_amount.toLocaleString()} CFA</p>
                                                     <p className="text-[9px] font-black text-zinc-300 uppercase italic">Pénalité Appliquée</p>
@@ -623,7 +622,7 @@ function MairieDashboardContent() {
                                         {organizations.map((org) => (
                                             <div key={org.id} className={cn(
                                                 "p-8 rounded-[2.5rem] border flex items-center justify-between transition-all",
-                                                org.isSuspended ? "bg-red-50 border-red-100 opacity-80" : "bg-white border-zinc-50 hover:border-emerald-500/30"
+                                                org.isSuspended ? "bg-red-500/10 border-red-500/20 opacity-80" : "bg-zinc-900 border-white/5 hover:border-emerald-500/30"
                                             )}>
                                                 <div className="flex items-center gap-5">
                                                     <div className={cn(
@@ -679,7 +678,7 @@ function MairieDashboardContent() {
                                     </div>
                                     <div className="space-y-8">
                                         <MaintenanceIntel vehicles={vehicles} />
-                                        <div className="p-8 bg-white border border-zinc-100 rounded-[3rem] shadow-xl shadow-zinc-200/20">
+                                        <div className="p-8 bg-zinc-900 border border-white/5 rounded-[3rem] shadow-2xl">
                                             <TelemetryFeed />
                                         </div>
                                     </div>
@@ -711,11 +710,11 @@ function MairieDashboardContent() {
                         {activeTab === 'rapports' && (
                             <motion.div key="rapports" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                                    <div className="lg:col-span-2 bg-white p-12 rounded-[4rem] border border-zinc-100 shadow-2xl shadow-zinc-200/20">
+                                    <div className="lg:col-span-2 bg-zinc-900 p-12 rounded-[4rem] border border-white/5 shadow-2xl">
                                         <div className="flex justify-between items-center mb-12">
                                             <div>
-                                                <h3 className="text-3xl font-black uppercase italic tracking-tighter text-zinc-900 leading-none">Impact Territorial</h3>
-                                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-2">Mesure de la performance environnementale</p>
+                                                <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white leading-none">Impact Territorial</h3>
+                                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-2">Mesure de la performance environnementale</p>
                                             </div>
                                             <span className="px-5 py-2.5 bg-emerald-50 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-3 border border-emerald-100 shadow-sm"><Leaf size={14} />Performance ÉCO</span>
                                         </div>
@@ -723,9 +722,9 @@ function MairieDashboardContent() {
                                             <div className="space-y-6">
                                                 <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">CO2 Évité (Territoire)</p>
                                                 <p className="text-6xl font-black italic tracking-tighter text-emerald-500">{(collectedWastes * 1.5).toFixed(1)} <span className="text-2xl text-zinc-300">kg</span></p>
-                                                <div className="flex items-center gap-3 p-4 bg-emerald-50/50 rounded-2xl border border-emerald-50">
-                                                    <div className="w-8 h-8 bg-white rounded-xl flex items-center justify-center text-emerald-500 shadow-sm"><Zap size={14} /></div>
-                                                    <p className="text-[9px] font-bold text-emerald-600 uppercase tracking-tight leading-none">Équivalent à {Math.round(collectedWastes * 0.05)} arbres plantés ce mois-ci.</p>
+                                                <div className="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
+                                                    <div className="w-8 h-8 bg-zinc-800 rounded-xl flex items-center justify-center text-emerald-500 shadow-sm"><Zap size={14} /></div>
+                                                    <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-tight leading-none">Équivalent à {Math.round(collectedWastes * 0.05)} arbres plantés ce mois-ci.</p>
                                                 </div>
                                             </div>
                                             <div className="space-y-6">

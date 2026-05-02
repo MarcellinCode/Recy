@@ -41,34 +41,30 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    /* Gris très foncé plutôt que noir pur */
-    --foreground: 210 40% 98%;
+    --background: 240 10% 3.9%; /* Zinc 950 profond */
+    --foreground: 0 0% 98%;
 
-    /* Vert émeraude légèrement plus clair pour le mode sombre */
-    --primary: 153 50% 48%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 153 60% 41%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 240 3.7% 15.9%; /* Zinc 800 */
+    --secondary-foreground: 0 0% 98%;
 
-    /* Jaune */
-    --accent: 43 96% 58%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 153 50% 48%;
-    /* Focus ring = Primary Green */
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 153 60% 41%;
   }
 }
 

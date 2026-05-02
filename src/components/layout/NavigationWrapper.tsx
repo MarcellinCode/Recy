@@ -16,7 +16,22 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
     const isPublicMairie = pathname?.startsWith("/mairie/");
     const shouldHideNav = isSuperAdmin || isPublicMairie;
 
+    const [role, setRole] = useState<string | null>(null);
+    const [forceDark, setForceDark] = useState(false);
+
     useEffect(() => {
+        const checkRole = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+                setRole(profile?.role || null);
+                if (['mairie', 'entreprise', 'organisation_admin'].includes(profile?.role)) {
+                    setForceDark(true);
+                }
+            }
+        };
+        checkRole();
+
         if (shouldHideNav) return;
 
         let channel: any;
@@ -65,15 +80,18 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
     }, [pathname, shouldHideNav]);
 
     return (
-        <>
+        <div className={cn(forceDark ? "dark" : "")}>
             {!shouldHideNav && <Header />}
             
-            <main className={shouldHideNav ? "" : "min-h-screen bg-gray-50/50 dark:bg-zinc-950/50"}>
+            <main className={cn(
+                shouldHideNav ? "" : "min-h-screen bg-gray-50/50 dark:bg-zinc-950",
+                forceDark ? "bg-zinc-950 text-white" : ""
+            )}>
                 {children}
             </main>
 
             {!shouldHideNav && <BottomNavigation />}
             {!shouldHideNav && <Footer />}
-        </>
+        </div>
     );
 }
