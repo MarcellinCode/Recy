@@ -560,14 +560,15 @@ function MairieDashboardContent() {
                         )}
 
                         {activeTab === 'sovereignty' && (
-                            <motion.div key="sovereignty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0,                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                            <motion.div key="sovereignty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
+                                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
                                     <div className="bg-zinc-900 border border-white/5 p-12 rounded-[4rem] shadow-2xl flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
                                         <AlertOctagon className="absolute -right-12 -top-12 text-red-500/5 w-64 h-64 rotate-12 transition-transform group-hover:scale-110" />
                                         <div className="relative z-10">
                                             <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><ShieldAlert size={32} /></div>
                                             <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white leading-none mb-4">Unités de <br />Sanction</h2>
                                             <p className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Gestion stricte des litiges, retards de collecte et pénalités contractuelles.</p>
-                                        </div>                                </div>
+                                        </div>
                                         <button onClick={() => setIsSanctionModalOpen(true)} className="w-full py-7 bg-red-600 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-red-600/30 hover:scale-[1.01] transition-transform relative z-10">ÉMETTRE UNE SANCTION</button>
                                     </div>
                                     <div className="bg-zinc-900 border border-white/5 p-12 rounded-[4rem] shadow-2xl flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
@@ -584,9 +585,10 @@ function MairieDashboardContent() {
                                     </div>
                                 </div>
 
-                                <div className="bg-white/70 backdrop-blur-xl rounded-[3rem] border border-zinc-100 p-10 shadow-xl shadow-zinc-200/20">
-                                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900">Registre des Sanctions Administratives</h3>
-                                                              {sanctions.map((s) => (
+                                <div className="bg-zinc-900/50 backdrop-blur-xl rounded-[3rem] border border-white/5 p-10 shadow-2xl">
+                                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-white">Registre des Sanctions Administratives</h3>
+                                    <div className="space-y-4">
+                                        {sanctions.map((s) => (
                                             <div key={s.id} className="flex items-center justify-between p-6 bg-zinc-900 border border-white/5 rounded-[2rem] hover:border-red-500/30 transition-all">
                                                 <div className="flex items-center gap-6">
                                                     <div className={cn(
@@ -597,7 +599,7 @@ function MairieDashboardContent() {
                                                         <p className="font-black italic uppercase text-white">{s.profiles?.full_name || "Organisation"}</p>
                                                         <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{s.type} — {new Date(s.created_at).toLocaleDateString()}</p>
                                                     </div>
-                                                </div>                                       </div>
+                                                </div>
                                                 <div className="text-right">
                                                     <p className="text-sm font-black text-red-500">-{s.penalty_amount.toLocaleString()} CFA</p>
                                                     <p className="text-[9px] font-black text-zinc-300 uppercase italic">Pénalité Appliquée</p>
@@ -605,17 +607,17 @@ function MairieDashboardContent() {
                                             </div>
                                         ))}
                                         {sanctions.length === 0 && (
-                                            <div className="py-20 text-center bg-zinc-50/50 rounded-[3rem] border border-dashed border-zinc-100">
-                                                <p className="text-[10px] font-black text-zinc-300 uppercase tracking-[0.3em]">Aucune sanction enregistrée.</p>
+                                            <div className="py-20 text-center bg-zinc-800/50 rounded-[3rem] border border-dashed border-white/5">
+                                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">Aucune sanction enregistrée.</p>
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="bg-white/70 backdrop-blur-xl rounded-[3rem] border border-zinc-100 p-10 shadow-xl shadow-zinc-200/20">
-                                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900 flex items-center justify-between">
+                                <div className="bg-zinc-900/50 backdrop-blur-xl rounded-[3rem] border border-white/5 p-10 shadow-2xl">
+                                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-white flex items-center justify-between">
                                         <span>Annuaire des Partenaires Certifiés</span>
-                                        <span className="text-[10px] font-black text-zinc-400">SEUIL D'EXCLUSION : 2.5/5.0</span>
+                                        <span className="text-[10px] font-black text-zinc-500">SEUIL D'EXCLUSION : 2.5/5.0</span>
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {organizations.map((org) => (
@@ -626,18 +628,18 @@ function MairieDashboardContent() {
                                                 <div className="flex items-center gap-5">
                                                     <div className={cn(
                                                         "w-16 h-16 rounded-3xl flex items-center justify-center font-black text-xl",
-                                                        org.isSuspended ? "bg-red-500 text-white" : "bg-emerald-50 text-emerald-500"
+                                                        org.isSuspended ? "bg-red-500 text-white" : "bg-emerald-500/10 text-emerald-500"
                                                     )}>
                                                         {org.full_name?.charAt(0) || "P"}
                                                     </div>
                                                     <div>
-                                                        <p className="font-black italic uppercase text-zinc-900">{org.full_name}</p>
+                                                        <p className="font-black italic uppercase text-white">{org.full_name}</p>
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <div className="flex gap-0.5">
                                                                 {[1,2,3,4,5].map(s => (
                                                                     <div key={s} className={cn(
                                                                         "w-3 h-1 rounded-full",
-                                                                        s <= (org.performance_score || 5) ? (org.isSuspended ? "bg-red-500" : "bg-emerald-500") : "bg-zinc-100"
+                                                                        s <= (org.performance_score || 5) ? (org.isSuspended ? "bg-red-500" : "bg-emerald-500") : "bg-zinc-800"
                                                                     )} />
                                                                 ))}
                                                             </div>
