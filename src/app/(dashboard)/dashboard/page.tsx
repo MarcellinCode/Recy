@@ -18,7 +18,8 @@ import {
     CalendarDays,
     Navigation,
     TrendingUp,
-    Truck
+    Truck,
+    Users
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase";
@@ -33,10 +34,12 @@ export default function DashboardPage() {
         totalWeight: 0,
         co2Saved: 0,
         ecoPoints: 0,
-        collectionsCount: 0
+        collectionsCount: 0,
+        citizenCount: 0
     });
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<any>(null);
+    const [activeSub, setActiveSub] = useState<any>(null);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -57,12 +60,33 @@ export default function DashboardPage() {
             const wastes = wastesRes.data;
             if (wastes) {
                 const totalWeight = wastes.reduce((acc: number, w: any) => acc + (w.final_weight || w.estimated_weight), 0);
+                
+                let citizenCount = 0;
+                if (prof?.role === 'mairie' && prof?.city) {
+                    const { count } = await supabase
+                        .from('profiles')
+                        .select('*', { count: 'exact', head: true })
+                        .eq('role', 'vendeur')
+                        .ilike('city', `%${prof.city}%`);
+                    citizenCount = count || 0;
+                }
+
                 setStats({
                     totalWeight,
                     co2Saved: totalWeight * 1.22,
                     ecoPoints: prof?.eco_points || 0,
-                    collectionsCount: wastes.length
+                    collectionsCount: wastes.length,
+                    citizenCount
                 });
+
+                // Récupérer l'abonnement actif
+                const { data: sub } = await supabase
+                    .from('subscriptions')
+                    .select('*, plan:subscription_plans(name, tier)')
+                    .eq('user_id', user.id)
+                    .eq('status', 'active')
+                    .maybeSingle();
+                setActiveSub(sub);
             }
             setLoading(false);
         };
@@ -112,7 +136,7 @@ export default function DashboardPage() {
         ...(profile?.role === 'vendeur' ? [
             { 
                 title: "Mon Service", 
-                description: "Gestion abonnement & alertes", 
+                description: activeSub?.plan?.name || "Gestion abonnement & alertes", 
                 icon: ShieldCheck, 
                 href: "/abonnements", 
                 color: "bg-emerald-600" 
@@ -188,7 +212,13 @@ export default function DashboardPage() {
                         <h1 className="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter leading-none dark:text-white">
                             Bonjour, <span className="text-primary">{profile?.full_name?.split(' ')[0] || "Eco-Guerrier"}</span>
                         </h1>
-                        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-2">Prêt pour votre prochaine action écologique ?</p>
+                        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400 mt-2">
+                            {activeSub?.plan?.name?.toLowerCase().includes('usine') 
+                                ? "Tableau de bord industriel Citicline" 
+                                : activeSub?.plan?.name?.toLowerCase().includes('entreprise')
+                                ? "Espace de gestion entreprise"
+                                : "Prêt pour votre prochaine action écologique ?"}
+                        </p>
                     </div>
                     
                     {/* Quick Wallet Summary */}
@@ -220,9 +250,9 @@ export default function DashboardPage() {
                     delay={0.2}
                 />
                 <MiniStat 
-                    label="Points" 
-                    value={stats.ecoPoints} 
-                    icon={Award} 
+                    label={profile?.role === 'mairie' ? "Citoyens" : "Points"} 
+                    value={profile?.role === 'mairie' ? stats.citizenCount : stats.ecoPoints} 
+                    icon={profile?.role === 'mairie' ? Users : Award} 
                     delay={0.3}
                 />
                 <MiniStat 
