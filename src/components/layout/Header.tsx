@@ -17,7 +17,12 @@ export function Header() {
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [user, setUser] = useState<User | null>(null);
-    const [role, setRole] = useState<string | null>(null);
+    const [role, setRole] = useState<string | null>(() => {
+        if (typeof window !== 'undefined') {
+            return localStorage.getItem('user-role');
+        }
+        return null;
+    });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -27,7 +32,14 @@ export function Header() {
                 .select('role')
                 .eq('id', userId)
                 .single();
-            setRole(profile?.role ?? null);
+            
+            const newRole = profile?.role ?? null;
+            setRole(newRole);
+            if (newRole) {
+                localStorage.setItem('user-role', newRole);
+            } else {
+                localStorage.removeItem('user-role');
+            }
             setLoading(false);
         };
 
@@ -39,6 +51,7 @@ export function Header() {
             } else {
                 setUser(null);
                 setRole(null);
+                localStorage.removeItem('user-role');
                 setLoading(false);
             }
         };
@@ -52,6 +65,7 @@ export function Header() {
             } else {
                 setUser(null);
                 setRole(null);
+                localStorage.removeItem('user-role');
                 setLoading(false);
             }
         });
