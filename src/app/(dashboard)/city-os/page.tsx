@@ -382,7 +382,6 @@ function MairieDashboardContent() {
     const slaBreaches = wastes.filter(w => w.status === 'published' && (now - new Date(w.created_at).getTime() > 48 * 3600 * 1000)).length;
 
     return (
-    return (
         <div className="flex h-screen w-full bg-zinc-950 text-white overflow-hidden select-none">
             {/* Sidebar : Live Intel Feed */}
             <aside className="w-[320px] hidden lg:flex flex-col border-r border-white/5 bg-zinc-900/50 backdrop-blur-3xl p-6">
