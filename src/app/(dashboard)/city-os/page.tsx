@@ -465,7 +465,7 @@ function MairieDashboardContent() {
                                         <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
                                     </div>
                                     <div className="space-y-8 overflow-y-auto pr-2 no-scrollbar">
-                                        <div className="flex justify-center bg-zinc-900/50 backdrop-blur-xl border border-white/5 rounded-[3rem] py-8 shadow-2xl">
+                                        <div className="flex justify-center bg-zinc-900 border border-white/5 rounded-[3rem] py-10 shadow-2xl">
                                             <HoloGauge value={collectionRate} label="SALUBRITÉ COMMUNE" />
                                         </div>
                                         <NeonCard title="SIGNALEMENTS ACTIFS" value={totalWastes} icon={AlertTriangle} color="blue" trend="+12 AUJOURD'HUI" />
@@ -481,15 +481,15 @@ function MairieDashboardContent() {
                                             {zones.filter(z => z.status === 'occupied').map((zone) => {
                                                 const concession = zone.concessions?.[0];
                                                 return (
-                                                    <div key={zone.id} className="flex items-center justify-between p-5 bg-white/5 border border-white/5 rounded-[2.5rem] hover:border-emerald-500/30 transition-all">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="w-12 h-12 rounded-2xl bg-zinc-800 border border-white/5 flex items-center justify-center text-emerald-500 shadow-sm"><Building2 size={24} /></div>
+                                                    <div key={zone.id} className="flex items-center justify-between p-6 bg-zinc-900/50 border border-white/5 rounded-[2.5rem] hover:border-emerald-500/30 transition-all">
+                                                        <div className="flex items-center gap-5">
+                                                            <div className="w-14 h-14 rounded-2xl bg-zinc-800 border border-white/10 flex items-center justify-center text-emerald-500 shadow-xl"><Building2 size={24} /></div>
                                                             <div>
-                                                                <p className="font-black italic uppercase text-lg text-white leading-none mb-1">{concession?.profiles?.full_name || "MUNICIPAL"}</p>
-                                                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{zone.name}</p>
+                                                                <p className="font-black italic uppercase text-xl text-white leading-none mb-2">{concession?.profiles?.full_name || "MUNICIPAL"}</p>
+                                                                <p className="text-[10px] font-black text-emerald-500/50 uppercase tracking-[0.2em]">{zone.name}</p>
                                                             </div>
                                                         </div>
-                                                                                                                <button onClick={() => handleRevokeConcessionClick(concession.id, zone.id)} className="w-10 h-10 rounded-xl bg-red-50 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"><XCircle size={18} /></button>
+                                                        <button onClick={() => handleRevokeConcessionClick(concession.id, zone.id)} className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-xl"><XCircle size={20} /></button>
                                                     </div>
                                                 );
                                             })}
@@ -516,10 +516,10 @@ function MairieDashboardContent() {
                             <motion.div key="tenders" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                     {tenders.map((tender) => (
-                                        <div key={tender.id} className="bg-white border border-zinc-100 p-8 rounded-[3.5rem] shadow-xl shadow-zinc-200/20 group hover:border-emerald-500/30 transition-all relative overflow-hidden">
-                                            <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity"><Gavel size={64} /></div>
-                                            <h3 className="text-2xl font-black italic uppercase text-zinc-900 mb-2 leading-none">{tender.title}</h3>
-                                            <p className="text-zinc-500 text-[10px] font-bold mb-10 line-clamp-3 uppercase tracking-wider">{tender.description}</p>
+                                        <div key={tender.id} className="bg-zinc-900 border border-white/5 p-8 rounded-[3.5rem] shadow-2xl group hover:border-emerald-500/30 transition-all relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity text-white"><Gavel size={64} /></div>
+                                            <h3 className="text-2xl font-black italic uppercase text-white mb-2 leading-none">{tender.title}</h3>
+                                            <p className="text-zinc-500 text-[10px] font-bold mb-10 line-clamp-3 uppercase tracking-wider leading-relaxed">{tender.description}</p>
                                             
                                             <div className="space-y-4">
                                                 <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Offres Reçues ({tender.tender_bids?.length || 0})</p>
@@ -789,21 +789,21 @@ function MairieDashboardContent() {
                                             <button 
                                                 key={inf.id} 
                                                 onClick={() => { setSelectedInfraction(inf); setIsInfractionDetailModalOpen(true); }}
-                                                className="w-full text-left p-6 bg-white border border-zinc-100 rounded-[2.5rem] hover:border-red-500/30 transition-all group relative overflow-hidden"
+                                                className="w-full text-left p-6 bg-zinc-900 border border-white/5 rounded-[2.5rem] hover:border-red-500/30 transition-all group relative overflow-hidden"
                                             >
                                                 <div className={cn(
                                                     "absolute top-0 right-0 p-3 text-[7px] font-black uppercase tracking-widest rounded-bl-xl",
-                                                    inf.status === 'open' ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"
+                                                    inf.status === 'open' ? "bg-red-600 text-white" : "bg-emerald-600 text-white"
                                                 )}>
                                                     {inf.status}
                                                 </div>
                                                 <div className="flex items-start gap-4">
-                                                    <div className="w-12 h-12 rounded-2xl bg-zinc-50 border border-zinc-100 flex items-center justify-center text-zinc-400 group-hover:text-red-500 transition-colors">
+                                                    <div className="w-12 h-12 rounded-2xl bg-zinc-800 border border-white/5 flex items-center justify-center text-zinc-500 group-hover:text-red-500 transition-colors">
                                                         <Trash2 size={24} />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-black italic uppercase text-zinc-900 leading-none mb-1">{inf.type}</p>
-                                                        <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">{inf.zones?.name || "Zone non définie"}</p>
+                                                        <p className="text-sm font-black italic uppercase text-white leading-none mb-1">{inf.type}</p>
+                                                        <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">{inf.zones?.name || "Zone non définie"}</p>
                                                     </div>
                                                 </div>
                                             </button>
@@ -865,17 +865,17 @@ function MairieDashboardContent() {
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                         {policeAgents.map((agent) => (
-                                            <div key={agent.id} className="p-6 bg-white border border-zinc-50 rounded-[2.5rem] hover:shadow-lg transition-all flex items-center justify-between">
+                                            <div key={agent.id} className="p-6 bg-zinc-900 border border-white/5 rounded-[2.5rem] hover:border-emerald-500/30 transition-all flex items-center justify-between shadow-2xl">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center font-black italic">
+                                                    <div className="w-14 h-14 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-2xl flex items-center justify-center font-black italic text-xl">
                                                         {agent.full_name?.charAt(0)}
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-black italic uppercase text-zinc-900">{agent.full_name}</p>
-                                                        <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">{agent.zones?.name || "Patrouille Libre"}</p>
+                                                        <p className="text-sm font-black italic uppercase text-white">{agent.full_name}</p>
+                                                        <p className="text-[9px] font-bold text-emerald-500/50 uppercase tracking-widest">{agent.zones?.name || "Patrouille Libre"}</p>
                                                     </div>
                                                 </div>
-                                                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse" />
                                             </div>
                                         ))}
                                         {policeAgents.length === 0 && (
@@ -1144,19 +1144,19 @@ function MairieDashboardContent() {
             <Modal isOpen={isAddAgentModalOpen} onClose={() => setIsAddAgentModalOpen(false)} title="📋 RECRUTEMENT DE NOUVEL AGENT (POLICE VERTE)">
                 <form onSubmit={handleRecruitAgent} className="space-y-6">
                     <div className="space-y-2">
-                        <label htmlFor="agentName" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom Complet de l'Officier</label>
-                        <input id="agentName" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.fullName} onChange={(e) => setNewAgent({...newAgent, fullName: e.target.value})} />
+                        <label htmlFor="agentName" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Nom Complet de l'Officier</label>
+                        <input id="agentName" required className="w-full px-6 py-4 bg-zinc-900 border border-white/5 rounded-2xl text-sm font-black outline-none text-white focus:border-emerald-500/50 transition-all" value={newAgent.fullName} onChange={(e) => setNewAgent({...newAgent, fullName: e.target.value})} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><label htmlFor="agentEmail" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Email Professionnel</label><input id="agentEmail" type="email" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.email} onChange={(e) => setNewAgent({...newAgent, email: e.target.value})} /></div>
-                        <div className="space-y-2"><label htmlFor="agentPass" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Mot de Passe Initial</label><input id="agentPass" type="password" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.password} onChange={(e) => setNewAgent({...newAgent, password: e.target.value})} /></div>
+                        <div className="space-y-2"><label htmlFor="agentEmail" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Email Professionnel</label><input id="agentEmail" type="email" required className="w-full px-6 py-4 bg-zinc-900 border border-white/5 rounded-2xl text-sm font-black outline-none text-white focus:border-emerald-500/50 transition-all" value={newAgent.email} onChange={(e) => setNewAgent({...newAgent, email: e.target.value})} /></div>
+                        <div className="space-y-2"><label htmlFor="agentPass" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Mot de Passe Initial</label><input id="agentPass" type="password" required className="w-full px-6 py-4 bg-zinc-900 border border-white/5 rounded-2xl text-sm font-black outline-none text-white focus:border-emerald-500/50 transition-all" value={newAgent.password} onChange={(e) => setNewAgent({...newAgent, password: e.target.value})} /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><label htmlFor="agentPhone" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Numéro de Téléphone</label><input id="agentPhone" required className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-sm font-black outline-none" value={newAgent.phone} onChange={(e) => setNewAgent({...newAgent, phone: e.target.value})} /></div>
-                        <div className="space-y-2"><label htmlFor="agentZone" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Zone d'Affectation</label>
-                            <select id="agentZone" className="w-full px-6 py-4 bg-gray-50 border border-gray-100 rounded-2xl text-[10px] font-black uppercase outline-none" value={newAgent.zoneId} onChange={(e) => setNewAgent({...newAgent, zoneId: e.target.value})}>
-                                <option value="">Choisir une zone...</option>
-                                {zones.map(z => (<option key={z.id} value={z.id}>{z.name}</option>))}
+                        <div className="space-y-2"><label htmlFor="agentPhone" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Numéro de Téléphone</label><input id="agentPhone" required className="w-full px-6 py-4 bg-zinc-900 border border-white/5 rounded-2xl text-sm font-black outline-none text-white focus:border-emerald-500/50 transition-all" value={newAgent.phone} onChange={(e) => setNewAgent({...newAgent, phone: e.target.value})} /></div>
+                        <div className="space-y-2"><label htmlFor="agentZone" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Zone d'Affectation</label>
+                            <select id="agentZone" className="w-full px-6 py-4 bg-zinc-900 border border-white/5 rounded-2xl text-[10px] font-black uppercase outline-none text-white focus:border-emerald-500/50 transition-all" value={newAgent.zoneId} onChange={(e) => setNewAgent({...newAgent, zoneId: e.target.value})}>
+                                <option value="" className="bg-zinc-900">Choisir une zone...</option>
+                                {zones.map(z => (<option key={z.id} value={z.id} className="bg-zinc-900">{z.name}</option>))}
                             </select>
                         </div>
                     </div>
@@ -1169,46 +1169,46 @@ function MairieDashboardContent() {
 
             <Modal isOpen={isFiscalModalOpen} onClose={() => setIsFiscalModalOpen(false)} title="⚖️ CONFIGURATION DE LA FISCALITÉ URBAINE">
                 <form onSubmit={handleSaveFiscalConfig} className="space-y-8">
-                    <div className="p-8 bg-zinc-50 border border-zinc-100 rounded-[3rem] space-y-6">
+                    <div className="p-8 bg-zinc-900 border border-white/5 rounded-[3rem] space-y-6 shadow-inner">
                         <div className="flex items-center gap-4 mb-4">
-                            <div className="w-12 h-12 rounded-2xl bg-white flex items-center justify-center text-zinc-900 shadow-sm">
-                                <DollarSign size={24} />
+                            <div className="w-14 h-14 rounded-2xl bg-zinc-800 border border-white/10 flex items-center justify-center text-emerald-500 shadow-xl">
+                                <DollarSign size={28} />
                             </div>
                             <div>
-                                <h4 className="text-sm font-black text-zinc-900 uppercase tracking-widest">Taux de Prélèvement</h4>
-                                <p className="text-[10px] font-bold text-zinc-500">Ajustez les pourcentages applicables sur chaque collecte validée.</p>
+                                <h4 className="text-lg font-black text-white uppercase tracking-widest leading-none">Taux de Prélèvement</h4>
+                                <p className="text-[10px] font-bold text-zinc-500 mt-2">Ajustez les pourcentages applicables sur chaque collecte validée.</p>
                             </div>
                         </div>
 
-                        <div className="space-y-4">
+                        <div className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Commission CITICLINE (%)</label>
+                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Commission CITICLINE (%)</label>
                                 <input 
                                     type="number" 
                                     step="0.1"
                                     min="0"
                                     max="100"
                                     required 
-                                    className="w-full px-6 py-4 bg-white border border-zinc-200 rounded-2xl text-sm font-black outline-none focus:border-zinc-900" 
+                                    className="w-full px-6 py-4 bg-zinc-950 border border-white/5 rounded-2xl text-sm font-black outline-none text-white focus:border-emerald-500/50 transition-all" 
                                     value={fiscalRates.commissionRate * 100} 
                                     onChange={(e) => setFiscalRates({...fiscalRates, commissionRate: parseFloat(e.target.value) / 100})} 
                                 />
-                                <p className="text-[8px] text-zinc-400 italic px-4">Taux par défaut : 10%</p>
+                                <p className="text-[8px] text-zinc-500 italic px-4 uppercase tracking-widest">Taux standard préconisé : 10%</p>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Éco-Taxe Municipale (%)</label>
+                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Éco-Taxe Municipale (%)</label>
                                 <input 
                                     type="number" 
                                     step="0.1"
                                     min="0"
                                     max="100"
                                     required 
-                                    className="w-full px-6 py-4 bg-white border border-zinc-200 rounded-2xl text-sm font-black outline-none focus:border-zinc-900" 
+                                    className="w-full px-6 py-4 bg-zinc-950 border border-white/5 rounded-2xl text-sm font-black outline-none text-white focus:border-emerald-500/50 transition-all" 
                                     value={fiscalRates.ecoTaxRate * 100} 
                                     onChange={(e) => setFiscalRates({...fiscalRates, ecoTaxRate: parseFloat(e.target.value) / 100})} 
                                 />
-                                <p className="text-[8px] text-zinc-400 italic px-4">Taux par défaut : 2%</p>
+                                <p className="text-[8px] text-zinc-500 italic px-4 uppercase tracking-widest">Taux standard préconisé : 2%</p>
                             </div>
                         </div>
                     </div>

@@ -93,11 +93,22 @@ export default function DashboardPage() {
         fetchStats();
     }, []);
 
+    // Redirection automatique pour la Mairie
+    useEffect(() => {
+        if (!loading && profile?.role === 'mairie') {
+            const router = require('next/navigation').useRouter();
+            router.push('/city-os');
+        }
+    }, [loading, profile]);
+
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-                <Loader2 className="w-10 h-10 text-primary animate-spin" />
-                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">Initialisation du Hub...</p>
+            <div className="flex flex-col items-center justify-center min-h-screen gap-6 bg-zinc-950">
+                <div className="relative">
+                    <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                    <div className="absolute inset-0 blur-xl bg-primary/20 animate-pulse" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 animate-pulse">Initialisation du Hub...</p>
             </div>
         );
     }

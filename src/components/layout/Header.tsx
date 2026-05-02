@@ -21,25 +21,39 @@ export function Header() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const fetchProfile = async (userId: string) => {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', userId)
+                .single();
+            setRole(profile?.role ?? null);
+            setLoading(false);
+        };
+
         const getSession = async () => {
             const { data: { session } } = await supabase.auth.getSession();
-            setUser(session?.user ?? null);
             if (session?.user) {
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('role')
-                    .eq('id', session.user.id)
-                    .single();
-                setRole(profile?.role ?? null);
+                setUser(session.user);
+                await fetchProfile(session.user.id);
+            } else {
+                setUser(null);
+                setRole(null);
+                setLoading(false);
             }
-            setLoading(false);
         };
 
         getSession();
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
-            setUser(session?.user ?? null);
-            setLoading(false);
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+            if (session?.user) {
+                setUser(session.user);
+                await fetchProfile(session.user.id);
+            } else {
+                setUser(null);
+                setRole(null);
+                setLoading(false);
+            }
         });
 
         return () => subscription.unsubscribe();
@@ -85,12 +99,14 @@ export function Header() {
         ],
     };
 
-    const desktopLinks = user
-        ? (role ? roleLinks[role] : roleLinks.vendeur) ?? roleLinks.vendeur
-        : [
-            { href: "/#features", label: "Fonctionnalités" },
-            { href: "/#impact",   label: "Notre Impact" },
-          ];
+    const desktopLinks = loading 
+        ? [] 
+        : (user
+            ? (role ? roleLinks[role] : roleLinks.vendeur) ?? roleLinks.vendeur
+            : [
+                { href: "/#features", label: "Fonctionnalités" },
+                { href: "/#impact",   label: "Notre Impact" },
+              ]);
 
     const isDarkRole = ['mairie', 'entreprise', 'organisation_admin'].includes(role || '');
 
