@@ -159,7 +159,7 @@ export function Header() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 sm:gap-4">
-                    {!loading && user && (
+                    {user && (
                         <Link href="/notifications" className="p-2 text-gray-500 transition-colors rounded-full relative group hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-zinc-800">
                             <Bell className="w-5 h-5 group-hover:text-primary transition-colors" />
                             {unreadNotifications > 0 && (
@@ -168,8 +168,7 @@ export function Header() {
                         </Link>
                     )}
 
-                    {!loading && (
-                        user ? (
+                    {user ? (
                             <div className="hidden md:flex items-center gap-3">
                                 <Link
                                     href="/profil"
