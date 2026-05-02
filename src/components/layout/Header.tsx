@@ -114,7 +114,7 @@ export function Header() {
     };
 
     const desktopLinks = user
-        ? (role ? roleLinks[role] : roleLinks.vendeur) ?? roleLinks.vendeur
+        ? (role ? roleLinks[role] : []) ?? []
         : [
             { href: "/#features", label: "Fonctionnalités" },
             { href: "/#impact",   label: "Notre Impact" },
