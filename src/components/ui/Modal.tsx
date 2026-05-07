@@ -46,7 +46,7 @@ export function Modal({ isOpen, onClose, title, children, className }: ModalProp
                         )}
                     >
                         <div className="p-8 border-b border-gray-50 dark:border-zinc-800 flex items-center justify-between">
-                            <h2 className="text-xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter">
+                            <h2 className="text-xl font-black text-zinc-900 dark:text-white uppercase italic tracking-tighter">
                                 {title}
                             </h2>
                             <button
