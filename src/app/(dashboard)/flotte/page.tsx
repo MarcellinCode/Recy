@@ -189,60 +189,65 @@ export default function FleetPage() {
             </div>
 
             {/* Modal Ajout Véhicule */}
-            <Modal isOpen={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} title="Enregistrer un Véhicule">
-                <form onSubmit={handleAddVehicle} className="space-y-6">
-                    <div className="space-y-4">
+            <Modal 
+                isOpen={isAddModalOpen} 
+                onClose={() => setIsAddModalOpen(false)} 
+                title="Enregistrer un Véhicule"
+                className="dark bg-zinc-900 border-white/10"
+            >
+                <form onSubmit={handleAddVehicle} className="space-y-8">
+                    <div className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Nom du véhicule (ex: Camion 01)</label>
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Nom du véhicule (ex: Camion 01)</label>
                             <input 
                                 required
-                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                                className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black uppercase text-white focus:border-emerald-500/50 transition-all"
                                 placeholder="NOM DU VÉHICULE"
                                 value={newVehicle.name}
                                 onChange={(e) => setNewVehicle({...newVehicle, name: e.target.value})}
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Numéro d'immatriculation</label>
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Numéro d'immatriculation</label>
                             <input 
                                 required
-                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                                className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black uppercase text-white focus:border-emerald-500/50 transition-all"
                                 placeholder="AA-000-AA"
                                 value={newVehicle.regNumber}
                                 onChange={(e) => setNewVehicle({...newVehicle, regNumber: e.target.value.toUpperCase()})}
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Type de véhicule</label>
+                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Type de véhicule</label>
                             <select 
-                                className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                                className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black uppercase text-white focus:border-emerald-500/50 transition-all appearance-none"
                                 value={newVehicle.type}
                                 onChange={(e) => setNewVehicle({...newVehicle, type: e.target.value})}
                             >
-                                <option value="camion">Camion de collecte</option>
-                                <option value="tricycle">Tricycle motorisé</option>
-                                <option value="benne">Benne tasseuse</option>
+                                <option value="camion" className="bg-zinc-900">Camion de collecte</option>
+                                <option value="tricycle" className="bg-zinc-900">Tricycle motorisé</option>
+                                <option value="benne" className="bg-zinc-900">Benne tasseuse</option>
                             </select>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Km Initial</label>
+                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Km Initial</label>
                                 <input 
                                     type="number"
                                     required
-                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black"
+                                    className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black text-white focus:border-emerald-500/50 transition-all"
                                     placeholder="0"
                                     value={newVehicle.initialMileage}
                                     onChange={(e) => setNewVehicle({...newVehicle, initialMileage: e.target.value})}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Assurance (Exp)</label>
+                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Assurance (Exp)</label>
                                 <input 
                                     type="date"
                                     required
-                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none font-black uppercase"
+                                    className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black uppercase text-white focus:border-emerald-500/50 transition-all"
                                     value={newVehicle.insuranceExpiry}
                                     onChange={(e) => setNewVehicle({...newVehicle, insuranceExpiry: e.target.value})}
                                 />
@@ -252,7 +257,7 @@ export default function FleetPage() {
                     <button 
                         type="submit" 
                         disabled={isSubmitting}
-                        className="w-full py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl disabled:opacity-50"
+                        className="w-full py-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-emerald-500/20 disabled:opacity-50 transition-all active:scale-95"
                     >
                         {isSubmitting ? "Enregistrement..." : "Confirmer l'Ajout"}
                     </button>
