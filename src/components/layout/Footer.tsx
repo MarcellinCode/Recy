@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Recycle, Mail, Globe, Twitter, Linkedin, Facebook, ArrowUpRight } from "lucide-react";
+import { Mail, Globe, Twitter, Linkedin, Facebook, ArrowUpRight } from "lucide-react";
 
 export function Footer() {
     const currentYear = new Date().getFullYear();
@@ -16,11 +16,13 @@ export function Footer() {
                     
                     {/* Brand Section */}
                     <div className="space-y-6">
-                        <Link href="/" className="flex items-center gap-2 group">
-                            <div className="p-2 bg-primary/20 rounded-xl border border-primary/20 group-hover:scale-110 transition-transform">
-                                <Recycle className="w-6 h-6 text-primary" />
+                        <Link href="/" className="flex items-center gap-3 group shrink-0">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white group-hover:scale-105 transition-all shadow-md overflow-hidden border border-white/10">
+                                <img src="/logo.png" alt="CITICLINE Logo" className="w-full h-full object-cover" />
                             </div>
-                            <span className="text-xl font-black text-white tracking-widest uppercase italic">CITI<span className="text-primary">CLINE</span></span>
+                            <span className="text-2xl font-black tracking-tighter uppercase italic leading-none text-white">
+                                CITI<span className="text-primary tracking-tighter">CLINE</span>
+                            </span>
                         </Link>
                         <p className="text-zinc-400 text-sm leading-relaxed font-medium">
                             L'Intelligence Urbaine au service de l'économie circulaire. Transformez chaque déchet en ressource précieuse pour votre cité.

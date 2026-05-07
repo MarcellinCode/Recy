@@ -111,6 +111,10 @@ export function Header() {
             { href: "/city-os",      label: "City OS" },
             { href: "/chat",         label: "Messages", badge: unreadMessages },
         ],
+        agent_police_verte: [
+            { href: "/city-os",      label: "Radar" },
+            { href: "/chat",         label: "Messages", badge: unreadMessages },
+        ],
     };
 
     const desktopLinks = user
@@ -188,7 +192,7 @@ export function Header() {
                                     href="/profil"
                                     className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-all dark:bg-zinc-800 dark:text-gray-200"
                                 >
-                                    {role === 'mairie' ? <School className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : role === 'entreprise' || role === 'organisation_admin' ? <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> : <UserIcon className="w-4 h-4" />}
+                                    {role === 'mairie' ? <School className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : role === 'entreprise' || role === 'organisation_admin' ? <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> : role === 'agent_police_verte' ? <img src="/images/police_verte_logo.png" alt="Police Verte" className="w-4 h-4 object-contain" /> : <UserIcon className="w-4 h-4" />}
                                     {user.user_metadata?.full_name?.split(' ')[0] || "Profil"}
                                 </Link>
                                 <button

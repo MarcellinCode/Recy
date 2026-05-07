@@ -83,8 +83,12 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="relative">
-                    <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-primary to-green-600 flex items-center justify-center border-4 border-white dark:border-zinc-800 shadow-2xl">
-                        <span className="text-4xl font-black text-white italic">{initials}</span>
+                    <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-primary to-green-600 flex items-center justify-center border-4 border-white dark:border-zinc-800 shadow-2xl overflow-hidden">
+                        {profile?.role === 'agent_police_verte' ? (
+                            <img src="/images/police_verte_logo.png" alt="Police Verte" className="w-full h-full object-contain p-6 bg-white" />
+                        ) : (
+                            <span className="text-4xl font-black text-white italic">{initials}</span>
+                        )}
                     </div>
                 </div>
 
@@ -105,9 +109,10 @@ export default function ProfilePage() {
                             "text-white text-[9px] font-black px-5 py-2 rounded-full uppercase tracking-[0.2em] shadow-lg",
                             profile?.role === 'vendeur' ? 'bg-primary shadow-primary/20' :
                                 profile?.role === 'collecteur' ? 'bg-amber-600 shadow-amber-600/20' :
-                                    'bg-blue-600 shadow-blue-600/20'
+                                    profile?.role === 'agent_police_verte' ? 'bg-emerald-600 shadow-emerald-600/20' :
+                                        'bg-blue-600 shadow-blue-600/20'
                         )}>
-                            {profile?.role === 'vendeur' ? 'Citoyen' : profile?.role === 'collecteur' ? 'Collecteur' : 'Partenaire / Entreprise'}
+                            {profile?.role === 'vendeur' ? 'Citoyen' : profile?.role === 'collecteur' ? 'Collecteur' : profile?.role === 'agent_police_verte' ? 'Agent Police Verte' : 'Partenaire / Entreprise'}
                         </span>
                         {profile?.role === 'vendeur' && (
                             <div className="bg-green-500/10 text-green-600 text-[9px] font-black px-5 py-2 rounded-full border border-green-500/20 uppercase tracking-[0.2em] flex items-center gap-2">

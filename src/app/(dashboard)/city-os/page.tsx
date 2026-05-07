@@ -415,8 +415,8 @@ function MairieDashboardContent() {
             <aside className="w-[320px] hidden lg:flex flex-col border-r border-white/5 bg-zinc-900/50 backdrop-blur-3xl p-6">
                 <div className="mb-10">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center">
-                            <ShieldCheck className="text-emerald-500" size={20} />
+                        <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center overflow-hidden">
+                            <img src="/images/police_verte_logo.png" alt="City OS" className="w-6 h-6 object-contain" />
                         </div>
                         <div>
                             <h1 className="text-lg font-black italic tracking-tighter uppercase leading-none text-white text-shadow-glow-emerald">City OS</h1>
@@ -461,7 +461,7 @@ function MairieDashboardContent() {
                                         : "text-zinc-500 hover:text-white hover:bg-white/5"
                                 )}
                             >
-                                <tab.icon size={14} />
+                                {tab.id === 'police' ? <img src="/images/police_verte_logo.png" className={cn("w-3.5 h-3.5 object-contain", activeTab === 'police' ? "brightness-0 invert" : "")} /> : <tab.icon size={14} />}
                                 {tab.label}
                             </button>
                         ))}
@@ -745,7 +745,7 @@ function MairieDashboardContent() {
                                                 <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white leading-none">Impact Territorial</h3>
                                                 <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-2">Mesure de la performance environnementale</p>
                                             </div>
-                                            <span className="px-5 py-2.5 bg-emerald-50 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-3 border border-emerald-100 shadow-sm"><Leaf size={14} />Performance ÉCO</span>
+                                            <span className="px-5 py-2.5 bg-emerald-50 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-3 border border-emerald-100 shadow-sm"><img src="/images/police_verte_logo.png" className="w-3.5 h-3.5 object-contain" />Performance ÉCO</span>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                                             <div className="space-y-6">
@@ -895,8 +895,8 @@ function MairieDashboardContent() {
                                         {policeAgents.map((agent) => (
                                             <div key={agent.id} className="p-6 bg-zinc-900 border border-white/5 rounded-[2.5rem] hover:border-emerald-500/30 transition-all flex items-center justify-between shadow-2xl">
                                                 <div className="flex items-center gap-4">
-                                                    <div className="w-14 h-14 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 rounded-2xl flex items-center justify-center font-black italic text-xl">
-                                                        {agent.full_name?.charAt(0)}
+                                                    <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center overflow-hidden p-3">
+                                                        <img src="/images/police_verte_logo.png" alt="Police Verte" className="w-full h-full object-contain" />
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-black italic uppercase text-white">{agent.full_name}</p>
