@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { 
@@ -152,9 +153,11 @@ export function MaintenanceIntel({ vehicles }: { vehicles: any[] }) {
                     </div>
                 </div>
 
-                <button className="w-full mt-12 py-6 bg-zinc-950 border border-white/5 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:border-emerald-500 transition-all shadow-2xl">
-                    Registre de Maintenance
-                </button>
+                <Link href="/flotte" className="block w-full mt-12">
+                    <button className="w-full py-6 bg-zinc-950 border border-white/5 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:border-emerald-500 transition-all shadow-2xl">
+                        Registre de Maintenance
+                    </button>
+                </Link>
             </div>
         </div>
     );
