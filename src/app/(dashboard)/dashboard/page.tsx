@@ -45,62 +45,83 @@ export default function DashboardPage() {
 
     useEffect(() => {
         const fetchStats = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            // Paralléliser les 2 requêtes
-            const [profRes, wastesRes] = await Promise.all([
-                supabase.from('profiles').select('*').eq('id', user.id).single(),
-                supabase.from('wastes').select('id, final_weight, estimated_weight')
-                    .or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`)
-                    .eq('status', 'collected')
-            ]);
-
-            const prof = profRes.data;
-            setProfile(prof);
-
-            const wastes = wastesRes.data;
-            if (wastes) {
-                const totalWeight = wastes.reduce((acc: number, w: any) => acc + (w.final_weight || w.estimated_weight), 0);
+            try {
+                // Timeout de 3 secondes pour l'auth
+                const sessionPromise = supabase.auth.getSession();
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000));
                 
-                let citizenCount = 0;
-                if (prof?.role === 'mairie' && prof?.city) {
-                    const { count } = await supabase
-                        .from('profiles')
-                        .select('*', { count: 'exact', head: true })
-                        .eq('role', 'vendeur')
-                        .ilike('city', `%${prof.city}%`);
-                    citizenCount = count || 0;
+                const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+                const user = session?.user;
+                
+                if (!user) {
+                    setLoading(false);
+                    return;
                 }
 
-                setStats({
-                    totalWeight,
-                    co2Saved: totalWeight * 1.22,
-                    ecoPoints: prof?.eco_points || 0,
-                    collectionsCount: wastes.length,
-                    citizenCount
-                });
+                // Requêtes simples sans jointures complexes pour débloquer
+                const [profRes, wastesRes] = await Promise.all([
+                    supabase.from('profiles').select('id,full_name,role,city,eco_points,wallet_balance').eq('id', user.id).maybeSingle(),
+                    supabase.from('wastes').select('id,final_weight,estimated_weight,status').or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`)
+                ]);
 
-                // Récupérer l'abonnement actif
-                const { data: sub } = await supabase
-                    .from('subscriptions')
-                    .select('*, plan:subscription_plans(name, tier)')
-                    .eq('user_id', user.id)
-                    .eq('status', 'active')
-                    .maybeSingle();
-                setActiveSub(sub);
+                const prof = profRes.data;
+                setProfile(prof);
+
+                const wastes = wastesRes.data;
+                if (wastes) {
+                    const totalWeight = wastes.reduce((acc: number, w: any) => acc + (w.final_weight || w.estimated_weight), 0);
+                    
+                    let citizenCount = 0;
+                    if (prof?.role === 'mairie' && prof?.city) {
+                        try {
+                            
+                            const { count } = await supabase
+                                .from('profiles')
+                                .select('*', { count: 'exact', head: true })
+                                .eq('role', 'vendeur')
+                                .ilike('city', `%${prof.city}%`);
+                            citizenCount = count || 0;
+                        } catch (e) {
+                            console.error("Error fetching citizen count", e);
+                        }
+                    }
+
+                    setStats({
+                        totalWeight,
+                        co2Saved: totalWeight * 1.22,
+                        ecoPoints: prof?.eco_points || 0,
+                        collectionsCount: wastes.length,
+                        citizenCount
+                    });
+
+                    /* 
+                    // Temporairement désactivé pour éviter les erreurs 400/404 qui bloquent l'UI
+                    const { data: sub } = await supabase
+                        .from('subscriptions')
+                        .select('*, plan:subscription_plans(name, tier)')
+                        .eq('user_id', user.id)
+                        .eq('status', 'active')
+                        .maybeSingle();
+                    setActiveSub(sub);
+                    */
+                }
+            } catch (err) {
+                console.error("Dashboard fetch error:", err);
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         };
         fetchStats();
     }, []);
 
-    // Redirection automatique pour la Mairie
+    // Redirection automatique supprimée pour permettre l'accès au Hub
+    /*
     useEffect(() => {
         if (!loading && profile?.role === 'mairie') {
             router.push('/city-os');
         }
     }, [loading, profile, router]);
+    */
 
     if (loading) {
         return (

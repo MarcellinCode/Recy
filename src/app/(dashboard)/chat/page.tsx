@@ -58,8 +58,8 @@ function Bubble({ msg, isMe, isLast }: { msg: Message; isMe: boolean; isLast: bo
                 className={cn(
                     "px-4 py-2.5 rounded-2xl text-[13px] sm:text-sm leading-relaxed shadow-sm",
                     isMe 
-                        ? "bg-primary text-white rounded-tr-none" 
-                        : "bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 rounded-tl-none border border-zinc-100 dark:border-zinc-700"
+                        ? "bg-primary text-white rounded-tr-none shadow-lg shadow-primary/20" 
+                        : "bg-zinc-800 text-zinc-200 rounded-tl-none border border-white/5 shadow-lg"
                 )}
             >
                 {msg.content}
@@ -154,22 +154,20 @@ function ChatContainer() {
 
     useEffect(() => {
         const fetchInitialData = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
+            const { data: { session } } = await Promise.race([
+                supabase.auth.getSession(),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+            ]) as any;
+
+            const user = session?.user;
             if (!user) return;
             setCurrentUser(user);
-
-            // 1. Fetch ALL wastes to find those involving the user
+            
             const { data: allWastes } = await supabase
                 .from('wastes')
-                .select(`
-                    id, status, seller_id, collector_id, estimated_weight,
-                    waste_types(name),
-                    seller:profiles!seller_id(id, full_name),
-                    collector:profiles!collector_id(id, full_name)
-                `)
+                .select('id, status, seller_id, collector_id, estimated_weight')
                 .order('created_at', { ascending: false });
 
-            // 2. Identify wastes where user is seller, collector, OR has messages
             const { data: userMessages } = await supabase
                 .from('messages')
                 .select('waste_id, is_read, receiver_id')
@@ -333,6 +331,7 @@ function ChatContainer() {
                 )
                 .map(msg => msg.id);
 
+
             if (unreadIds.length > 0) {
                 const { error } = await supabase
                     .from('messages')
@@ -430,22 +429,22 @@ function ChatContainer() {
     );
 
     return (
-        <div className="max-w-7xl mx-auto px-0 md:px-4 lg:px-8 py-0 md:py-8 h-[calc(100svh-4rem)] md:h-[calc(100svh-8rem)] flex flex-col relative min-h-0">
-            <div className="bg-white dark:bg-zinc-900 md:rounded-[2.5rem] md:border-2 border-zinc-100 dark:border-zinc-800 md:shadow-2xl overflow-hidden flex-1 flex min-h-0">
+        <div className="max-w-7xl mx-auto px-0 md:px-4 lg:px-8 py-0 md:py-8 h-[calc(100svh-4rem)] md:h-[calc(100svh-8rem)] flex flex-col relative min-h-0 bg-zinc-950">
+            <div className="bg-zinc-900/50 md:rounded-[2.5rem] md:border-2 border-white/5 md:shadow-2xl overflow-hidden flex-1 flex min-h-0 backdrop-blur-xl">
                 
                 {/* Sidebar (Conversations) */}
                 <div className={cn(
-                    "w-full md:w-80 lg:w-96 border-r border-zinc-50 dark:border-zinc-800 flex flex-col min-h-0",
+                    "w-full md:w-80 lg:w-96 border-r border-white/5 flex flex-col min-h-0 bg-zinc-900/30",
                     selectedConv && "hidden md:flex"
                 )}>
-                    <div className="p-6 border-b border-zinc-50 dark:border-zinc-800">
-                        <h1 className="text-2xl font-black uppercase italic tracking-tighter mb-4">Messages</h1>
+                    <div className="p-6 border-b border-white/5">
+                        <h1 className="text-2xl font-black uppercase italic tracking-tighter mb-4 text-white">Messages</h1>
                         <div className="relative">
-                            <Search className="absolute left-4 top-3 w-4 h-4 text-zinc-300" />
+                            <Search className="absolute left-4 top-3 w-4 h-4 text-zinc-500" />
                             <input 
                                 type="text" 
                                 placeholder="Rechercher..." 
-                                className="w-full pl-10 pr-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border-none rounded-xl text-xs font-bold outline-none" 
+                                className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/50 text-white border-none rounded-xl text-xs font-bold outline-none focus:ring-1 ring-primary/30" 
                             />
                         </div>
                     </div>
@@ -492,13 +491,13 @@ function ChatContainer() {
 
                 {/* Main Chat Area */}
                 <div className={cn(
-                    "flex-1 flex flex-col bg-zinc-50/30 dark:bg-zinc-950 min-h-0",
+                    "flex-1 flex flex-col bg-zinc-950/20 min-h-0",
                     !selectedConv && "hidden md:flex items-center justify-center p-12 text-center"
                 )}>
                     {selectedConv ? (
                         <>
                             {/* Chat Header */}
-                            <div className="p-4 sm:p-6 bg-white dark:bg-zinc-900 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+                            <div className="p-4 sm:p-6 bg-zinc-900/50 border-b border-white/5 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <button onClick={() => setSelectedConv(null)} className="md:hidden p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl">
                                         <ArrowLeft className="w-5 h-5" />
@@ -545,7 +544,7 @@ function ChatContainer() {
                             </div>
 
                             {/* Input Area */}
-                            <div className="relative p-4 sm:p-6 bg-white dark:bg-zinc-900 border-t border-zinc-100 dark:border-zinc-800 shadow-[0_-4px_20px_-5px_rgba(0,0,0,0.05)]">
+                            <div className="relative p-4 sm:p-6 bg-zinc-900/80 border-t border-white/5 shadow-2xl">
                                 
                                 {/* New Message Badge */}
                                 <AnimatePresence>

@@ -16,11 +16,11 @@ export function Footer() {
                     
                     {/* Brand Section */}
                     <div className="space-y-6">
-                        <Link href="/" className="flex items-center gap-3 group shrink-0">
-                            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-white group-hover:scale-105 transition-all shadow-md overflow-hidden border border-white/10">
+                        <Link href="/" className="flex items-center gap-4 group shrink-0">
+                            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-900 group-hover:scale-105 transition-all shadow-2xl overflow-hidden border border-white/10">
                                 <img src="/logo.png" alt="CITICLINE Logo" className="w-full h-full object-cover" />
                             </div>
-                            <span className="text-2xl font-black tracking-tighter uppercase italic leading-none text-white">
+                            <span className="text-3xl font-black tracking-tighter uppercase italic leading-none text-white">
                                 CITI<span className="text-primary tracking-tighter">CLINE</span>
                             </span>
                         </Link>

@@ -124,7 +124,13 @@ export function Header() {
             { href: "/#impact",   label: "Notre Impact" },
           ];
 
-    const isDarkRole = ['mairie', 'entreprise', 'organisation_admin'].includes(role || '');
+    const isDashboardPath = pathname.includes('/dashboard') || 
+                           pathname.includes('/city-os') || 
+                           pathname.includes('/chat') || 
+                           pathname.includes('/mes-dechets') ||
+                           pathname.includes('/marketplace');
+
+    const isDarkRole = ['mairie', 'entreprise', 'organisation_admin'].includes(role || '') || isDashboardPath;
 
     return (
         <header className={cn(
