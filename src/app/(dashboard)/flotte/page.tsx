@@ -265,9 +265,11 @@ export default function FleetPage() {
                     <p className="font-black uppercase tracking-[0.3em] text-xs">Aucun véhicule enregistré</p>
                 </div>
             )}
+            </div>
         </div>
     );
 }
+
 
 function VehicleCard({ vehicle }: { vehicle: any }) {
     const isMaintenanceNeeded = vehicle.status === 'in_maintenance';
