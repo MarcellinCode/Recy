@@ -183,41 +183,46 @@ export default function MyWastePage() {
             {filteredWastes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {filteredWastes.map((waste) => (
-                        <div key={waste.id} className="group bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-gray-100 dark:border-zinc-800 overflow-hidden hover:shadow-2xl hover:shadow-gray-100 dark:hover:shadow-none transition-all duration-500 border-b-4 border-b-primary/20">
+                        <div key={waste.id} className="group bg-white/5 backdrop-blur-xl rounded-[2.5rem] border border-white/10 overflow-hidden hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/30 transition-all duration-700 relative">
                             <div className="relative aspect-[4/3] overflow-hidden">
                                 {waste.images?.[0] ? (
-                                    <img src={waste.images[0]} alt={waste.waste_types?.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                                    <img src={waste.images[0]} alt={waste.waste_types?.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" />
                                 ) : (
-                                    <div className="w-full h-full bg-gray-50 dark:bg-zinc-800 flex items-center justify-center text-5xl">
+                                    <div className="w-full h-full bg-zinc-900/50 flex items-center justify-center text-6xl grayscale group-hover:grayscale-0 transition-all">
                                         {waste.waste_types?.emoji || "♻️"}
                                     </div>
                                 )}
-                                <div className="absolute top-4 left-4">
-                                    <span className="px-4 py-2 bg-white/90 backdrop-blur-md rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-sm">
+                                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-60" />
+                                <div className="absolute top-6 left-6">
+                                    <span className="px-4 py-2 bg-primary/20 backdrop-blur-md border border-primary/30 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] text-primary shadow-2xl">
                                         {waste.waste_types?.name}
                                     </span>
                                 </div>
                             </div>
-                            <div className="p-6">
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2 text-gray-400">
+                            <div className="p-8">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center gap-3 text-zinc-500">
                                         <Calendar className="w-4 h-4" />
-                                        <span className="text-[10px] font-bold uppercase">{new Date(waste.created_at).toLocaleDateString()}</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest">{new Date(waste.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
                                     </div>
-                                    <span className="text-xl font-black text-primary">
-                                        {waste.estimated_weight} <span className="text-xs">kg</span>
-                                    </span>
+                                    <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/5">
+                                        <span className="text-2xl font-black text-white italic font-serif">
+                                            {waste.estimated_weight} <span className="text-[10px] uppercase not-italic text-zinc-500 ml-1">kg</span>
+                                        </span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2 text-gray-500 dark:text-gray-400 mb-6 font-medium text-sm">
-                                    <MapPin className="w-4 h-4 shrink-0 text-primary/60" />
-                                    <span className="truncate">{waste.location}</span>
+                                <div className="flex items-start gap-3 text-zinc-400 mb-8 font-medium text-sm bg-white/5 p-4 rounded-2xl border border-white/5 group-hover:border-primary/20 transition-colors">
+                                    <MapPin className="w-4 h-4 shrink-0 text-primary animate-pulse" />
+                                    <span className="text-xs font-bold leading-relaxed line-clamp-2 uppercase tracking-tight">{waste.location}</span>
                                 </div>
                                 <button
                                     onClick={() => navigateSafe(router, ROUTES.MES_DECHETS + `/${waste.id}`)}
-                                    className="flex items-center justify-center gap-2 w-full py-3.5 bg-gray-50 dark:bg-zinc-800 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-primary hover:text-white transition-all group/btn"
+                                    className="flex items-center justify-center gap-3 w-full py-5 bg-white text-zinc-950 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-primary hover:text-white transition-all duration-500 shadow-2xl active:scale-95 group/btn overflow-hidden relative"
                                 >
-                                    Détails & Suivi
-                                    <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                    <span className="relative z-10 flex items-center gap-2">
+                                        Détails & Suivi
+                                        <ArrowRight className="w-4 h-4 group-hover/btn:translate-x-2 transition-transform" />
+                                    </span>
                                 </button>
                             </div>
                         </div>
