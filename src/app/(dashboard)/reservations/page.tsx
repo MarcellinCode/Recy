@@ -44,7 +44,6 @@ export default function ReservationsPage() {
     useEffect(() => {
         const fetchReservations = async () => {
             try {
-                // Timeout de 5s pour éviter le blocage infini sur l'auth
                 const timeoutPromise = new Promise((_, reject) => 
                     setTimeout(() => reject(new Error("Timeout Auth")), 5000)
                 );
@@ -58,19 +57,37 @@ export default function ReservationsPage() {
                     setLoading(false);
                     return;
                 }
-                setCurrentUser(user);
 
-                const { data, error } = await supabase
+                // Récupérer le profil pour connaître le rôle et la ville
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role, city')
+                    .eq('id', user.id)
+                    .single();
+
+                const fullUser = { ...user, ...profile };
+                setCurrentUser(fullUser);
+
+                let query = supabase
                     .from('wastes')
                     .select(`
                         id, status, estimated_weight, location, created_at,
                         waste_types!type_id(name, emoji),
-                        seller:profiles!seller_id(id, full_name),
+                        seller:profiles!seller_id(id, full_name, city),
                         collector:profiles!collector_id(id, full_name)
                     `)
-                    .eq('status', 'reserved')
-                    .or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`)
-                    .order('created_at', { ascending: false });
+                    .eq('status', 'reserved');
+
+                // Logique de filtrage par rôle
+                if (profile?.role === 'mairie' && profile?.city) {
+                    // La mairie voit tout ce qui se passe dans sa ville
+                    query = query.ilike('seller.city', `%${profile.city}%`);
+                } else {
+                    // Un utilisateur normal ne voit que ses propres réservations
+                    query = query.or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`);
+                }
+
+                const { data, error } = await query.order('created_at', { ascending: false });
 
                 if (error) throw error;
                 setReservations(data as any[] || []);
@@ -84,11 +101,12 @@ export default function ReservationsPage() {
         fetchReservations();
     }, []);
 
-    const filteredReservations = reservations.filter(res => 
-        currentTab === "collectes" 
+    const filteredReservations = reservations.filter(res => {
+        if (currentUser?.role === 'mairie') return true; // La mairie voit tout le résultat de la requête
+        return currentTab === "collectes" 
             ? res.collector?.id === currentUser?.id 
-            : res.seller?.id === currentUser?.id
-    );
+            : res.seller?.id === currentUser?.id;
+    });
 
     if (loading) {
         return (
@@ -116,14 +134,16 @@ export default function ReservationsPage() {
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10">
                     <div>
                         <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter dark:text-white leading-[0.85]">
-                            Suivi des <br />
+                            {currentUser?.role === 'mairie' ? "Supervision" : "Suivi des"} <br />
                             <span className="text-primary italic text-3xl sm:text-5xl">Réservations</span>
                         </h1>
                     </div>
                     
                     <div className="flex items-center gap-4 bg-zinc-50 dark:bg-zinc-800/50 p-2 rounded-[1.5rem] border border-zinc-100 dark:border-zinc-800">
                         <div className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-100 dark:border-zinc-800">
-                            <span className="text-[10px] font-black uppercase text-zinc-400 block leading-none mb-1">Total Actif</span>
+                            <span className="text-[10px] font-black uppercase text-zinc-400 block leading-none mb-1">
+                                {currentUser?.role === 'mairie' ? "Total Ville" : "Total Actif"}
+                            </span>
                             <span className="text-xl font-black italic dark:text-white leading-none">{reservations.length}</span>
                         </div>
                     </div>
@@ -131,30 +151,39 @@ export default function ReservationsPage() {
 
                 {/* Tab Switcher */}
                 <div className="flex bg-white dark:bg-zinc-900 p-1.5 rounded-[2.2rem] border border-zinc-100 dark:border-zinc-800 shadow-xl shadow-zinc-200/20 dark:shadow-none relative z-10">
-                    <button 
-                        onClick={() => setCurrentTab("collectes")}
-                        className={cn(
-                            "flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest transition-all",
-                            currentTab === "collectes" 
-                                ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl" 
-                                : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-                        )}
-                    >
-                        <CalendarDays className={cn("w-4 h-4", currentTab === "collectes" ? "animate-bounce" : "")} />
-                        Mes Collectes
-                    </button>
-                    <button 
-                        onClick={() => setCurrentTab("ventes")}
-                        className={cn(
-                            "flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest transition-all",
-                            currentTab === "ventes" 
-                                ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl" 
-                                : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
-                        )}
-                    >
-                        <Package className={cn("w-4 h-4", currentTab === "ventes" ? "animate-bounce" : "")} />
-                        Mes Ventes
-                    </button>
+                    {currentUser?.role === 'mairie' ? (
+                        <div className="flex-1 flex items-center justify-center gap-3 py-4 text-[10px] font-black uppercase tracking-widest text-primary italic">
+                            <Navigation className="w-4 h-4 animate-pulse" />
+                            Activité en temps réel • {currentUser?.city}
+                        </div>
+                    ) : (
+                        <>
+                            <button 
+                                onClick={() => setCurrentTab("collectes")}
+                                className={cn(
+                                    "flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest transition-all",
+                                    currentTab === "collectes" 
+                                        ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl" 
+                                        : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                                )}
+                            >
+                                <CalendarDays className={cn("w-4 h-4", currentTab === "collectes" ? "animate-bounce" : "")} />
+                                Mes Collectes
+                            </button>
+                            <button 
+                                onClick={() => setCurrentTab("ventes")}
+                                className={cn(
+                                    "flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest transition-all",
+                                    currentTab === "ventes" 
+                                        ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl" 
+                                        : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                                )}
+                            >
+                                <Package className={cn("w-4 h-4", currentTab === "ventes" ? "animate-bounce" : "")} />
+                                Mes Ventes
+                            </button>
+                        </>
+                    )}
                 </div>
             </header>
 
@@ -168,7 +197,7 @@ export default function ReservationsPage() {
                         className="space-y-4"
                     >
                         {filteredReservations.map((res) => (
-                            <ReservationCard key={res.id} reservation={res} role={currentTab} onFinalized={() => {
+                            <ReservationCard key={res.id} reservation={res} role={currentUser?.role === 'mairie' ? 'mairie' : currentTab} onFinalized={() => {
                                 // Simple update to remove it from the list
                                 setReservations(prev => prev.filter(r => r.id !== res.id));
                             }} />
@@ -270,10 +299,21 @@ function ReservationCard({ reservation, role, onFinalized }: { reservation: Rese
                                 <User className="w-3.5 h-3.5" />
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">{role === "collectes" ? "Vendeur" : "Collecteur"}</span>
-                                <span className="text-[10px] font-black uppercase dark:text-zinc-200">
-                                    {role === "collectes" ? reservation.seller.full_name : (reservation.collector?.full_name || "En recherche...")}
-                                </span>
+                                {role === 'mairie' ? (
+                                    <>
+                                        <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Binôme</span>
+                                        <span className="text-[10px] font-black uppercase dark:text-zinc-200">
+                                            {reservation.seller.full_name} → {reservation.collector?.full_name || "En recherche"}
+                                        </span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">{role === "collectes" ? "Vendeur" : "Collecteur"}</span>
+                                        <span className="text-[10px] font-black uppercase dark:text-zinc-200">
+                                            {role === "collectes" ? reservation.seller.full_name : (reservation.collector?.full_name || "En recherche...")}
+                                        </span>
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className="flex items-center gap-3 text-zinc-600 dark:text-zinc-400">
@@ -307,7 +347,7 @@ function ReservationCard({ reservation, role, onFinalized }: { reservation: Rese
                     <span className="text-[8px] font-black uppercase text-zinc-400 group-hover/btn:text-primary">Chat</span>
                 </Link>
                 
-                {role === "collectes" && (
+                {role !== "mairie" && role === "collectes" && (
                     <>
                         <button 
                             onClick={handleNavigate}
