@@ -35,11 +35,12 @@ export default function MyWastePage() {
 
             let query = supabase
                 .from('wastes')
-                .select('*, waste_types(name, emoji), profiles!seller_id(city)')
+                .select('*, waste_types(name, emoji), seller:profiles!seller_id(city)')
                 .order('created_at', { ascending: false });
 
             if (activeProfile?.role === 'mairie' && activeProfile?.city) {
-                query = query.ilike('profiles!seller_id.city', `%${activeProfile.city}%`);
+                // Utilisation de l'alias 'seller' pour le filtre
+                query = query.ilike('seller.city', `%${activeProfile.city}%`);
             } else {
                 query = query.or(`seller_id.eq.${resolvedUid},collector_id.eq.${resolvedUid}`);
             }
