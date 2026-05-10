@@ -104,53 +104,71 @@ export default function MyWastePage() {
 
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
-                <div>
-                    <h1 className="text-4xl font-black text-gray-900 dark:text-white flex items-center gap-3 tracking-tight uppercase">
-                        <Trash2 className="w-8 h-8 text-primary" />
-                        {userProfile?.role === 'mairie' ? "Stock Urbain" : "Mes Déchets"}
-                    </h1>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 font-medium">
-                        {userProfile?.role === 'mairie' 
-                            ? `Supervision des flux de déchets • ${userProfile?.city}`
-                            : userProfile?.role === 'collecteur'
-                                ? "Historique des lots que vous avez réservés ou collectés."
-                                : "Suivez en temps réel l'état de vos collectes et vos gains."}
-                    </p>
-                </div>
-                {userProfile?.role !== 'collecteur' && (
-                    <button
-                        onClick={() => navigateSafe(router, ROUTES.MARKETPLACE_PUBLISH)}
-                        className="flex items-center justify-center gap-2 px-8 py-4 bg-primary text-white font-black rounded-3xl shadow-xl shadow-primary/25 hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] transition-all text-sm uppercase tracking-widest"
-                    >
-                        <Plus className="w-5 h-5" />
-                        Publier un lot
-                    </button>
-                )}
-            </div>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16 min-h-screen pb-24">
+            <header className="mb-16 relative">
+                <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -z-10" />
+                
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-8 mb-12">
+                    <div>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-2 h-2 bg-primary rounded-full animate-ping" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Live Inventory</span>
+                        </div>
+                        <h1 className="text-5xl sm:text-7xl font-black uppercase tracking-tighter text-white leading-[0.8] mb-2">
+                            {userProfile?.role === 'mairie' ? "Stock" : "Mes"} <br />
+                            <span className="text-primary italic font-serif">{userProfile?.role === 'mairie' ? "Urbain" : "Déchets"}</span>
+                        </h1>
+                        <p className="text-zinc-500 text-xs font-bold uppercase tracking-widest mt-4">
+                            {userProfile?.role === 'mairie' 
+                                ? `Supervision des flux de déchets • ${userProfile?.city}`
+                                : "Suivez l'état de vos collectes et vos gains."}
+                        </p>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                        <div className="bg-white/5 backdrop-blur-md p-4 rounded-[2rem] border border-white/10 shadow-2xl">
+                            <p className="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-1 leading-none text-center">Total</p>
+                            <p className="text-4xl font-black italic text-white leading-none tracking-tighter text-center">
+                                {wastes.length.toString().padStart(2, '0')}
+                            </p>
+                        </div>
 
-            {/* Tabs */}
-            <div className="flex gap-2 p-1.5 bg-gray-100 dark:bg-zinc-900 rounded-[2rem] mb-10 overflow-x-auto">
-                {tabs.map((tab) => {
-                    const count = wastes.filter(w => w.status === tab.id).length;
-                    const isActive = activeTab === tab.id;
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={cn(
-                                "flex-1 min-w-fit px-8 py-3.5 rounded-[1.5rem] text-xs font-black transition-all whitespace-nowrap uppercase tracking-widest",
-                                isActive
-                                    ? "bg-white text-primary shadow-xl shadow-gray-200/50 dark:bg-zinc-800 dark:text-white dark:shadow-none"
-                                    : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                            )}
-                        >
-                            {tab.label} <span className={cn("ml-1 opacity-50", isActive && "text-primary/50")}>({count})</span>
-                        </button>
-                    );
-                })}
-            </div>
+                        {userProfile?.role !== 'mairie' && userProfile?.role !== 'collecteur' && (
+                            <button
+                                onClick={() => navigateSafe(router, ROUTES.MARKETPLACE_PUBLISH)}
+                                className="h-20 px-8 bg-primary text-white font-black rounded-[2rem] shadow-xl shadow-primary/20 hover:scale-105 active:scale-95 transition-all text-xs uppercase tracking-widest flex items-center gap-3"
+                            >
+                                <Plus className="w-5 h-5" />
+                                Publier
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Tabs Switcher Glassmorphism */}
+                <div className="p-1.5 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden">
+                    <div className="flex overflow-x-auto no-scrollbar">
+                        {tabs.map((tab) => {
+                            const count = wastes.filter(w => w.status === tab.id).length;
+                            const isActive = activeTab === tab.id;
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={cn(
+                                        "flex-1 min-w-fit px-10 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 whitespace-nowrap",
+                                        isActive
+                                            ? "bg-white text-zinc-950 shadow-2xl scale-[1.02]"
+                                            : "text-zinc-500 hover:text-white"
+                                    )}
+                                >
+                                    {tab.label} <span className={cn("ml-2 opacity-40", isActive && "text-primary opacity-100 font-serif italic text-sm")}>{count}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+            </header>
 
             {loading ? (
                 <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -201,21 +219,26 @@ export default function MyWastePage() {
                     ))}
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-24 text-center border-4 border-dashed border-gray-50 dark:border-zinc-900 rounded-[3rem] px-6">
-                    <div className="w-24 h-24 bg-gray-50 dark:bg-zinc-900 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner">
-                        <Search className="w-10 h-10 text-gray-300" />
+                <div className="flex flex-col items-center justify-center py-24 sm:py-32 px-8 text-center bg-white/5 backdrop-blur-md rounded-[3rem] border border-dashed border-white/10 relative group overflow-hidden">
+                    <div className="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+                    
+                    <div className="w-24 h-24 bg-white/5 dark:bg-zinc-900/50 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl border border-white/10 relative z-10 group-hover:scale-110 transition-transform duration-500">
+                        <Search className="w-10 h-10 text-zinc-500 group-hover:text-primary transition-colors" />
                     </div>
-                    <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-2">
+                    
+                    <h3 className="text-2xl font-black text-white uppercase tracking-tighter mb-3 relative z-10">
                         {userProfile?.role === 'mairie' ? "Aucun flux détecté" : "Aucun déchet trouvé"}
                     </h3>
-                    <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto font-medium leading-relaxed">
+                    
+                    <p className="text-zinc-500 text-sm max-w-xs mx-auto font-medium leading-relaxed mb-10 relative z-10">
                         {userProfile?.role === 'mairie' 
                             ? `Il n'y a actuellement aucun lot de déchets actifs à ${userProfile?.city}.`
                             : "C'est un bon début pour l'environnement ! Publiez votre premier lot pour commencer à gagner."}
                     </p>
+                    
                     <button
                         onClick={() => userProfile?.role === 'mairie' ? fetchWastes() : navigateSafe(router, ROUTES.MARKETPLACE_PUBLISH)}
-                        className="mt-8 px-8 py-4 bg-primary/10 text-primary font-black rounded-2xl hover:bg-primary hover:text-white transition-all text-xs uppercase tracking-widest"
+                        className="px-10 py-5 bg-white text-zinc-950 font-black rounded-[1.5rem] hover:scale-105 active:scale-95 transition-all text-[10px] uppercase tracking-[0.2em] relative z-10 shadow-2xl"
                     >
                         {userProfile?.role === 'mairie' ? "Rafraîchir la vue" : "Publiez maintenant"}
                     </button>
