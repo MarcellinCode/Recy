@@ -311,7 +311,7 @@ function ReservationCard({ reservation, role, onFinalized }: { reservation: Rese
                                     <>
                                         <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">{role === "collectes" ? "Vendeur" : "Collecteur"}</span>
                                         <span className="text-[10px] font-black uppercase dark:text-zinc-200">
-                                            {role === "collectes" ? reservation.seller.full_name : (reservation.collector?.full_name || "En recherche...")}
+                                            {role === "collectes" ? (reservation.seller?.full_name || "Inconnu") : (reservation.collector?.full_name || "En recherche...")}
                                         </span>
                                     </>
                                 )}
