@@ -43,24 +43,43 @@ export default function ReservationsPage() {
 
     useEffect(() => {
         const fetchReservations = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            setCurrentUser(user);
+            try {
+                // Timeout de 5s pour éviter le blocage infini sur l'auth
+                const timeoutPromise = new Promise((_, reject) => 
+                    setTimeout(() => reject(new Error("Timeout Auth")), 5000)
+                );
+                
+                const { data: { user } } = await Promise.race([
+                    supabase.auth.getUser(),
+                    timeoutPromise
+                ]) as any;
 
-            const { data } = await supabase
-                .from('wastes')
-                .select(`
-                    id, status, estimated_weight, location, created_at,
-                    waste_types(name, emoji),
-                    seller:profiles!seller_id(id, full_name),
-                    collector:profiles!collector_id(id, full_name)
-                `)
-                .eq('status', 'reserved')
-                .or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`)
-                .order('created_at', { ascending: false });
+                if (!user) {
+                    setLoading(false);
+                    return;
+                }
+                setCurrentUser(user);
 
-            setReservations(data as any[] || []);
-            setLoading(false);
+                const { data, error } = await supabase
+                    .from('wastes')
+                    .select(`
+                        id, status, estimated_weight, location, created_at,
+                        waste_types!type_id(name, emoji),
+                        seller:profiles!seller_id(id, full_name),
+                        collector:profiles!collector_id(id, full_name)
+                    `)
+                    .eq('status', 'reserved')
+                    .or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`)
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+                setReservations(data as any[] || []);
+            } catch (err) {
+                console.error("Erreur lors de la récupération des réservations:", err);
+                showToast("Erreur de synchronisation", "error");
+            } finally {
+                setLoading(false);
+            }
         };
         fetchReservations();
     }, []);
