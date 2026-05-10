@@ -101,10 +101,20 @@ export default function MyWastePage() {
 
     const filteredWastes = wastes.filter(w => w.status === activeTab);
 
-
+    if (loading) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-screen gap-6 bg-zinc-950">
+                <div className="relative">
+                    <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                    <div className="absolute inset-0 blur-3xl bg-primary/30 animate-pulse" />
+                </div>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 animate-pulse text-center">Synchronisation de l'inventaire...</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16 min-h-screen pb-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16 min-h-screen pb-24 bg-zinc-950">
             <header className="mb-16 relative">
                 <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -z-10" />
                 
@@ -170,12 +180,7 @@ export default function MyWastePage() {
                 </div>
             </header>
 
-            {loading ? (
-                <div className="flex flex-col items-center justify-center py-24 gap-4">
-                    <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                    <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Chargement de vos trésors...</p>
-                </div>
-            ) : filteredWastes.length > 0 ? (
+            {filteredWastes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {filteredWastes.map((waste) => (
                         <div key={waste.id} className="group bg-white dark:bg-zinc-900 rounded-[2.5rem] border border-gray-100 dark:border-zinc-800 overflow-hidden hover:shadow-2xl hover:shadow-gray-100 dark:hover:shadow-none transition-all duration-500 border-b-4 border-b-primary/20">
