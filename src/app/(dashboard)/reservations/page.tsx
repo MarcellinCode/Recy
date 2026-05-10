@@ -80,8 +80,8 @@ export default function ReservationsPage() {
 
                 // Logique de filtrage par rôle
                 if (profile?.role === 'mairie' && profile?.city) {
-                    // Filtrage strict par commune (exact match)
-                    query = query.eq('seller.city', profile.city);
+                    // Filtrage intelligent par commune (contient le nom de la ville)
+                    query = query.ilike('seller.city', `%${profile.city}%`);
                 } else {
                     // Un utilisateur normal ne voit que ses propres réservations
                     query = query.or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`);

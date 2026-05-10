@@ -39,7 +39,7 @@ export default function MyWastePage() {
                 .order('created_at', { ascending: false });
 
             if (activeProfile?.role === 'mairie' && activeProfile?.city) {
-                query = query.eq('profiles!seller_id.city', activeProfile.city);
+                query = query.ilike('profiles!seller_id.city', `%${activeProfile.city}%`);
             } else {
                 query = query.or(`seller_id.eq.${resolvedUid},collector_id.eq.${resolvedUid}`);
             }
