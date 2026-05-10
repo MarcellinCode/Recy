@@ -114,7 +114,7 @@ export default function MyWastePage() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-16 min-h-screen pb-24 bg-zinc-950">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-24 min-h-screen pb-24 bg-zinc-950">
             <header className="mb-16 relative">
                 <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -z-10" />
                 
@@ -157,7 +157,7 @@ export default function MyWastePage() {
 
                 {/* Tabs Switcher Glassmorphism */}
                 <div className="p-1.5 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden">
-                    <div className="flex overflow-x-auto no-scrollbar">
+                    <div className="flex overflow-x-auto hide-scrollbar">
                         {tabs.map((tab) => {
                             const count = wastes.filter(w => w.status === tab.id).length;
                             const isActive = activeTab === tab.id;

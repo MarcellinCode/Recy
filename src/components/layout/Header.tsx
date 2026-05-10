@@ -134,9 +134,9 @@ export function Header() {
 
     return (
         <header className={cn(
-            "sticky top-0 z-50 w-full border-b backdrop-blur-md transition-all duration-500",
+            "sticky top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-500",
             isDarkRole 
-                ? "border-white/5 bg-zinc-950/80 text-white shadow-2xl" 
+                ? "border-white/5 bg-zinc-950/40 text-white shadow-2xl" 
                 : "border-gray-100 bg-white/80 dark:border-zinc-800 dark:bg-zinc-950/80"
         )}>
             <div className="flex items-center justify-between h-16 px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
