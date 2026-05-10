@@ -27,16 +27,24 @@ export default function MyWastePage() {
     ];
 
     // Extracted fetch function so it can be reused by realtime callback
-    const fetchWastes = async (uid?: string) => {
+    const fetchWastes = async (uid?: string, profile?: any) => {
         try {
             const resolvedUid = uid ?? userId;
+            const activeProfile = profile ?? userProfile;
             if (!resolvedUid) return;
 
-            const { data, error } = await supabase
+            let query = supabase
                 .from('wastes')
-                .select('*, waste_types(name, emoji)')
-                .or(`seller_id.eq.${resolvedUid},collector_id.eq.${resolvedUid}`)
+                .select('*, waste_types(name, emoji), profiles!seller_id(city)')
                 .order('created_at', { ascending: false });
+
+            if (activeProfile?.role === 'mairie' && activeProfile?.city) {
+                query = query.eq('profiles!seller_id.city', activeProfile.city);
+            } else {
+                query = query.or(`seller_id.eq.${resolvedUid},collector_id.eq.${resolvedUid}`);
+            }
+
+            const { data, error } = await query;
 
             if (error) throw error;
             setWastes(data || []);
@@ -63,14 +71,14 @@ export default function MyWastePage() {
             // Fetch profile
             const { data: profile } = await supabase
                 .from('profiles')
-                .select('id, role')
+                .select('id, role, city')
                 .eq('id', user.id)
                 .maybeSingle();
 
             setUserProfile(profile);
 
             // Initial fetch
-            await fetchWastes(user.id);
+            await fetchWastes(user.id, profile);
 
             // ✅ Realtime sync — mise à jour auto sans refresh
             const channel = supabase
@@ -78,7 +86,7 @@ export default function MyWastePage() {
                 .on(
                     'postgres_changes',
                     { event: '*', schema: 'public', table: 'wastes' },
-                    () => fetchWastes(user.id)
+                    () => fetchWastes(user.id, profile)
                 )
                 .subscribe();
 
@@ -100,12 +108,14 @@ export default function MyWastePage() {
                 <div>
                     <h1 className="text-4xl font-black text-gray-900 dark:text-white flex items-center gap-3 tracking-tight uppercase">
                         <Trash2 className="w-8 h-8 text-primary" />
-                        Mes Déchets
+                        {userProfile?.role === 'mairie' ? "Stock Urbain" : "Mes Déchets"}
                     </h1>
                     <p className="text-gray-500 dark:text-gray-400 text-sm mt-2 font-medium">
-                        {userProfile?.role === 'collecteur'
-                            ? "Historique des lots que vous avez réservés ou collectés."
-                            : "Suivez en temps réel l'état de vos collectes et vos gains."}
+                        {userProfile?.role === 'mairie' 
+                            ? `Supervision des flux de déchets • ${userProfile?.city}`
+                            : userProfile?.role === 'collecteur'
+                                ? "Historique des lots que vous avez réservés ou collectés."
+                                : "Suivez en temps réel l'état de vos collectes et vos gains."}
                     </p>
                 </div>
                 {userProfile?.role !== 'collecteur' && (
@@ -194,15 +204,19 @@ export default function MyWastePage() {
                     <div className="w-24 h-24 bg-gray-50 dark:bg-zinc-900 rounded-[2rem] flex items-center justify-center mb-6 shadow-inner">
                         <Search className="w-10 h-10 text-gray-300" />
                     </div>
-                    <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-2">Aucun déchet trouvé</h3>
+                    <h3 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tight mb-2">
+                        {userProfile?.role === 'mairie' ? "Aucun flux détecté" : "Aucun déchet trouvé"}
+                    </h3>
                     <p className="text-gray-500 dark:text-gray-400 text-sm max-w-xs mx-auto font-medium leading-relaxed">
-                        C'est un bon début pour l'environnement ! <br /> Publiez votre premier lot pour commencer à gagner.
+                        {userProfile?.role === 'mairie' 
+                            ? `Il n'y a actuellement aucun lot de déchets actifs à ${userProfile?.city}.`
+                            : "C'est un bon début pour l'environnement ! Publiez votre premier lot pour commencer à gagner."}
                     </p>
                     <button
-                        onClick={() => navigateSafe(router, ROUTES.MARKETPLACE_PUBLISH)}
+                        onClick={() => userProfile?.role === 'mairie' ? fetchWastes() : navigateSafe(router, ROUTES.MARKETPLACE_PUBLISH)}
                         className="mt-8 px-8 py-4 bg-primary/10 text-primary font-black rounded-2xl hover:bg-primary hover:text-white transition-all text-xs uppercase tracking-widest"
                     >
-                        Publiez maintenant
+                        {userProfile?.role === 'mairie' ? "Rafraîchir la vue" : "Publiez maintenant"}
                     </button>
                 </div>
             )}
