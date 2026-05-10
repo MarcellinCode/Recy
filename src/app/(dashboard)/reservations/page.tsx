@@ -80,8 +80,8 @@ export default function ReservationsPage() {
 
                 // Logique de filtrage par rôle
                 if (profile?.role === 'mairie' && profile?.city) {
-                    // La mairie voit tout ce qui se passe dans sa ville
-                    query = query.ilike('seller.city', `%${profile.city}%`);
+                    // Filtrage strict par commune (exact match)
+                    query = query.eq('seller.city', profile.city);
                 } else {
                     // Un utilisateur normal ne voit que ses propres réservations
                     query = query.or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`);
@@ -114,76 +114,94 @@ export default function ReservationsPage() {
             <div className="flex flex-col items-center justify-center min-h-screen gap-6 bg-zinc-950">
                 <div className="relative">
                     <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                    <div className="absolute inset-0 blur-xl bg-primary/20 animate-pulse" />
+                    <div className="absolute inset-0 blur-3xl bg-primary/30 animate-pulse" />
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 animate-pulse">Synchronisation de vos réservations...</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 animate-pulse">Synchronisation sécurisée...</p>
             </div>
         );
     }
 
     return (
         <div className="max-w-4xl mx-auto px-4 py-8 sm:py-16 min-h-screen pb-24">
-            <header className="mb-12 relative">
-                <div className="absolute -top-20 -left-20 w-64 h-64 bg-primary/5 rounded-full blur-3xl -z-10" />
-                <div className="flex items-center gap-6 mb-8">
-                    <Link href="/dashboard" className="w-12 h-12 flex items-center justify-center bg-white dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 rounded-2xl shadow-sm hover:shadow-md hover:-translate-x-1 transition-all">
-                        <ArrowLeft className="w-5 h-5 dark:text-white" />
+            <header className="mb-16 relative">
+                <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -z-10" />
+                
+                <div className="flex items-center gap-6 mb-12">
+                    <Link href="/dashboard" className="group w-14 h-14 flex items-center justify-center bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl hover:bg-primary/20 hover:border-primary/50 transition-all">
+                        <ArrowLeft className="w-6 h-6 text-white group-hover:-translate-x-1 transition-transform" />
                     </Link>
-                    <div className="h-px flex-1 bg-gradient-to-r from-zinc-200 dark:from-zinc-800 to-transparent" />
+                    <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
                 </div>
 
-                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 mb-10">
+                <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-8 mb-12">
                     <div>
-                        <h1 className="text-4xl sm:text-6xl font-black uppercase tracking-tighter dark:text-white leading-[0.85]">
-                            {currentUser?.role === 'mairie' ? "Supervision" : "Suivi des"} <br />
-                            <span className="text-primary italic text-3xl sm:text-5xl">Réservations</span>
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-2 h-2 bg-primary rounded-full animate-ping" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Live Monitor</span>
+                        </div>
+                        <h1 className="text-5xl sm:text-7xl font-black uppercase tracking-tighter text-white leading-[0.8] mb-2">
+                            {currentUser?.role === 'mairie' ? "Supervision" : "Mes"} <br />
+                            <span className="text-primary italic font-serif">Réservations</span>
                         </h1>
                     </div>
                     
-                    <div className="flex items-center gap-4 bg-zinc-50 dark:bg-zinc-800/50 p-2 rounded-[1.5rem] border border-zinc-100 dark:border-zinc-800">
-                        <div className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-100 dark:border-zinc-800">
-                            <span className="text-[10px] font-black uppercase text-zinc-400 block leading-none mb-1">
-                                {currentUser?.role === 'mairie' ? "Total Ville" : "Total Actif"}
-                            </span>
-                            <span className="text-xl font-black italic dark:text-white leading-none">{reservations.length}</span>
-                        </div>
+                    <div className="bg-white/5 backdrop-blur-md p-4 rounded-[2rem] border border-white/10 shadow-2xl">
+                        <p className="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-1 leading-none">
+                            {currentUser?.role === 'mairie' ? "Activité Ville" : "Total Actif"}
+                        </p>
+                        <p className="text-4xl font-black italic text-white leading-none tracking-tighter">
+                            {reservations.length.toString().padStart(2, '0')}
+                        </p>
                     </div>
                 </div>
 
-                {/* Tab Switcher */}
-                <div className="flex bg-white dark:bg-zinc-900 p-1.5 rounded-[2.2rem] border border-zinc-100 dark:border-zinc-800 shadow-xl shadow-zinc-200/20 dark:shadow-none relative z-10">
+                {/* Tab Switcher / Activity Bar */}
+                <div className="relative p-1.5 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    
                     {currentUser?.role === 'mairie' ? (
-                        <div className="flex-1 flex items-center justify-center gap-3 py-4 text-[10px] font-black uppercase tracking-widest text-primary italic">
-                            <Navigation className="w-4 h-4 animate-pulse" />
-                            Activité en temps réel • {currentUser?.city}
+                        <div className="flex items-center justify-between px-8 py-5">
+                            <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+                                    <Navigation className="w-5 h-5 text-primary animate-pulse" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-white">Flux en temps réel</p>
+                                    <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-tight italic">Secteur : {currentUser?.city}</p>
+                                </div>
+                            </div>
+                            <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/20">
+                                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse" />
+                                <span className="text-[8px] font-black uppercase text-primary tracking-widest">Connecté</span>
+                            </div>
                         </div>
                     ) : (
-                        <>
+                        <div className="flex relative z-10">
                             <button 
                                 onClick={() => setCurrentTab("collectes")}
                                 className={cn(
-                                    "flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest transition-all",
+                                    "flex-1 flex items-center justify-center gap-3 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-widest transition-all duration-500",
                                     currentTab === "collectes" 
-                                        ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl" 
-                                        : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                                        ? "bg-white text-zinc-950 shadow-2xl scale-[1.02]" 
+                                        : "text-zinc-500 hover:text-white"
                                 )}
                             >
-                                <CalendarDays className={cn("w-4 h-4", currentTab === "collectes" ? "animate-bounce" : "")} />
+                                <CalendarDays className="w-4 h-4" />
                                 Mes Collectes
                             </button>
                             <button 
                                 onClick={() => setCurrentTab("ventes")}
                                 className={cn(
-                                    "flex-1 flex items-center justify-center gap-3 py-4 rounded-[1.8rem] text-[10px] font-black uppercase tracking-widest transition-all",
+                                    "flex-1 flex items-center justify-center gap-3 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-widest transition-all duration-500",
                                     currentTab === "ventes" 
-                                        ? "bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-xl" 
-                                        : "text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                                        ? "bg-white text-zinc-950 shadow-2xl scale-[1.02]" 
+                                        : "text-zinc-500 hover:text-white"
                                 )}
                             >
-                                <Package className={cn("w-4 h-4", currentTab === "ventes" ? "animate-bounce" : "")} />
+                                <Package className="w-4 h-4" />
                                 Mes Ventes
                             </button>
-                        </>
+                        </div>
                     )}
                 </div>
             </header>
@@ -191,11 +209,11 @@ export default function ReservationsPage() {
             <AnimatePresence mode="wait">
                 {filteredReservations.length > 0 ? (
                     <motion.div 
-                        key={currentTab}
-                        initial={{ opacity: 0, y: 10 }}
+                        key={currentUser?.role === 'mairie' ? 'mairie' : currentTab}
+                        initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        className="space-y-4"
+                        exit={{ opacity: 0, y: -20 }}
+                        className="space-y-6"
                     >
                         {filteredReservations.map((res) => (
                             <ReservationCard key={res.id} reservation={res} role={currentUser?.role === 'mairie' ? 'mairie' : currentTab} onFinalized={() => {
