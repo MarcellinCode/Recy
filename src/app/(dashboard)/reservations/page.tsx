@@ -102,10 +102,11 @@ export default function ReservationsPage() {
     }, []);
 
     const filteredReservations = reservations.filter(res => {
-        if (currentUser?.role === 'mairie') return true; // La mairie voit tout le résultat de la requête
+        if (!currentUser) return false;
+        if (currentUser.role === 'mairie') return true;
         return currentTab === "collectes" 
-            ? res.collector?.id === currentUser?.id 
-            : res.seller?.id === currentUser?.id;
+            ? res.collector?.id === currentUser.id 
+            : res.seller?.id === currentUser.id;
     });
 
     if (loading) {
@@ -303,7 +304,7 @@ function ReservationCard({ reservation, role, onFinalized }: { reservation: Rese
                                     <>
                                         <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Binôme</span>
                                         <span className="text-[10px] font-black uppercase dark:text-zinc-200">
-                                            {reservation.seller.full_name} → {reservation.collector?.full_name || "En recherche"}
+                                            {reservation.seller?.full_name || "Vendeur inconnu"} → {reservation.collector?.full_name || "En recherche"}
                                         </span>
                                     </>
                                 ) : (
