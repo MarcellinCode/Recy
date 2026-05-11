@@ -166,10 +166,10 @@ export function Header() {
                                 key={link.href}
                                 href={link.href}
                                 className={cn(
-                                    "text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 hover:text-primary relative flex items-center gap-2",
+                                    "text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 relative flex items-center gap-2 px-3 py-2 rounded-xl",
                                     isActive 
-                                        ? "text-primary bg-primary/10 px-4 py-2 rounded-xl shadow-lg shadow-primary/10" 
-                                        : (isDarkRole ? "text-zinc-400 hover:text-white" : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white")
+                                        ? "text-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-500/5" 
+                                        : (isDarkRole ? "text-white/60 hover:text-white hover:bg-white/5" : "text-zinc-900/60 hover:text-zinc-900 hover:bg-zinc-900/5")
                                 )}
                             >
                                 {link.label}
