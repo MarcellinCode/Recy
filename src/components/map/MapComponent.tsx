@@ -256,7 +256,7 @@ export default function MapComponent({
             }
 
             try {
-                setWastes((wastesData || []).filter(w => w.latitude && w.longitude));
+                setWastes((wastesData || []).filter((w: any) => w.latitude && w.longitude));
             } catch (e) { console.error("Map: Error processing wastes", e); }
             
             setLoading(false);
