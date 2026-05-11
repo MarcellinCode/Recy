@@ -165,9 +165,11 @@ export function Header() {
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                 className={cn(
-                                    "text-sm font-bold uppercase tracking-widest transition-colors hover:text-primary relative flex items-center gap-1.5",
-                                    isActive ? "text-primary" : (isDarkRole ? "text-zinc-400" : "text-gray-500 dark:text-gray-400")
+                                className={cn(
+                                    "text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-300 hover:text-primary relative flex items-center gap-2",
+                                    isActive 
+                                        ? "text-primary bg-primary/10 px-4 py-2 rounded-xl shadow-lg shadow-primary/10" 
+                                        : (isDarkRole ? "text-zinc-400 hover:text-white" : "text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white")
                                 )}
                             >
                                 {link.label}
@@ -196,9 +198,15 @@ export function Header() {
                             <div className="hidden md:flex items-center gap-3">
                                 <Link
                                     href="/profil"
-                                    className="flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 transition-all dark:bg-zinc-800 dark:text-gray-200"
+                                    className={cn(
+                                        "flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all",
+                                        isDarkRole 
+                                            ? "bg-zinc-900 border border-white/10 text-white hover:bg-zinc-800" 
+                                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-zinc-800 dark:text-gray-200"
+                                    )}
+                                    style={{ borderRadius: '14px' }}
                                 >
-                                    {role === 'mairie' ? <School className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> : role === 'entreprise' || role === 'organisation_admin' ? <Building2 className="w-4 h-4 text-indigo-600 dark:text-indigo-400" /> : role === 'agent_police_verte' ? <img src="/images/police_verte_logo.png" alt="Police Verte" className="w-4 h-4 object-contain" /> : <UserIcon className="w-4 h-4" />}
+                                    {role === 'mairie' ? <School className="w-4 h-4 text-emerald-500" /> : role === 'entreprise' || role === 'organisation_admin' ? <Building2 className="w-4 h-4 text-indigo-400" /> : role === 'agent_police_verte' ? <img src="/images/police_verte_logo.png" alt="Police Verte" className="w-4 h-4 object-contain" /> : <UserIcon className="w-4 h-4" />}
                                     {user.user_metadata?.full_name?.split(' ')[0] || "Profil"}
                                 </Link>
                                 <button
