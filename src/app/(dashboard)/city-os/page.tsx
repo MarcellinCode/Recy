@@ -1,41 +1,7 @@
 "use client";
 
-import { 
-    MapPin, 
-    Navigation,
-    Plus, 
-    Search, 
-    Filter, 
-    CheckCircle2, 
-    XCircle, 
-    Clock, 
-    ArrowUpRight,
-    Building2,
-    ShieldCheck,
-    Activity,
-    Trash2,
-    AlertOctagon,
-    Megaphone,
-    Gavel,
-    ShieldAlert,
-    BarChart3,
-    FileDown,
-    Truck,
-    Lock,
-    Leaf,
-    Globe,
-    TrendingUp,
-    DollarSign,
-    Eye,
-    FileText,
-    Calendar,
-    Printer,
-    AlertTriangle,
-    Zap,
-    Star,
-    Handshake
-} from "lucide-react";
-import { useState, useEffect, Suspense } from "react";
+import { MapPin, Navigation, Plus, Search, Filter, CheckCircle2, XCircle, Clock, ArrowUpRight, Building2, ShieldCheck, Activity, Trash2, AlertOctagon, Megaphone, Gavel, ShieldAlert, BarChart3, FileDown, Truck, Lock, Leaf, Globe, TrendingUp, DollarSign, Eye, FileText, Calendar, Printer, AlertTriangle, Zap, Star, Handshake } from "lucide-react";
+import React, { useState, useEffect, Suspense } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { createTender, awardTender } from "@/app/actions/tenders";
@@ -800,7 +766,11 @@ function MairieDashboardContent() {
                             <motion.div key="police" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="space-y-10">
                                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                                     <div className="lg:col-span-3 h-[600px] rounded-[4rem] overflow-hidden border border-zinc-200 bg-white relative shadow-2xl shadow-zinc-200/20">
-                                        <div className="absolute inset-0 z-0"><MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} /></div>
+                                        <div className="absolute inset-0 z-0">
+                                            <RadarErrorBoundary>
+                                                <MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} />
+                                            </RadarErrorBoundary>
+                                        </div>
                                         <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
                                             <div className="w-[500px] h-[500px] border border-red-500/10 rounded-full animate-ping opacity-20" />
                                             <div className="absolute w-[300px] h-[300px] border border-red-500/20 rounded-full animate-pulse opacity-20" />
@@ -1356,6 +1326,36 @@ function KPIStoreCard({ label, value, icon: Icon, trend, color, progress, isAler
             </div>
         </motion.div>
     );
+}
+
+// --- Error Boundary for the Map ---
+class RadarErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+    constructor(props: { children: React.ReactNode }) {
+        super(props);
+        this.state = { hasError: false };
+    }
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+    componentDidCatch(error: any, errorInfo: any) {
+        console.error("Radar Error Boundary caught:", error, errorInfo);
+    }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="w-full h-[70vh] rounded-[3rem] bg-zinc-900 border border-red-500/20 flex flex-col items-center justify-center gap-4">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-red-500">Erreur d'initialisation du moteur radar</p>
+                    <button 
+                        onClick={() => this.setState({ hasError: false })}
+                        className="px-6 py-2 bg-red-500/10 text-red-500 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-red-500/20 transition-all"
+                    >
+                        Réinitialiser le radar
+                    </button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
 }
 
 export default function MairieManagementPage() {
