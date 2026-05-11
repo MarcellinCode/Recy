@@ -104,24 +104,20 @@ export const CI_MUNICIPALITIES: Record<string, MunicipalityGeo> = {
  * Retourne les données géographiques par défaut pour une ville de Côte d'Ivoire.
  */
 export function getMunicipalityGeo(name: string): MunicipalityGeo {
-    const cleanName = name.replace(/Mairie de |Commune de |Ville de /gi, "").trim();
+    if (!name) return CI_MUNICIPALITIES["Yopougon"]; // Default to Yopougon if empty for safety
+
+    const cleanName = name
+        .replace(/Mairie de |Commune de |Ville de /gi, "")
+        .trim()
+        .toLowerCase();
     
+    // Recherche par correspondance exacte ou inclusion
     const match = Object.keys(CI_MUNICIPALITIES).find(k => 
-        cleanName.toLowerCase().includes(k.toLowerCase())
+        cleanName.includes(k.toLowerCase()) || k.toLowerCase().includes(cleanName)
     );
 
     if (match) return CI_MUNICIPALITIES[match];
 
-    // Fallback Abidjan Centre (Plateau)
-    return {
-        center: [5.3200, -4.0200],
-        zoom: 12,
-        boundaries: [
-            [-4.0197 - 0.05, 5.3484 - 0.05],
-            [-4.0197 + 0.05, 5.3484 - 0.05],
-            [-4.0197 + 0.05, 5.3484 + 0.05],
-            [-4.0197 - 0.05, 5.3484 + 0.05],
-            [-4.0197 - 0.05, 5.3484 - 0.05]
-        ]
-    };
+    // Fallback Abidjan Centre (Yopougon par défaut pour cette instance)
+    return CI_MUNICIPALITIES["Yopougon"];
 }
