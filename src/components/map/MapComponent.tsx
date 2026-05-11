@@ -185,13 +185,13 @@ export default function MapComponent({
             // 1. Récupérer les déchets et types avec filtrage par ville
             let wastesQuery = supabase
                 .from('wastes')
-                .select('*, waste_types(*), profiles!seller_id!inner(city)')
+                .select('*, waste_types(*), seller:profiles!seller_id!inner(city)')
                 .in('status', ['published', 'reserved'])
                 .not('latitude', 'is', null)
                 .not('longitude', 'is', null);
 
             if (targetCity) {
-                wastesQuery = wastesQuery.eq('profiles.city', targetCity);
+                wastesQuery = wastesQuery.eq('seller.city', targetCity);
             }
 
             const { data: wastesData } = await wastesQuery;
