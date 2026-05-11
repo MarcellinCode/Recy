@@ -222,7 +222,12 @@ function MairieDashboardContent() {
             
             // Correction des jointures Supabase (Syntaxe PostgREST propre)
             const { data: sanctionsData } = await supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false });
-            const { data: infractionsData } = await supabase.from('environmental_infractions').select('*, zones(name)').order('created_at', { ascending: false });
+            // Filtrage des infractions par les zones de la mairie
+            let infractionsQuery = supabase.from('environmental_infractions').select('*, zones(name)');
+            if (zoneIds.length > 0) {
+                infractionsQuery = infractionsQuery.in('zone_id', zoneIds);
+            }
+            const { data: infractionsData } = await infractionsQuery.order('created_at', { ascending: false });
 
             const enrichedZones = enrichZonesData(zonesData || [], concessionsData || [], profilesData || []);
             const enrichedTenders = enrichTendersData(tendersData || [], bidsData || [], profilesData || []);
