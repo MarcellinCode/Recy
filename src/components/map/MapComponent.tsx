@@ -255,7 +255,10 @@ export default function MapComponent({
                 setZones(zonesData || []);
             }
 
-            setWastes(wastesData || []);
+            try {
+                setWastes((wastesData || []).filter(w => w.latitude && w.longitude));
+            } catch (e) { console.error("Map: Error processing wastes", e); }
+            
             setLoading(false);
         };
 
@@ -311,12 +314,16 @@ export default function MapComponent({
         </div>
     );
 
-    // Calcul du centre et du zoom par défaut
+    // Calcul du centre et du zoom par défaut sécurisé
     const defaultGeo = targetCity ? getMunicipalityGeo(targetCity) : getMunicipalityGeo("Abidjan");
-    const mapCenter: [number, number] = zones.length > 0 && zones[0].latitude && zones[0].longitude 
-        ? [zones[0].latitude, zones[0].longitude] 
-        : defaultGeo.center;
-    const mapZoom = zones.length > 0 ? 13 : defaultGeo.zoom;
+    
+    // Priorité : 1. Zone existante, 2. Ville cible, 3. Abidjan
+    const validZones = zones.filter(z => z.latitude && z.longitude);
+    const mapCenter: [number, number] = validZones.length > 0 
+        ? [validZones[0].latitude!, validZones[0].longitude!] 
+        : (defaultGeo?.center || [5.3484, -4.0197]);
+        
+    const mapZoom = validZones.length > 0 ? 13 : (defaultGeo?.zoom || 12);
 
     return (
         <div className="w-full h-[70vh] rounded-[3rem] overflow-hidden border-4 border-white dark:border-zinc-800 shadow-2xl relative z-0 group">

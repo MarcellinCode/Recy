@@ -234,36 +234,47 @@ function MairieDashboardContent() {
             setSanctions(sanctionsData || []);
             setInfractions(infractionsData || []);
 
-            const agentsRes = await getPoliceAgents();
-            if (agentsRes.success) setPoliceAgents(agentsRes.agents || []);
+            // Sécurisation des appels secondaires pour éviter de bloquer tout le radar
+            try {
+                const agentsRes = await getPoliceAgents();
+                if (agentsRes?.success) setPoliceAgents(agentsRes.agents || []);
+            } catch (e) { console.error("Radar: Error fetching agents", e); }
 
-            const infractionStatsRes = await getInfractionStats();
-            if (infractionStatsRes.success) setInfractionStats(infractionStatsRes.stats);
+            try {
+                const infractionStatsRes = await getInfractionStats();
+                if (infractionStatsRes?.success) setInfractionStats(infractionStatsRes.stats);
+            } catch (e) { console.error("Radar: Error fetching infraction stats", e); }
 
-            const fetchedRates = await getFiscalConfig();
-            setFiscalRates(fetchedRates);
+            try {
+                const fetchedRates = await getFiscalConfig();
+                if (fetchedRates) setFiscalRates(fetchedRates);
+            } catch (e) { console.error("Radar: Error fetching fiscal config", e); }
 
-            const orgsResult = await getOrganizationsForConcession();
-            if (orgsResult.success) {
-                // Filtrer les organisations avec un score critique
-                const enrichedOrgs = (orgsResult.organizations || []).map((org: any) => ({
-                    ...org,
-                    isSuspended: (org.performance_score || 5) < 2.5
-                }));
-                setOrganizations(enrichedOrgs);
-            }
+            try {
+                const orgsResult = await getOrganizationsForConcession();
+                if (orgsResult?.success) {
+                    const enrichedOrgs = (orgsResult.organizations || []).map((org: any) => ({
+                        ...org,
+                        isSuspended: (org.performance_score || 5) < 2.5
+                    }));
+                    setOrganizations(enrichedOrgs);
+                }
+            } catch (e) { console.error("Radar: Error fetching organizations", e); }
 
-            const { data: vehiclesData } = await supabase.from('vehicles').select('*');
-            const { data: posData } = await supabase.from('agent_live_positions').select('*');
-            
-            setVehicles(vehiclesData || []);
-            setFleetPositions(posData || []);
+            try {
+                const { data: vehiclesData } = await supabase.from('vehicles').select('*');
+                const { data: posData } = await supabase.from('agent_live_positions').select('*');
+                setVehicles(vehiclesData || []);
+                setFleetPositions(posData || []);
+            } catch (e) { console.error("Radar: Error fetching fleet data", e); }
 
-            setLiveEvents(prev => [{ id: Date.now(), type: "SYSTÈME", message: "Souveraineté territoriale confirmée.", timestamp: new Date() }, ...prev.slice(0, 5)]);
+            setLiveEvents(prev => [{ id: Date.now(), type: "SYSTÈME", message: "Radar initialisé avec succès.", timestamp: new Date() }, ...prev.slice(0, 5)]);
         } catch (err: any) {
-            console.error("fetchMairieData error:", err?.message);
+            console.error("fetchMairieData CRITICAL error:", err?.message);
+            showToast("Erreur lors du chargement des données radar", "error");
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     }
 
     const handleCreateTender = async (e: React.FormEvent) => {
