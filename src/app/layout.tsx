@@ -9,6 +9,20 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
+// --- SHIELD: Immunize against intrusive browser extensions ---
+if (typeof window !== 'undefined') {
+  (window as any).watchRouteChange = (window as any).watchRouteChange || function() {};
+  const originalDefine = customElements.define;
+  customElements.define = function(name: string, constructor: any, options?: any) {
+    if (name.includes('chat-one') || name.includes('search-side')) {
+      console.warn('🛡️ RecyCla Shield: Blocked intrusive extension element:', name);
+      return;
+    }
+    return originalDefine.call(this, name, constructor, options);
+  };
+}
+// -------------------------------------------------------------
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.citicline.com"),
   title: {
