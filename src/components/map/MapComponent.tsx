@@ -124,6 +124,17 @@ function LocationMarker() {
     );
 }
 
+// Component to automatically adjust map bounds based on markers
+function MapAdjuster({ bounds }: { bounds: L.LatLngBounds | null }) {
+    const map = useMap();
+    useEffect(() => {
+        if (bounds && bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
+        }
+    }, [bounds, map]);
+    return null;
+}
+
 function RadarScanner() {
     return (
         <div className="absolute inset-0 pointer-events-none z-[400] overflow-hidden rounded-[3rem]">
@@ -196,11 +207,20 @@ export default function MapComponent({
 
             const { data: wastesData } = await wastesQuery;
 
-            // Ajout fetch infractions
+            // Ajout fetch infractions avec filtrage
             if (isMairie) {
-                const { data: infractionsData } = await supabase
+                let infractionsQuery = supabase
                     .from('environmental_infractions')
-                    .select('*, profiles:reporter_id(full_name)');
+                    .select('*, profiles:reporter_id(full_name)')
+                    .not('latitude', 'is', null)
+                    .not('longitude', 'is', null);
+                
+                if (targetCity) {
+                    // Si on a la ville, on filtre. On peut aussi filtrer par zone_id si besoin
+                    infractionsQuery = infractionsQuery.eq('city', targetCity);
+                }
+
+                const { data: infractionsData } = await infractionsQuery;
                 setInfractions(infractionsData || []);
             }
 
@@ -307,6 +327,54 @@ export default function MapComponent({
         }
     };
 
+    // Calcul dynamique des limites géographiques (Bounds)
+    const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
+
+    useEffect(() => {
+        if (loading) return;
+
+        const bounds = L.latLngBounds([]);
+        let hasPoints = false;
+
+        // On inclut les déchets
+        wastes.forEach(w => {
+            if (w.latitude && w.longitude) {
+                bounds.extend([w.latitude, w.longitude]);
+                hasPoints = true;
+            }
+        });
+
+        // On inclut les infractions
+        infractions.forEach(i => {
+            if (i.latitude && i.longitude) {
+                bounds.extend([i.latitude, i.longitude]);
+                hasPoints = true;
+            }
+        });
+
+        // On inclut les zones
+        zones.forEach(z => {
+            if (z.latitude && z.longitude) {
+                bounds.extend([z.latitude, z.longitude]);
+                hasPoints = true;
+            }
+        });
+
+        if (hasPoints && bounds.isValid()) {
+            setMapBounds(bounds);
+        } else if (targetCity) {
+            // Fallback sur les coordonnées de la ville si aucun point n'est trouvé
+            const cityGeo = getMunicipalityGeo(targetCity);
+            if (cityGeo) {
+                const cityBounds = L.latLngBounds([
+                    [cityGeo.center[0] - 0.05, cityGeo.center[1] - 0.05],
+                    [cityGeo.center[0] + 0.05, cityGeo.center[1] + 0.05]
+                ]);
+                setMapBounds(cityBounds);
+            }
+        }
+    }, [wastes, infractions, zones, loading, targetCity]);
+
     if (loading) return (
         <div className="w-full h-[70vh] flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-900 rounded-[3rem] border border-gray-100 dark:border-zinc-800">
             <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
@@ -314,16 +382,10 @@ export default function MapComponent({
         </div>
     );
 
-    // Calcul du centre et du zoom par défaut sécurisé
+    // Centre de secours si tout échoue
     const defaultGeo = targetCity ? getMunicipalityGeo(targetCity) : getMunicipalityGeo("Abidjan");
-    
-    // Priorité : 1. Zone existante, 2. Ville cible, 3. Abidjan
-    const validZones = zones.filter(z => z.latitude && z.longitude);
-    const mapCenter: [number, number] = validZones.length > 0 
-        ? [validZones[0].latitude!, validZones[0].longitude!] 
-        : (defaultGeo?.center || [5.3484, -4.0197]);
-        
-    const mapZoom = validZones.length > 0 ? 13 : (defaultGeo?.zoom || 12);
+    const mapCenter: [number, number] = defaultGeo?.center || [5.3484, -4.0197];
+    const mapZoom = defaultGeo?.zoom || 12;
 
     return (
         <div className="w-full h-[70vh] rounded-[3rem] overflow-hidden border-4 border-white dark:border-zinc-800 shadow-2xl relative z-0 group">
@@ -335,6 +397,7 @@ export default function MapComponent({
                 scrollWheelZoom={true}
                 zoomControl={false}
             >
+                <MapAdjuster bounds={mapBounds} />
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
