@@ -1139,9 +1139,17 @@ function MairieDashboardContent() {
                                     <div className="absolute inset-0 bg-red-600/10 opacity-0 group-hover:opacity-100 transition-opacity" />
                                     <h4 className="text-[9px] font-black uppercase text-zinc-500 mb-2 tracking-widest">Type d'Infraction</h4>
                                     <p className="text-3xl font-black italic uppercase tracking-tighter text-red-500 leading-none">{selectedInfraction.type}</p>
-                                    <div className="mt-8 flex items-center gap-3">
-                                        <div className="p-2 bg-white/5 rounded-lg"><MapPin size={12} className="text-zinc-500" /></div>
-                                        <p className="text-[10px] font-bold uppercase text-zinc-300">{selectedInfraction.zones?.name || "Coordonnées GPS directes"}</p>
+                                    <div className="mt-8 space-y-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 bg-white/5 rounded-lg"><MapPin size={12} className="text-zinc-500" /></div>
+                                            <p className="text-[10px] font-bold uppercase text-zinc-300">{selectedInfraction.zones?.name || "Coordonnées GPS directes"}</p>
+                                        </div>
+                                        {selectedInfraction.manual_address && (
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-emerald-500/10 rounded-lg"><Navigation size={12} className="text-emerald-500" /></div>
+                                                <p className="text-[10px] font-black uppercase text-emerald-400 italic">Précision : {selectedInfraction.manual_address}</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
