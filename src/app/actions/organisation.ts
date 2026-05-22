@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase-server";
 import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { revalidatePath } from "next/cache";
-import crypto from "crypto";
+import crypto from "node:crypto";
 
 /**
  * ACTIONS POUR LES ORGANISATIONS (B2B)
@@ -15,7 +15,7 @@ export async function addAgent(formData: any) {
     if (!user) return { success: false, error: "Non connecté" };
 
     const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
-    if (!profile || (profile.subscription_tier !== 'organisation' && profile.subscription_tier !== 'mairie')) {
+    if (profile?.subscription_tier !== 'organisation' && profile?.subscription_tier !== 'mairie') {
         return { success: false, error: "Accès refusé" };
     }
 
@@ -115,7 +115,7 @@ export async function assignAgentToZone(agentId: string, zoneId: string) {
 
     // Vérification de l'abonnement
     const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
-    if (!profile || (profile.subscription_tier !== 'organisation' && profile.subscription_tier !== 'mairie')) {
+    if (profile?.subscription_tier !== 'organisation' && profile?.subscription_tier !== 'mairie') {
         return { success: false, error: "Accès refusé : Abonnement requis pour la gestion tactique." };
     }
 

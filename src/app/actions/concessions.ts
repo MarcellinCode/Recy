@@ -17,7 +17,7 @@ export async function assignConcessionDirectly(data: {
 
     // 1. Vérifier que c'est bien une mairie
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (!profile || profile.role !== 'mairie') {
+    if (profile?.role !== 'mairie') {
         return { success: false, error: "Seule la Mairie peut attribuer des concessions directes." };
     }
 
@@ -143,7 +143,7 @@ export async function getOrganizationsForConcession() {
         let performanceScore = totalCount > 0 ? (successCount / totalCount) * 5 : 0;
         
         // Petit boost si l'entreprise a beaucoup d'agents (capacité de montée en charge)
-        if (org.agent_count && parseInt(org.agent_count) > 10) performanceScore += 0.5;
+        if (org.agent_count && Number.parseInt(org.agent_count, 10) > 10) performanceScore += 0.5;
 
         return {
             ...org,

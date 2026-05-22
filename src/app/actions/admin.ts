@@ -14,7 +14,7 @@ export async function adjustWallet(userId: string, amount: number, isAddition: b
     if (!user) throw new Error("Non authentifié");
 
     const { data: adminProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (!adminProfile || adminProfile.role !== 'super_admin') {
+    if (adminProfile?.role !== 'super_admin') {
         throw new Error("Action non autorisée. Réservée aux Super Admins.");
     }
     
@@ -62,13 +62,13 @@ export async function updateSystemRole(userId: string, newRole: string) {
     if (!user) throw new Error("Non authentifié");
 
     const { data: adminProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (!adminProfile || adminProfile.role !== 'super_admin') {
+    if (adminProfile?.role !== 'super_admin') {
         throw new Error("Action non autorisée. Réservée aux Super Admins.");
     }
 
     // 🛡️ ANTI-MUTINERIE : Empêcher de dégrader un autre Super Admin
     const { data: targetProfile } = await supabase.from('profiles').select('role').eq('id', userId).single();
-    if (targetProfile && targetProfile.role === 'super_admin' && newRole !== 'super_admin') {
+    if (targetProfile?.role === 'super_admin' && newRole !== 'super_admin') {
         throw new Error("Action interdite : Vous ne pouvez pas rétrograder un autre Super Admin.");
     }
     

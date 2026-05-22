@@ -22,7 +22,7 @@ export async function approveWithdrawal(transactionId: string) {
 
         if (fetchError || !tx) throw new Error("Transaction introuvable");
         if (tx.status !== 'Pending') throw new Error("La transaction n'est pas en attente");
-        // if (tx.type !== 'withdrawal') throw new Error("Ceci n'est pas une demande de retrait");
+
 
         const { error: updateError } = await supabase
             .from('transactions')

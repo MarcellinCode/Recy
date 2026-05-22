@@ -1,18 +1,19 @@
 "use client";
 
 import { useState } from "react";
-import { Check, X, Clock, Wallet, AlertTriangle } from "lucide-react";
+import { Check, X, Clock, Wallet } from "lucide-react";
 import { approveWithdrawal, rejectWithdrawal } from "@/app/actions/finance";
 import { showToast } from "@/components/ui/toast";
-import { cn } from "@/lib/utils";
+ 
+interface WithdrawalManagerProps {
+    readonly pendingTransactions: readonly any[];
+    readonly onRefresh: () => void;
+}
 
 export default function WithdrawalManager({ 
     pendingTransactions, 
     onRefresh 
-}: { 
-    pendingTransactions: any[],
-    onRefresh: () => void
-}) {
+}: Readonly<WithdrawalManagerProps>) {
     const [processingId, setProcessingId] = useState<string | null>(null);
 
     const handleApprove = async (id: string) => {

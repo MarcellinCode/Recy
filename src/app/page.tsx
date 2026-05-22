@@ -7,15 +7,6 @@ export default async function Home() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  let profile = null;
-  if (user) {
-    const { data } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .single();
-    profile = data;
-  }
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -319,7 +310,16 @@ export default async function Home() {
   );
 }
 
-function PillarCard({ icon: Icon, title, subtitle, desc, features, color }: any) {
+interface PillarCardProps {
+  readonly icon: React.ComponentType<any>;
+  readonly title: string;
+  readonly subtitle: string;
+  readonly desc: string;
+  readonly features: readonly string[];
+  readonly color: string;
+}
+
+function PillarCard({ icon: Icon, title, subtitle, desc, features, color }: Readonly<PillarCardProps>) {
   return (
     <div className="group relative p-10 bg-gray-50 dark:bg-zinc-900 rounded-[3rem] border border-gray-100 dark:border-zinc-800 hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
       <div className={cn("w-16 h-16 rounded-[1.5rem] flex items-center justify-center mb-8 shadow-lg group-hover:scale-110 transition-transform", color)}>
@@ -344,7 +344,13 @@ function PillarCard({ icon: Icon, title, subtitle, desc, features, color }: any)
   );
 }
 
-function BourseTicker({ name, price, trend }: { name: string, price: string, trend: number }) {
+interface BourseTickerProps {
+  readonly name: string;
+  readonly price: string;
+  readonly trend: number;
+}
+
+function BourseTicker({ name, price, trend }: Readonly<BourseTickerProps>) {
     const isUp = trend > 0;
     return (
         <div className="flex items-center gap-4 px-8 py-3 bg-zinc-800/50 rounded-2xl border border-zinc-700/50">

@@ -10,8 +10,8 @@ const inter = Inter({
 });
 
 // --- SHIELD: Immunize against intrusive browser extensions ---
-if (typeof window !== 'undefined') {
-  (window as any).watchRouteChange = (window as any).watchRouteChange || function() {};
+if (typeof globalThis.window !== 'undefined') {
+  (globalThis.window as any).watchRouteChange = (globalThis.window as any).watchRouteChange || function() {};
   const originalDefine = customElements.define;
   customElements.define = function(name: string, constructor: any, options?: any) {
     if (name.includes('chat-one') || name.includes('search-side')) {

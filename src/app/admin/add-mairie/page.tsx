@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { 
     Landmark, 
     ShieldCheck, 
@@ -20,7 +19,6 @@ import { createMairieAccount } from "@/app/actions/admin-mairie";
 import { showToast } from "@/components/ui/toast";
 
 export default function AddMairiePage() {
-    const router = useRouter();
     const [loading, setLoading] = useState(false);
     const [success, setSuccess] = useState(false);
     const [newMairieId, setNewMairieId] = useState<string | null>(null);
@@ -48,6 +46,7 @@ export default function AddMairiePage() {
                 showToast(res.error || "Erreur lors de la création", "error");
             }
         } catch (error) {
+            console.error("Critical error in handleSubmit:", error);
             showToast("Une erreur critique est survenue", "error");
         } finally {
             setLoading(false);
@@ -141,8 +140,9 @@ export default function AddMairiePage() {
 
                     <div className="space-y-4">
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de la Mairie / Commune</label>
+                            <label htmlFor="municipalityName" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom de la Mairie / Commune</label>
                             <input
+                                id="municipalityName"
                                 required
                                 value={formData.municipalityName}
                                 onChange={(e) => setFormData({...formData, municipalityName: e.target.value})}
@@ -152,8 +152,9 @@ export default function AddMairiePage() {
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Département ou Direction</label>
+                            <label htmlFor="officialDepartment" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Département ou Direction</label>
                             <input
+                                id="officialDepartment"
                                 required
                                 value={formData.officialDepartment}
                                 onChange={(e) => setFormData({...formData, officialDepartment: e.target.value})}
@@ -163,10 +164,11 @@ export default function AddMairiePage() {
                         </div>
 
                         <div className="space-y-1">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville / Zone d'Opération</label>
+                            <label htmlFor="city" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville / Zone d'Opération</label>
                             <div className="relative">
                                 <MapPin className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
                                 <input
+                                    id="city"
                                     required
                                     value={formData.city}
                                     onChange={(e) => setFormData({...formData, city: e.target.value})}
@@ -188,10 +190,11 @@ export default function AddMairiePage() {
                     <div className="flex-1 space-y-6">
                         <div className="space-y-4">
                             <div className="space-y-1">
-                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Email Officiel (.gouv / .ci)</label>
+                                <label htmlFor="email" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Email Officiel (.gouv / .ci)</label>
                                 <div className="relative">
                                     <Mail className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
                                     <input
+                                        id="email"
                                         type="email"
                                         required
                                         value={formData.email}
@@ -204,10 +207,11 @@ export default function AddMairiePage() {
                             </div>
 
                             <div className="space-y-1">
-                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Mot de Passe Initial</label>
+                                <label htmlFor="password" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Mot de Passe Initial</label>
                                 <div className="relative">
                                     <Lock className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
                                     <input
+                                        id="password"
                                         type="password"
                                         required
                                         value={formData.password}
@@ -221,10 +225,11 @@ export default function AddMairiePage() {
                             </div>
 
                             <div className="space-y-1">
-                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Contact Téléphonique Direct</label>
+                                <label htmlFor="phone" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Contact Téléphonique Direct</label>
                                 <div className="relative">
                                     <Phone className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-600" size={18} />
                                     <input
+                                        id="phone"
                                         type="tel"
                                         required
                                         value={formData.phone}

@@ -80,7 +80,7 @@ export default function PrivacyPage() {
     );
 }
 
-function PrivacyCard({ icon: Icon, title, items }: { icon: any; title: string; items: string[] }) {
+function PrivacyCard({ icon: Icon, title, items }: Readonly<{ icon: any; title: string; items: string[] }>) {
     return (
         <div className="p-8 bg-gray-50 dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] space-y-6">
             <div className="flex items-center gap-3">
@@ -90,8 +90,8 @@ function PrivacyCard({ icon: Icon, title, items }: { icon: any; title: string; i
                 <h4 className="text-lg font-black uppercase italic tracking-tighter text-gray-900 dark:text-white">{title}</h4>
             </div>
             <ul className="space-y-3">
-                {items.map((item, i) => (
-                    <li key={i} className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-gray-400">
+                {items.map((item) => (
+                    <li key={item} className="flex items-center gap-3 text-xs font-bold uppercase tracking-widest text-gray-400">
                         <CheckCircle className="w-3 h-3 text-primary" />
                         {item}
                     </li>

@@ -4,11 +4,10 @@ import { useState, use } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
-import { Building2, ArrowRight, Lock, Mail, Loader2, ShieldCheck } from "lucide-react";
+import { ArrowRight, Lock, Mail, Loader2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
 
-export default function MairieConnexionPage({ params }: { params: Promise<{ id: string }> }) {
+export default function MairieConnexionPage({ params }: Readonly<{ params: Promise<{ readonly id: string }> }>) {
     const { id } = use(params);
     const router = useRouter();
     const supabase = createClient();
@@ -34,7 +33,7 @@ export default function MairieConnexionPage({ params }: { params: Promise<{ id: 
         }
 
         // Vérification des droits : l'user connecté a-t-il le droit d'accéder à CETTE mairie ?
-        const { data: profileError } = await supabase
+        const { data: profile } = await supabase
             .from('profiles')
             .select('role, id')
             .eq('id', data.user.id)
@@ -91,10 +90,11 @@ export default function MairieConnexionPage({ params }: { params: Promise<{ id: 
 
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div className="space-y-2 group">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 transition-colors group-focus-within:text-primary">Email Officiel</label>
+                            <label htmlFor="email" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 transition-colors group-focus-within:text-primary">Email Officiel</label>
                             <div className="relative">
                                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors group-focus-within:text-primary" />
                                 <input
+                                    id="email"
                                     type="email"
                                     required
                                     value={email}
@@ -107,10 +107,11 @@ export default function MairieConnexionPage({ params }: { params: Promise<{ id: 
                         </div>
 
                         <div className="space-y-2 group">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 transition-colors group-focus-within:text-primary">Clé d'Accès</label>
+                            <label htmlFor="password" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4 transition-colors group-focus-within:text-primary">Clé d'Accès</label>
                             <div className="relative">
                                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors group-focus-within:text-primary" />
                                 <input
+                                    id="password"
                                     type="password"
                                     required
                                     value={password}

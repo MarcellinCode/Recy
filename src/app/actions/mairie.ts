@@ -2,13 +2,12 @@
 
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { sendNotification } from "./notifications";
 
 export async function dispatchEmergencyAgent(wasteId: string, agentId: string) {
     const cookieStore = await cookies();
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
         {
             cookies: {
                 getAll() {
@@ -19,7 +18,9 @@ export async function dispatchEmergencyAgent(wasteId: string, agentId: string) {
                         cookiesToSet.forEach(({ name, value, options }) =>
                             cookieStore.set(name, value, options)
                         );
-                    } catch (_) {}
+                    } catch (_) {
+                        // Ignored: setting cookies might throw during server-side/static rendering, which is expected.
+                    }
                 },
             },
         }
@@ -60,8 +61,8 @@ export async function dispatchEmergencyAgent(wasteId: string, agentId: string) {
 export async function issueSanction(organizationId: string, type: string, description: string, severity: string = 'medium', penaltyAmount: number = 0) {
     const cookieStore = await cookies();
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
         {
             cookies: {
                 getAll() {
@@ -72,7 +73,9 @@ export async function issueSanction(organizationId: string, type: string, descri
                         cookiesToSet.forEach(({ name, value, options }) =>
                             cookieStore.set(name, value, options)
                         );
-                    } catch (_) {}
+                    } catch (_) {
+                        // Ignored: setting cookies might throw during server-side/static rendering, which is expected.
+                    }
                 },
             },
         }
@@ -113,12 +116,12 @@ export async function issueSanction(organizationId: string, type: string, descri
         }
 
         // Mise à jour du Score de Performance (baisse proportionnelle à la sévérité)
-        const penaltyMap: Record<string, number> = { low: 0.1, medium: 0.25, high: 0.5, critical: 1.0 };
+        const penaltyMap: Record<string, number> = { low: 0.1, medium: 0.25, high: 0.5, critical: 1 };
         const scoreDrop = penaltyMap[severity] || 0.25;
 
         // Récupérer le score actuel
         const { data: profile } = await supabase.from('profiles').select('performance_score').eq('id', organizationId).single();
-        const newScore = Math.max(0, (profile?.performance_score || 5.0) - scoreDrop);
+        const newScore = Math.max(0, (profile?.performance_score || 5) - scoreDrop);
 
         await supabase.from('profiles').update({ performance_score: newScore }).eq('id', organizationId);
 

@@ -149,11 +149,12 @@ export default function FleetPage() {
                         { label: "EN MAINTENANCE", value: stats.maintenance, icon: Wrench, color: "amber" },
                         { label: "ALERTES ENTRETIEN", value: stats.alert, icon: ShieldAlert, color: "red" }
                     ].map((card) => {
-                        const cardBgAndTextColor = card.color === "emerald" 
-                            ? "bg-emerald-500/10 text-emerald-500" 
-                            : card.color === "amber" 
-                                ? "bg-amber-500/10 text-amber-500" 
-                                : "bg-red-500/10 text-red-500";
+                        let cardBgAndTextColor = "bg-red-500/10 text-red-500";
+                        if (card.color === "emerald") {
+                            cardBgAndTextColor = "bg-emerald-500/10 text-emerald-500";
+                        } else if (card.color === "amber") {
+                            cardBgAndTextColor = "bg-amber-500/10 text-amber-500";
+                        }
                         return (
                             <div key={card.label} className="bg-zinc-900/40 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/5 shadow-2xl flex items-center gap-6 group hover:border-white/10 transition-all">
                                 <div className={cn(
@@ -299,11 +300,12 @@ function VehicleCard({ vehicle }: { readonly vehicle: any }) {
     const isInsuranceExpiring = vehicle.insurance_expiry_date ? new Date(vehicle.insurance_expiry_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : false;
     const isInsuranceOverdue = vehicle.insurance_expiry_date ? new Date(vehicle.insurance_expiry_date) < new Date() : false;
 
-    const insuranceColorClass = isInsuranceOverdue 
-        ? "text-red-500" 
-        : isInsuranceExpiring 
-            ? "text-amber-500" 
-            : "text-white";
+    let insuranceColorClass = "text-white";
+    if (isInsuranceOverdue) {
+        insuranceColorClass = "text-red-500";
+    } else if (isInsuranceExpiring) {
+        insuranceColorClass = "text-amber-500";
+    }
 
     return (
         <div className="bg-zinc-900/40 backdrop-blur-xl p-8 rounded-[3rem] border border-white/5 hover:border-emerald-500/30 transition-all group relative overflow-hidden shadow-2xl">

@@ -14,15 +14,14 @@ import {
 import { cn } from "@/lib/utils";
 
 interface PageProps {
-    params: {
-        id: string;
-    };
+    readonly params: Promise<{
+        readonly id: string;
+    }>;
 }
-
-export default async function MairieLandingPage({ params }: PageProps) {
+ 
+export default async function MairieLandingPage({ params }: Readonly<PageProps>) {
     const supabase = await createClient();
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
+    const { id } = await params;
 
     const { data: mairie, error } = await supabase
         .from('profiles')
@@ -167,7 +166,15 @@ export default async function MairieLandingPage({ params }: PageProps) {
     );
 }
 
-function StatCard({ icon: Icon, value, label, color, bg }: { icon: any, value: string, label: string, color: string, bg: string }) {
+interface StatCardProps {
+    readonly icon: React.ComponentType<any>;
+    readonly value: string;
+    readonly label: string;
+    readonly color: string;
+    readonly bg: string;
+}
+
+function StatCard({ icon: Icon, value, label, color, bg }: Readonly<StatCardProps>) {
     return (
         <div className="p-8 bg-zinc-900 rounded-[2.5rem] border border-zinc-800 flex items-center gap-6 group hover:border-zinc-700 transition-colors shadow-2xl">
             <div className={cn("w-16 h-16 rounded-full flex items-center justify-center shrink-0", bg)}>

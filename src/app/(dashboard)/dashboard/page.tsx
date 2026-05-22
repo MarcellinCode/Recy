@@ -212,11 +212,12 @@ export default function DashboardPage() {
         ] : []),
     ];
 
-    const welcomeSubText = activeSub?.plan?.name?.toLowerCase().includes('usine') 
-        ? "Tableau de bord industriel Citicline" 
-        : activeSub?.plan?.name?.toLowerCase().includes('entreprise')
-        ? "Espace de gestion entreprise"
-        : "Prêt pour votre prochaine action écologique ?";
+    let welcomeSubText = "Prêt pour votre prochaine action écologique ?";
+    if (activeSub?.plan?.name?.toLowerCase().includes('usine')) {
+        welcomeSubText = "Tableau de bord industriel Citicline";
+    } else if (activeSub?.plan?.name?.toLowerCase().includes('entreprise')) {
+        welcomeSubText = "Espace de gestion entreprise";
+    }
 
     return (
         <div className="bg-zinc-950 min-h-screen">

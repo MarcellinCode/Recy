@@ -1,4 +1,4 @@
-import { Mail, Phone, MapPin, Send, MessageSquare } from "lucide-react";
+import { Mail, Phone, MapPin, Send } from "lucide-react";
 
 export default function ContactPage() {
     return (
@@ -52,16 +52,18 @@ export default function ContactPage() {
                             <form className="space-y-6">
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Nom Complet</label>
+                                        <label htmlFor="contact-fullname" className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Nom Complet</label>
                                         <input 
+                                            id="contact-fullname"
                                             type="text" 
                                             placeholder="John Doe" 
                                             className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-900 border-none rounded-2xl focus:ring-2 focus:ring-primary/30 transition-all font-medium text-gray-900 dark:text-white"
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Email</label>
+                                        <label htmlFor="contact-email" className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Email</label>
                                         <input 
+                                            id="contact-email"
                                             type="email" 
                                             placeholder="john@example.com" 
                                             className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-900 border-none rounded-2xl focus:ring-2 focus:ring-primary/30 transition-all font-medium text-gray-900 dark:text-white"
@@ -70,8 +72,8 @@ export default function ContactPage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Sujet</label>
-                                    <select className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-900 border-none rounded-2xl focus:ring-2 focus:ring-primary/30 transition-all font-medium text-gray-900 dark:text-white appearance-none">
+                                    <label htmlFor="contact-subject" className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Sujet</label>
+                                    <select id="contact-subject" className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-900 border-none rounded-2xl focus:ring-2 focus:ring-primary/30 transition-all font-medium text-gray-900 dark:text-white appearance-none">
                                         <option>Partenariat Mairie</option>
                                         <option>Support Citoyen</option>
                                         <option>Devenir Collecteur</option>
@@ -80,8 +82,9 @@ export default function ContactPage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Message</label>
+                                    <label htmlFor="contact-message" className="text-[10px] font-black text-gray-400 uppercase tracking-widest pl-2">Message</label>
                                     <textarea 
+                                        id="contact-message"
                                         rows={5} 
                                         placeholder="Comment pouvons-nous vous aider ?" 
                                         className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-900 border-none rounded-2xl focus:ring-2 focus:ring-primary/30 transition-all font-medium text-gray-900 dark:text-white resize-none"
@@ -104,7 +107,7 @@ export default function ContactPage() {
     );
 }
 
-function ContactInfoItem({ icon: Icon, title, value }: { icon: any; title: string; value: string }) {
+function ContactInfoItem({ icon: Icon, title, value }: Readonly<{ icon: any; title: string; value: string }>) {
     return (
         <div className="flex items-start gap-5">
             <div className="p-4 bg-primary/10 rounded-2xl">

@@ -51,6 +51,28 @@ function getFilteredReservations(reservations: Reservation[], currentUser: any, 
     );
 }
 
+async function fetchReservationsData(supabase: any, userId: string, role: string | null, city: string | null) {
+    let query = supabase
+        .from('wastes')
+        .select(`
+            id, status, estimated_weight, location, created_at,
+            waste_types!type_id(name, emoji),
+            seller:profiles!seller_id(id, full_name, city),
+            collector:profiles!collector_id(id, full_name)
+        `)
+        .eq('status', 'reserved');
+
+    if (role === 'mairie' && city) {
+        query = query.ilike('seller.city', `%${city}%`);
+    } else {
+        query = query.or(`seller_id.eq.${userId},collector_id.eq.${userId}`);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) throw error;
+    return data as Reservation[] || [];
+}
+
 export default function ReservationsPage() {
     const supabase = createClient();
     const [currentTab, setCurrentTab] = useState<"collectes" | "ventes">("collectes");
@@ -73,7 +95,6 @@ export default function ReservationsPage() {
                     return;
                 }
 
-                // Récupérer le profil pour connaître le rôle et la ville
                 const { data: profile } = await supabase
                     .from('profiles')
                     .select('role, city')
@@ -83,29 +104,8 @@ export default function ReservationsPage() {
                 const fullUser = { ...user, ...profile };
                 setCurrentUser(fullUser);
 
-                let query = supabase
-                    .from('wastes')
-                    .select(`
-                        id, status, estimated_weight, location, created_at,
-                        waste_types!type_id(name, emoji),
-                        seller:profiles!seller_id(id, full_name, city),
-                        collector:profiles!collector_id(id, full_name)
-                    `)
-                    .eq('status', 'reserved');
-
-                // Logique de filtrage par rôle
-                if (profile?.role === 'mairie' && profile?.city) {
-                    // Filtrage intelligent par commune (contient le nom de la ville)
-                    query = query.ilike('seller.city', `%${profile.city}%`);
-                } else {
-                    // Un utilisateur normal ne voit que ses propres réservations
-                    query = query.or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`);
-                }
-
-                const { data, error } = await query.order('created_at', { ascending: false });
-
-                if (error) throw error;
-                setReservations(data as any[] || []);
+                const data = await fetchReservationsData(supabase, user.id, profile?.role || null, profile?.city || null);
+                setReservations(data);
             } catch (err) {
                 console.error("Erreur lors de la récupération des réservations:", err);
                 showToast("Erreur de synchronisation", "error");

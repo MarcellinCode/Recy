@@ -25,7 +25,7 @@ export async function addVehicle(name: string, type: string, regNumber: string, 
 
     // Vérification de l'abonnement
     const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
-    if (!profile || (profile.subscription_tier !== 'organisation' && profile.subscription_tier !== 'mairie')) {
+    if (profile?.subscription_tier !== 'organisation' && profile?.subscription_tier !== 'mairie') {
         return { success: false, error: "Abonnement Organisation ou Mairie requis pour gérer la flotte." };
     }
 
@@ -61,7 +61,7 @@ export async function addMaintenanceLog(vehicleId: string, type: string, descrip
 
     // Vérification de l'abonnement (Elite Requis pour maintenance avancée / Carnet)
     const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
-    if (!profile || profile.subscription_tier !== 'mairie') {
+    if (profile?.subscription_tier !== 'mairie') {
         return { success: false, error: "Plan Mairie Elite requis pour enregistrer des maintenances." };
     }
 

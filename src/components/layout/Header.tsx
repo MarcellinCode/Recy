@@ -3,83 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Menu, X, Leaf, LogOut, User as UserIcon, School, Building2 } from "lucide-react";
+import { Bell, Menu, X, LogOut, User as UserIcon, School, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { User } from "@supabase/supabase-js";
 import { useUnreadBadges } from "@/hooks/useUnreadBadges";
 
-export function Header() {
-    const pathname = usePathname();
-    const router = useRouter();
-    const supabase = createClient();
-    const { unreadMessages, unreadNotifications } = useUnreadBadges();
-
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [user, setUser] = useState<User | null>(null);
-    const [role, setRole] = useState<string | null>(() => {
-        if (typeof window !== 'undefined') {
-            return localStorage.getItem('user-role');
-        }
-        return null;
-    });
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchProfile = async (userId: string) => {
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', userId)
-                .single();
-            
-            const newRole = profile?.role ?? null;
-            setRole(newRole);
-            if (newRole) {
-                localStorage.setItem('user-role', newRole);
-            } else {
-                localStorage.removeItem('user-role');
-            }
-            setLoading(false);
-        };
-
-        const getSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                setUser(session.user);
-                await fetchProfile(session.user.id);
-            } else {
-                setUser(null);
-                setRole(null);
-                localStorage.removeItem('user-role');
-                setLoading(false);
-            }
-        };
-
-        getSession();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
-            if (session?.user) {
-                setUser(session.user);
-                await fetchProfile(session.user.id);
-            } else {
-                setUser(null);
-                setRole(null);
-                localStorage.removeItem('user-role');
-                setLoading(false);
-            }
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
-
-    const handleLogout = async () => {
-        await supabase.auth.signOut();
-        router.push("/connexion");
-        router.refresh();
-    };
-
-    const roleLinks: Record<string, { href: string; label: string; badge?: number }[]> = {
+function getRoleLinks(unreadMessages: number): Record<string, { href: string; label: string; badge?: number }[]> {
+    return {
         vendeur: [
             { href: "/dashboard",   label: "Hub" },
             { href: "/marketplace", label: "Marché" },
@@ -116,9 +47,108 @@ export function Header() {
             { href: "/chat",         label: "Messages", badge: unreadMessages },
         ],
     };
+}
 
+function safeGetRole(): string | null {
+    if (typeof globalThis.window !== 'undefined') {
+        return globalThis.localStorage.getItem('user-role');
+    }
+    return null;
+}
+
+function safeSetRole(newRole: string | null) {
+    if (typeof globalThis.window !== 'undefined') {
+        if (newRole) {
+            globalThis.localStorage.setItem('user-role', newRole);
+        } else {
+            globalThis.localStorage.removeItem('user-role');
+        }
+    }
+}
+
+function getLinkClass(isActive: boolean, isDarkRole: boolean): string {
+    if (isActive) {
+        return "text-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-500/5";
+    }
+    if (isDarkRole) {
+        return "text-white/60 hover:text-white hover:bg-white/5";
+    }
+    return "text-zinc-900/60 hover:text-zinc-900 hover:bg-zinc-900/5";
+}
+
+function renderRoleIcon(role: string | null) {
+    if (role === 'mairie') {
+        return <School className="w-4 h-4 text-emerald-500" />;
+    }
+    if (role === 'entreprise' || role === 'organisation_admin') {
+        return <Building2 className="w-4 h-4 text-indigo-400" />;
+    }
+    if (role === 'agent_police_verte') {
+        return <img src="/images/police_verte_logo.png" alt="Police Verte" className="w-4 h-4 object-contain" />;
+    }
+    return <UserIcon className="w-4 h-4" />;
+}
+
+export function Header() {
+    const pathname = usePathname();
+    const router = useRouter();
+    const supabase = createClient();
+    const { unreadMessages, unreadNotifications } = useUnreadBadges();
+
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [user, setUser] = useState<User | null>(null);
+    const [role, setRole] = useState<string | null>(() => safeGetRole());
+
+    useEffect(() => {
+        const fetchProfile = async (userId: string) => {
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('role')
+                .eq('id', userId)
+                .single();
+            
+            const newRole = profile?.role ?? null;
+            setRole(newRole);
+            safeSetRole(newRole);
+        };
+
+        const getSession = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                setUser(session.user);
+                await fetchProfile(session.user.id);
+            } else {
+                setUser(null);
+                setRole(null);
+                safeSetRole(null);
+            }
+        };
+
+        getSession();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
+            if (session?.user) {
+                setUser(session.user);
+                await fetchProfile(session.user.id);
+            } else {
+                setUser(null);
+                setRole(null);
+                safeSetRole(null);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    const handleLogout = async () => {
+        await supabase.auth.signOut();
+        router.push("/connexion");
+        router.refresh();
+    };
+
+    const links = getRoleLinks(unreadMessages);
     const desktopLinks = user
-        ? (role ? roleLinks[role] : []) ?? []
+        ? (role ? links[role] : []) ?? []
         : [
             { href: "/#features", label: "Fonctionnalités" },
             { href: "/#impact",   label: "Notre Impact" },
@@ -167,9 +197,7 @@ export function Header() {
                                 href={link.href}
                                 className={cn(
                                     "text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 relative flex items-center gap-2 px-3 py-2 rounded-xl",
-                                    isActive 
-                                        ? "text-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-500/5" 
-                                        : (isDarkRole ? "text-white/60 hover:text-white hover:bg-white/5" : "text-zinc-900/60 hover:text-zinc-900 hover:bg-zinc-900/5")
+                                    getLinkClass(isActive, isDarkRole)
                                 )}
                             >
                                 {link.label}
@@ -206,7 +234,7 @@ export function Header() {
                                     )}
                                     style={{ borderRadius: '14px' }}
                                 >
-                                    {role === 'mairie' ? <School className="w-4 h-4 text-emerald-500" /> : role === 'entreprise' || role === 'organisation_admin' ? <Building2 className="w-4 h-4 text-indigo-400" /> : role === 'agent_police_verte' ? <img src="/images/police_verte_logo.png" alt="Police Verte" className="w-4 h-4 object-contain" /> : <UserIcon className="w-4 h-4" />}
+                                    {renderRoleIcon(role)}
                                     {user.user_metadata?.full_name?.split(' ')[0] || "Profil"}
                                 </Link>
                                 <button
@@ -240,16 +268,7 @@ export function Header() {
             {/* Menu Mobile déroulant */}
             {isMobileMenuOpen && (
                 <div className="border-t border-gray-100 md:hidden dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 space-y-4">
-                    {!user ? (
-                        <>
-                            <Link href="/connexion" className="block w-full px-4 py-3 text-center text-xs font-black uppercase tracking-widest text-white rounded-2xl bg-primary">
-                                Se connecter
-                            </Link>
-                            <Link href="/inscription" className="block w-full px-4 py-3 text-center text-xs font-black uppercase tracking-widest text-gray-700 bg-gray-100 rounded-2xl">
-                                Créer un compte
-                            </Link>
-                        </>
-                    ) : (
+                    {user ? (
                         <>
                             <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-zinc-900 rounded-2xl mb-4">
                                 <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
@@ -279,6 +298,15 @@ export function Header() {
                                 <LogOut className="w-4 h-4" />
                                 Déconnexion
                             </button>
+                        </>
+                    ) : (
+                        <>
+                            <Link href="/connexion" className="block w-full px-4 py-3 text-center text-xs font-black uppercase tracking-widest text-white rounded-2xl bg-primary">
+                                Se connecter
+                            </Link>
+                            <Link href="/inscription" className="block w-full px-4 py-3 text-center text-xs font-black uppercase tracking-widest text-gray-700 bg-gray-100 rounded-2xl">
+                                Créer un compte
+                            </Link>
                         </>
                     )}
                 </div>

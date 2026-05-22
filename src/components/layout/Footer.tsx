@@ -87,7 +87,12 @@ export function Footer() {
     );
 }
 
-function SocialLink({ icon: Icon, href }: { icon: any; href: string }) {
+interface SocialLinkProps {
+    readonly icon: React.ComponentType<any>;
+    readonly href: string;
+}
+
+function SocialLink({ icon: Icon, href }: Readonly<SocialLinkProps>) {
     return (
         <a 
             href={href} 
@@ -98,7 +103,12 @@ function SocialLink({ icon: Icon, href }: { icon: any; href: string }) {
     );
 }
 
-function FooterLink({ href, children }: { href: string; children: React.ReactNode }) {
+interface FooterLinkProps {
+    readonly href: string;
+    readonly children: React.ReactNode;
+}
+
+function FooterLink({ href, children }: Readonly<FooterLinkProps>) {
     return (
         <li>
             <Link 

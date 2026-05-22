@@ -7,7 +7,7 @@ import { useEffect, useState, useCallback } from "react";
 import { createClient } from "@/lib/supabase";
 import Link from "next/link";
 import { Truck, MapPin, Package, Navigation, Loader2, Zap, Gavel } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { cn } from "@/lib/utils";
 import { dispatchEmergencyAgent } from "@/app/actions/mairie";
@@ -52,9 +52,36 @@ interface ZoneMarker {
     }[];
 }
 
+function getMainColor(isHotspot: boolean, color: string): string {
+    if (isHotspot) {
+        return "red-600";
+    }
+    if (color === "#22c55e") {
+        return "primary";
+    }
+    return "amber-500";
+}
+
+function getWasteStatusText(isHotspot: boolean, status: string): string {
+    if (isHotspot) {
+        return "POINT NOIR (SLA >48h)";
+    }
+    if (status === "reserved") {
+        return "Réservé";
+    }
+    return "Disponible";
+}
+
+function getDispatchButtonClass(status: string): string {
+    if (status === 'reserved') {
+        return 'bg-gray-100 text-gray-400 dark:bg-zinc-800 dark:text-zinc-600 cursor-not-allowed';
+    }
+    return 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-500 hover:text-white hover:shadow-red-500/20';
+}
+
 // Custom Icon Creator
 const createCustomIcon = (emoji: string, color: string = "#22c55e", isHotspot: boolean = false) => {
-    const mainColor = isHotspot ? 'red-600' : (color === '#22c55e' ? 'primary' : 'amber-500');
+    const mainColor = getMainColor(isHotspot, color);
     const ringClass = isHotspot ? 'bg-red-600 opacity-60 animate-ping border-4 border-red-500 shadow-[0_0_15px_rgba(220,38,38,0.8)]' : `bg-${mainColor} opacity-20 animate-ping`;
     const iconBaseClass = isHotspot ? 'bg-red-50 dark:bg-black border-red-600 shadow-[0_0_20px_rgba(220,38,38,1)] text-2xl' : `bg-white dark:bg-zinc-900 border-${mainColor} shadow-xl text-xl`;
 
@@ -125,10 +152,10 @@ function LocationMarker() {
 }
 
 // Component to automatically adjust map bounds based on markers
-function MapAdjuster({ bounds }: { bounds: L.LatLngBounds | null }) {
+function MapAdjuster({ bounds }: Readonly<{ bounds: L.LatLngBounds | null }>) {
     const map = useMap();
     useEffect(() => {
-        if (bounds && bounds.isValid()) {
+        if (bounds?.isValid()) {
             map.fitBounds(bounds, { padding: [50, 50], maxZoom: 15 });
         }
     }, [bounds, map]);
@@ -177,11 +204,11 @@ export default function MapComponent({
     isMairie = false, 
     targetCity, 
     mairieId 
-}: { 
+}: Readonly<{ 
     isMairie?: boolean;
     targetCity?: string;
     mairieId?: string;
-}) {
+}>) {
     const supabase = createClient();
     const [wastes, setWastes] = useState<WasteMarker[]>([]);
     const [agents, setAgents] = useState<AgentMarker[]>([]);
@@ -251,10 +278,13 @@ export default function MapComponent({
                 ]);
 
                 // 4. Fusionner les données
+                const profilesMap = new Map(profilesRes.data?.map((p: any) => [p.id, p]));
+                const vehiclesMap = new Map(vehiclesRes.data?.map((v: any) => [v.id, v]));
+
                 const enrichedAgents = Object.values(latestPositions).map((pos: any) => ({
                     ...pos,
-                    profiles: profilesRes.data?.find((p: any) => p.id === pos.agent_id),
-                    vehicles: vehiclesRes.data?.find((v: any) => v.id === pos.vehicle_id)
+                    profiles: profilesMap.get(pos.agent_id),
+                    vehicles: vehiclesMap.get(pos.vehicle_id)
                 }));
 
                 setAgents(enrichedAgents as AgentMarker[]);
@@ -408,7 +438,7 @@ export default function MapComponent({
 
                 {/* Affichage des polygones de zone */}
                 {zones.map((zone) => {
-                    if (!zone.boundaries || !zone.boundaries.geometry || !zone.boundaries.geometry.coordinates) return null;
+                    if (!zone.boundaries?.geometry?.coordinates) return null;
                     
                     const isOccupied = zone.status === 'occupied' || zone.status === 'rented';
                     const zoneColor = isOccupied ? "#3b82f6" : "#22c55e";
@@ -443,7 +473,7 @@ export default function MapComponent({
                     maxClusterRadius={50}
                 >
                     {wastes.map((waste) => {
-                        const isSlaBreached = waste.created_at && (new Date().getTime() - new Date(waste.created_at).getTime() > 48 * 3600 * 1000);
+                        const isSlaBreached = waste.created_at && (Date.now() - new Date(waste.created_at).getTime() > 48 * 3600 * 1000);
                         const isHotspot = !!(isMairie && isSlaBreached && waste.status !== 'reserved');
 
                         return (
@@ -471,7 +501,7 @@ export default function MapComponent({
                                             <div>
                                                 <div className="text-[10px] font-black uppercase text-zinc-900 dark:text-white leading-tight mb-0.5">{waste.waste_types?.name}</div>
                                                 <p className={`text-[9px] font-bold uppercase tracking-widest ${isHotspot ? 'text-red-600' : 'text-primary'}`}>
-                                                    {isHotspot ? 'POINT NOIR (SLA >48h)' : (waste.status === 'reserved' ? 'Réservé' : 'Disponible')}
+                                                    {getWasteStatusText(isHotspot, waste.status)}
                                                 </p>
                                             </div>
                                         </div>
@@ -492,7 +522,10 @@ export default function MapComponent({
                                         <button
                                             onClick={() => handleEmergencyDispatch(waste.id, waste.latitude, waste.longitude)}
                                             disabled={waste.status === 'reserved'}
-                                            className={`block w-full py-3 text-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg ${waste.status === 'reserved' ? 'bg-gray-100 text-gray-400 dark:bg-zinc-800 dark:text-zinc-600 cursor-not-allowed' : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-500 hover:text-white hover:shadow-red-500/20'}`}
+                                            className={cn(
+                                                "block w-full py-3 text-center rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg",
+                                                getDispatchButtonClass(waste.status)
+                                            )}
                                         >
                                             <span className="flex justify-center items-center gap-2">
                                                 <Navigation size={12} />

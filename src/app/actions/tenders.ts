@@ -20,7 +20,7 @@ export async function createTender(data: {
 
   // Vérification de l'abonnement
   const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
-  if (!profile || profile.subscription_tier !== 'mairie') {
+  if (profile?.subscription_tier !== 'mairie') {
     return { success: false, error: "Abonnement Mairie Elite requis pour lancer des appels d'offres." };
   }
 
@@ -52,7 +52,7 @@ export async function submitBid(data: {
 
   // Vérification de l'abonnement
   const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
-  if (!profile || (profile.subscription_tier !== 'organisation' && profile.subscription_tier !== 'mairie')) {
+  if (profile?.subscription_tier !== 'organisation' && profile?.subscription_tier !== 'mairie') {
     return { success: false, error: "Abonnement Organisation requis pour soumettre des offres." };
   }
 
@@ -79,7 +79,7 @@ export async function awardTender(tenderId: string, bidId: string, organisationI
 
   // Vérification de l'abonnement
   const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
-  if (!profile || profile.subscription_tier !== 'mairie') {
+  if (profile?.subscription_tier !== 'mairie') {
     return { success: false, error: "Action réservée aux Mairies Elite." };
   }
   

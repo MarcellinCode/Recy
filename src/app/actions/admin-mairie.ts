@@ -71,7 +71,7 @@ export async function createMairieAccount(formData: {
             let lat: number;
             let lng: number;
 
-            if (osmData && osmData.isValidGeometry) {
+            if (osmData?.isValidGeometry) {
                 // On a trouvé les vraies frontières sur OpenStreetMap
                 lat = osmData.center[0];
                 lng = osmData.center[1];

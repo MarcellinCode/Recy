@@ -1,29 +1,45 @@
 "use client";
-
+ 
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { 
     Truck, 
     Battery, 
-    Fuel, 
-    Zap, 
     Wrench, 
     User, 
     MapPin, 
     Activity,
-    AlertCircle,
-    CheckCircle2,
-    Calendar,
     Navigation,
     TrendingUp
 } from "lucide-react";
 
+interface Vehicle {
+    readonly id: string;
+    readonly name: string;
+    readonly registration_number?: string;
+    readonly status?: string;
+    readonly battery_level?: number;
+    readonly load_level?: number;
+    readonly driver_name?: string;
+    readonly next_maintenance_date?: string | Date;
+}
+
+function getLogColorClass(type: string): string {
+    if (type === 'alert') {
+        return "text-amber-500";
+    }
+    if (type === 'critical') {
+        return "text-red-500";
+    }
+    return "text-zinc-400 group-hover:text-white";
+}
+ 
 /**
  * VehicleCard: Carte de télémétrie haute densité Midnight pour une unité de la flotte
  */
-export function VehicleCard({ vehicle, position }: { vehicle: any, position?: any }) {
-    const seed = vehicle.id ? parseInt(vehicle.id.split('-')[0], 16) : 42;
+export function VehicleCard({ vehicle, position }: Readonly<{ vehicle: Vehicle, position?: any }>) {
+    const seed = vehicle.id ? Number.parseInt(vehicle.id.split('-')[0], 16) : 42;
     const batteryLevel = vehicle.battery_level ?? (seed % 40 + 60);
     const loadLevel = vehicle.load_level ?? (seed % 50 + 20);
     
@@ -33,7 +49,7 @@ export function VehicleCard({ vehicle, position }: { vehicle: any, position?: an
         en_maintenance: "text-amber-400 bg-amber-500/10 border-amber-500/20",
         out_of_service: "text-red-400 bg-red-500/10 border-red-500/20"
     };
-
+ 
     return (
         <motion.div 
             whileHover={{ y: -5 }}
@@ -42,7 +58,7 @@ export function VehicleCard({ vehicle, position }: { vehicle: any, position?: an
             <div className="absolute -right-6 -top-6 text-white opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
                 <Truck size={140} />
             </div>
-
+ 
             <div className="flex justify-between items-start mb-8 relative z-10">
                 <div className={cn("w-14 h-14 rounded-2xl border flex items-center justify-center shadow-2xl bg-zinc-950", 
                     vehicle.status === 'in_maintenance' ? "text-amber-500 border-amber-500/20" : "text-emerald-500 border-emerald-500/20")}>
@@ -52,12 +68,12 @@ export function VehicleCard({ vehicle, position }: { vehicle: any, position?: an
                     {vehicle.status || "ACTIF"}
                 </div>
             </div>
-
+ 
             <div className="mb-8 relative z-10">
                 <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white leading-none mb-2">{vehicle.name}</h3>
                 <p className="text-[10px] font-black text-emerald-500/50 uppercase tracking-widest">{vehicle.registration_number || "WS-742-CL"}</p>
             </div>
-
+ 
             <div className="grid grid-cols-1 gap-6 mb-8 relative z-10">
                 <div className="space-y-3">
                     <div className="flex justify-between items-center text-[9px] font-black uppercase text-zinc-500 tracking-widest">
@@ -86,7 +102,7 @@ export function VehicleCard({ vehicle, position }: { vehicle: any, position?: an
                     </div>
                 </div>
             </div>
-
+ 
             <div className="pt-6 border-t border-white/5 flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/5 flex items-center justify-center text-zinc-400">
@@ -102,18 +118,18 @@ export function VehicleCard({ vehicle, position }: { vehicle: any, position?: an
         </motion.div>
     );
 }
-
+ 
 /**
  * MaintenanceIntel: Vue d'ensemble de l'état technique Midnight
  */
-export function MaintenanceIntel({ vehicles }: { vehicles: any[] }) {
+export function MaintenanceIntel({ vehicles }: Readonly<{ vehicles: readonly Vehicle[] }>) {
     const maintenanceNeeded = vehicles.filter(v => v.status === 'in_maintenance').length;
     const criticalHealth = vehicles.filter(v => {
         if (!v.next_maintenance_date) return false;
-        const days = Math.floor((new Date(v.next_maintenance_date).getTime() - new Date().getTime()) / (1000 * 3600 * 24));
+        const days = Math.floor((new Date(v.next_maintenance_date).getTime() - Date.now()) / (1000 * 3600 * 24));
         return days < 7;
     }).length;
-
+ 
     return (
         <div className="bg-zinc-900 border border-white/5 p-10 rounded-[3.5rem] shadow-2xl relative overflow-hidden group">
             <Wrench size={180} className="absolute -right-12 -bottom-12 text-white/5 rotate-12 transition-transform group-hover:scale-110" />
@@ -128,7 +144,7 @@ export function MaintenanceIntel({ vehicles }: { vehicles: any[] }) {
                         <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mt-2">ANALYSE TÉLÉMÉTRIQUE</p>
                     </div>
                 </div>
-
+ 
                 <div className="space-y-8">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -152,7 +168,7 @@ export function MaintenanceIntel({ vehicles }: { vehicles: any[] }) {
                         <span className="text-2xl font-black italic text-red-500">{maintenanceNeeded}</span>
                     </div>
                 </div>
-
+ 
                 <Link href="/flotte" className="block w-full mt-12">
                     <button className="w-full py-6 bg-zinc-950 border border-white/5 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:border-emerald-500 transition-all shadow-2xl">
                         Registre de Maintenance
@@ -162,7 +178,7 @@ export function MaintenanceIntel({ vehicles }: { vehicles: any[] }) {
         </div>
     );
 }
-
+ 
 /**
  * TelemetryFeed: Journal live Midnight des logs de la flotte
  */
@@ -173,7 +189,7 @@ export function TelemetryFeed() {
         { id: 3, v: "V-01", msg: "COLLECTE VALIDÉE : TREICHVILLE", time: "14:15", type: "event" },
         { id: 4, v: "V-02", msg: "CRITIQUE : BATT. FAIBLE (15%)", time: "14:12", type: "critical" },
     ];
-
+ 
     return (
         <div className="space-y-6">
             <h3 className="text-[11px] font-black uppercase tracking-[0.4em] text-emerald-500 mb-8 flex items-center gap-4 italic">
@@ -185,7 +201,7 @@ export function TelemetryFeed() {
                         <div className="flex items-center gap-5">
                             <span className="text-[10px] font-black text-white bg-zinc-800 border border-white/10 px-3 py-1.5 rounded-xl">{log.v}</span>
                             <span className={cn("text-[10px] font-black uppercase tracking-tight transition-colors", 
-                                log.type === 'alert' ? "text-amber-500" : log.type === 'critical' ? "text-red-500" : "text-zinc-400 group-hover:text-white"
+                                getLogColorClass(log.type)
                             )}>
                                 {log.msg}
                             </span>
@@ -197,7 +213,7 @@ export function TelemetryFeed() {
         </div>
     );
 }
-
+ 
 /**
  * RouteOptimizationOverlay: Visualisation SVG des trajets IA
  */

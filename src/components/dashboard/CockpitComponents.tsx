@@ -1,9 +1,15 @@
 "use client";
-
+ 
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { LucideIcon, Activity } from "lucide-react";
-import { useEffect, useState } from "react";
+ 
+interface EventType {
+    readonly id?: string | number;
+    readonly type?: string;
+    readonly timestamp?: string | number | Date;
+    readonly message?: string;
+}
 
 /**
  * NeonCard: Une carte futuriste "Souveraine" optimisée pour mode sombre
@@ -15,28 +21,28 @@ export function NeonCard({
     trend, 
     className, 
     color = "emerald" 
-}: { 
+}: Readonly<{ 
     title: string; 
     value: string | number; 
     icon: LucideIcon; 
     trend?: string;
     className?: string;
     color?: "emerald" | "blue" | "amber" | "red";
-}) {
+}>) {
     const colors = {
         emerald: "border-emerald-500/20 text-emerald-400 shadow-emerald-500/5",
         blue: "border-blue-500/20 text-blue-400 shadow-blue-500/5",
         amber: "border-amber-500/20 text-amber-400 shadow-amber-500/5",
         red: "border-red-500/20 text-red-400 shadow-red-500/5"
     };
-
+ 
     const iconBgs = {
         emerald: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
         blue: "bg-blue-500/10 text-blue-500 border-blue-500/20",
         amber: "bg-amber-500/10 text-amber-500 border-amber-500/20",
         red: "bg-red-500/10 text-red-500 border-red-500/20"
     };
-
+ 
     return (
         <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -82,15 +88,15 @@ export function NeonCard({
         </motion.div>
     );
 }
-
+ 
 /**
  * HoloGauge: Jauge circulaire haute visibilité pour mode sombre
  */
-export function HoloGauge({ value, label = "Souveraineté" }: { value: number, label?: string }) {
+export function HoloGauge({ value, label = "Souveraineté" }: Readonly<{ value: number, label?: string }>) {
     const radius = 80;
     const circumference = 2 * Math.PI * radius;
     const offset = circumference - (value / 100) * circumference;
-
+ 
     return (
         <div className="relative flex items-center justify-center w-64 h-64 group">
             {/* Background Circle */}
@@ -155,11 +161,11 @@ export function HoloGauge({ value, label = "Souveraineté" }: { value: number, l
         </div>
     );
 }
-
+ 
 /**
  * LiveTicker: Flux d'événements néon haute visibilité
  */
-export function LiveTicker({ events }: { events: any[] }) {
+export function LiveTicker({ events }: Readonly<{ events: readonly EventType[] }>) {
     return (
         <div className="h-full flex flex-col gap-4 overflow-hidden relative">
             <div className="flex items-center gap-3 mb-4 px-2">
@@ -200,14 +206,14 @@ export function LiveTicker({ events }: { events: any[] }) {
         </div>
     );
 }
-
-export function StatusIndicator({ label, status = "active" }: { label: string, status?: "active" | "warning" | "error" }) {
+ 
+export function StatusIndicator({ label, status = "active" }: Readonly<{ label: string, status?: "active" | "warning" | "error" }>) {
     const colors = {
         active: "bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]",
         warning: "bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]",
         error: "bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]"
     };
-
+ 
     return (
         <div className="flex items-center gap-3 px-5 py-3 bg-zinc-900 border border-white/5 rounded-2xl shadow-xl hover:border-white/10 transition-colors">
             <div className={cn("w-2 h-2 rounded-full animate-pulse", colors[status])} />

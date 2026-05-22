@@ -15,7 +15,10 @@ import {
     UserPlus,
     Trash2,
     X,
-    Loader2
+    Loader2,
+    Banknote,
+    TrendingUp,
+    TrendingDown
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
@@ -23,7 +26,6 @@ import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/Modal";
 import { adjustWallet, updateSystemRole } from "@/app/actions/admin";
-import { Banknote, TrendingUp, TrendingDown, LayoutDashboard } from "lucide-react";
 
 type Profile = {
     id: string;
@@ -336,8 +338,9 @@ export default function UsersPage() {
             >
                 <form onSubmit={handleAddUser} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom Complet</label>
+                        <label htmlFor="addFullName" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom Complet</label>
                         <input 
+                            id="addFullName"
                             required
                             className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all"
                             value={newUser.full_name}
@@ -345,8 +348,9 @@ export default function UsersPage() {
                         />
                     </div>
                     <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Email</label>
+                        <label htmlFor="addEmail" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Email</label>
                         <input 
+                            id="addEmail"
                             required
                             type="email"
                             className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all"
@@ -356,8 +360,9 @@ export default function UsersPage() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Rôle</label>
+                            <label htmlFor="addRole" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Rôle</label>
                             <select 
+                                id="addRole"
                                 className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer"
                                 value={newUser.role}
                                 onChange={(e) => setNewUser({...newUser, role: e.target.value})}
@@ -370,8 +375,9 @@ export default function UsersPage() {
                             </select>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville</label>
+                            <label htmlFor="addCity" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville</label>
                             <input 
+                                id="addCity"
                                 className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all"
                                 value={newUser.city}
                                 onChange={(e) => setNewUser({...newUser, city: e.target.value})}
@@ -396,8 +402,9 @@ export default function UsersPage() {
                 {editingUser && (
                     <form onSubmit={handleUpdateUser} className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom Complet</label>
+                            <label htmlFor="editFullName" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Nom Complet</label>
                             <input 
+                                id="editFullName"
                                 required
                                 className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase"
                                 value={editingUser.full_name}
@@ -406,8 +413,9 @@ export default function UsersPage() {
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Rôle</label>
+                                <label htmlFor="editRole" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Rôle</label>
                                 <select 
+                                    id="editRole"
                                     className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer font-black"
                                     value={editingUser.role}
                                     onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
@@ -421,8 +429,9 @@ export default function UsersPage() {
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Statut</label>
+                                <label htmlFor="editStatus" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Statut</label>
                                 <select 
+                                    id="editStatus"
                                     className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all appearance-none cursor-pointer font-black"
                                     value={editingUser.status}
                                     onChange={(e) => setEditingUser({...editingUser, status: e.target.value})}
@@ -434,8 +443,9 @@ export default function UsersPage() {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville / Zone</label>
+                            <label htmlFor="editCity" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Ville / Zone</label>
                             <input 
+                                id="editCity"
                                 className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all font-black uppercase"
                                 value={editingUser.city || ""}
                                 onChange={(e) => setEditingUser({...editingUser, city: e.target.value})}
@@ -467,10 +477,11 @@ export default function UsersPage() {
                         </div>
 
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Montant de l'opération (FCFA)</label>
+                            <label htmlFor="walletAmount" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Montant de l'opération (FCFA)</label>
                             <div className="relative group">
                                 <Banknote className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={20} />
                                 <input 
+                                    id="walletAmount"
                                     type="number"
                                     placeholder="Ex: 5000"
                                     className="w-full pl-16 pr-6 py-5 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-3xl text-xl font-black outline-none focus:border-primary transition-all"

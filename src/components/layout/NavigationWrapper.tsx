@@ -17,7 +17,6 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
     const isPublicMairie = pathname?.startsWith("/mairie/");
     const shouldHideNav = isSuperAdmin || isPublicMairie;
 
-    const [role, setRole] = useState<string | null>(null);
     const [forceDark, setForceDark] = useState(false);
 
     useEffect(() => {
@@ -25,7 +24,6 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-                setRole(profile?.role || null);
                 if (['mairie', 'entreprise', 'organisation_admin'].includes(profile?.role)) {
                     setForceDark(true);
                 }
