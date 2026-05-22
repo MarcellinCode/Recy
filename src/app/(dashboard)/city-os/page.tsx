@@ -157,10 +157,48 @@ function MairieDashboardContent() {
             if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
                 zonesQuery = zonesQuery.eq('created_by', mairieId);
             }
-            const { data: zonesData } = await zonesQuery;
-            
-            const zoneIds = zonesData?.map((z: any) => z.id) || [];
-            
+
+            // Start all stage 1 parallel queries
+            const [
+                zonesRes,
+                wastesRes,
+                tendersRes,
+                bidsRes,
+                txRes,
+                sanctionsRes,
+                agentsRes,
+                infractionStatsRes,
+                fetchedRates,
+                orgsResult,
+                vehiclesRes,
+                posRes
+            ] = await Promise.all([
+                zonesQuery.catch((e: any) => { console.error("Error fetching zones:", e); return { data: null }; }),
+                supabase.from('wastes').select('id, status, created_at, estimated_weight').catch((e: any) => { console.error("Error fetching wastes:", e); return { data: null }; }),
+                supabase.from('tenders').select('*').eq('mairie_id', mairieId).catch((e: any) => { console.error("Error fetching tenders:", e); return { data: null }; }),
+                supabase.from('tender_bids').select('*').catch((e: any) => { console.error("Error fetching tender bids:", e); return { data: null }; }),
+                supabase.from('transactions').select('*').eq('profile_id', mairieId).order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching transactions:", e); return { data: null }; }),
+                supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching sanctions:", e); return { data: null }; }),
+                getPoliceAgents().catch((e: any) => { console.error("Error fetching agents:", e); return { success: false, agents: [] }; }),
+                getInfractionStats().catch((e: any) => { console.error("Error fetching infraction stats:", e); return { success: false, stats: null }; }),
+                getFiscalConfig().catch((e: any) => { console.error("Error fetching fiscal config:", e); return null; }),
+                getOrganizationsForConcession().catch((e: any) => { console.error("Error fetching organizations:", e); return { success: false, organizations: [] }; }),
+                supabase.from('vehicles').select('*').catch((e: any) => { console.error("Error fetching vehicles:", e); return { data: null }; }),
+                supabase.from('agent_live_positions').select('*').catch((e: any) => { console.error("Error fetching agent live positions:", e); return { data: null }; })
+            ]);
+
+            const zonesData = zonesRes?.data || [];
+            const wastesData = wastesRes?.data || [];
+            const tendersData = tendersRes?.data || [];
+            const bidsData = bidsRes?.data || [];
+            const txData = txRes?.data || [];
+            const sanctionsData = sanctionsRes?.data || [];
+            const vehiclesData = vehiclesRes?.data || [];
+            const posData = posRes?.data || [];
+
+            // Stage 2: Concessions & infractions (which depend on zoneIds from zonesData)
+            const zoneIds = zonesData.map((z: any) => z.id) || [];
+
             let concessionsQuery = supabase.from('concessions').select('*');
             if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
                 if (zoneIds.length > 0) {
@@ -169,76 +207,59 @@ function MairieDashboardContent() {
                     concessionsQuery = concessionsQuery.eq('id', 'NO_DATA_PREVENT_FETCH');
                 }
             }
-            const { data: concessionsData } = await concessionsQuery;
-            
-            const profileIds = [...new Set([
-                ...(concessionsData?.map((c: any) => c.organization_id) || []),
-                ...(concessionsData?.map((c: any) => c.profiles?.id) || [])
-            ].filter(Boolean))];
 
-            let profilesData = [];
-            if (profileIds.length > 0) {
-                const { data } = await supabase.from('profiles').select('id, full_name, role').in('id', profileIds);
-                profilesData = data || [];
-            }
-
-            const { data: wastesData } = await supabase.from('wastes').select('id, status, created_at, estimated_weight');
-            const { data: tendersData } = await supabase.from('tenders').select('*').eq('mairie_id', mairieId);
-            const { data: bidsData } = await supabase.from('tender_bids').select('*');
-            const { data: txData } = await supabase.from('transactions').select('*').eq('profile_id', mairieId).order('created_at', { ascending: false });
-            
-            // Correction des jointures Supabase (Syntaxe PostgREST propre)
-            const { data: sanctionsData } = await supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false });
-            // Filtrage des infractions par les zones de la mairie
             let infractionsQuery = supabase.from('environmental_infractions').select('*, zones(name)');
             if (zoneIds.length > 0) {
                 infractionsQuery = infractionsQuery.in('zone_id', zoneIds);
             }
-            const { data: infractionsData } = await infractionsQuery.order('created_at', { ascending: false });
+            infractionsQuery = infractionsQuery.order('created_at', { ascending: false });
 
-            const enrichedZones = enrichZonesData(zonesData || [], concessionsData || [], profilesData || []);
-            const enrichedTenders = enrichTendersData(tendersData || [], bidsData || [], profilesData || []);
+            const [concessionsRes, infractionsRes] = await Promise.all([
+                concessionsQuery.catch((e: any) => { console.error("Error fetching concessions:", e); return { data: null }; }),
+                infractionsQuery.catch((e: any) => { console.error("Error fetching infractions:", e); return { data: null }; })
+            ]);
 
+            const concessionsData = concessionsRes?.data || [];
+            const infractionsData = infractionsRes?.data || [];
+
+            // Stage 3: Fetch profiles based on concession organization IDs and profiles IDs
+            const profileIds = [...new Set([
+                ...(concessionsData.map((c: any) => c.organization_id) || []),
+                ...(concessionsData.map((c: any) => c.profiles?.id) || [])
+            ].filter(Boolean))];
+
+            let profilesData: any[] = [];
+            if (profileIds.length > 0) {
+                const profilesRes = await supabase.from('profiles').select('id, full_name, role').in('id', profileIds).catch((e: any) => { console.error("Error fetching profiles:", e); return { data: null }; });
+                profilesData = profilesRes?.data || [];
+            }
+
+            // Enrich zones and tenders using resolved values
+            const enrichedZones = enrichZonesData(zonesData, concessionsData, profilesData);
+            const enrichedTenders = enrichTendersData(tendersData, bidsData, profilesData);
+
+            // Update all states
             setZones(enrichedZones);
-            setWastes(wastesData || []);
+            setWastes(wastesData);
             setTenders(enrichedTenders);
-            setTransactions(txData || []);
-            setSanctions(sanctionsData || []);
-            setInfractions(infractionsData || []);
+            setTransactions(txData);
+            setSanctions(sanctionsData);
+            setInfractions(infractionsData);
 
-            // Sécurisation des appels secondaires pour éviter de bloquer tout le radar
-            try {
-                const agentsRes = await getPoliceAgents();
-                if (agentsRes?.success) setPoliceAgents(agentsRes.agents || []);
-            } catch (e) { console.error("Radar: Error fetching agents", e); }
+            if (agentsRes?.success) setPoliceAgents(agentsRes.agents || []);
+            if (infractionStatsRes?.success) setInfractionStats(infractionStatsRes.stats);
+            if (fetchedRates) setFiscalRates(fetchedRates);
+            
+            if (orgsResult?.success) {
+                const enrichedOrgs = (orgsResult.organizations || []).map((org: any) => ({
+                    ...org,
+                    isSuspended: (org.performance_score || 5) < 2.5
+                }));
+                setOrganizations(enrichedOrgs);
+            }
 
-            try {
-                const infractionStatsRes = await getInfractionStats();
-                if (infractionStatsRes?.success) setInfractionStats(infractionStatsRes.stats);
-            } catch (e) { console.error("Radar: Error fetching infraction stats", e); }
-
-            try {
-                const fetchedRates = await getFiscalConfig();
-                if (fetchedRates) setFiscalRates(fetchedRates);
-            } catch (e) { console.error("Radar: Error fetching fiscal config", e); }
-
-            try {
-                const orgsResult = await getOrganizationsForConcession();
-                if (orgsResult?.success) {
-                    const enrichedOrgs = (orgsResult.organizations || []).map((org: any) => ({
-                        ...org,
-                        isSuspended: (org.performance_score || 5) < 2.5
-                    }));
-                    setOrganizations(enrichedOrgs);
-                }
-            } catch (e) { console.error("Radar: Error fetching organizations", e); }
-
-            try {
-                const { data: vehiclesData } = await supabase.from('vehicles').select('*');
-                const { data: posData } = await supabase.from('agent_live_positions').select('*');
-                setVehicles(vehiclesData || []);
-                setFleetPositions(posData || []);
-            } catch (e) { console.error("Radar: Error fetching fleet data", e); }
+            setVehicles(vehiclesData);
+            setFleetPositions(posData);
 
             setLiveEvents(prev => [{ id: Date.now(), type: "SYSTÈME", message: "Radar initialisé avec succès.", timestamp: new Date() }, ...prev.slice(0, 5)]);
         } catch (err: any) {
