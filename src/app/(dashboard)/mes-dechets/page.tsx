@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import Link from "next/link";
-import { Trash2, Plus, Search, MapPin, Calendar, ArrowRight, Loader2 } from "lucide-react";
+import { Plus, Search, MapPin, Calendar, ArrowRight, Loader2 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { navigateSafe } from "@/utils/navigation";
 import { useRouter } from "next/navigation";

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { UserCircle, ArrowLeft, Loader2, Save, Mail, MapPin, User, Camera, Upload } from "lucide-react";
+import { UserCircle, ArrowLeft, Loader2, Save, Mail, MapPin, User, Camera } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ROUTES } from "@/constants/routes";
 import { userService } from "@/services/userService";
@@ -130,6 +130,7 @@ export default function ProfileInfosPage() {
                             )}
                         </div>
                         <label 
+                            htmlFor="avatar-file"
                             className={cn(
                                 "absolute -bottom-2 -right-2 bg-zinc-900 text-white p-2 rounded-xl cursor-pointer hover:bg-primary transition-all shadow-lg border-2 border-white dark:border-zinc-800",
                                 uploading && "opacity-50 pointer-events-none"
@@ -137,6 +138,7 @@ export default function ProfileInfosPage() {
                         >
                             <Camera className="w-4 h-4" />
                             <input 
+                                id="avatar-file"
                                 type="file" 
                                 className="hidden" 
                                 accept="image/*" 
@@ -153,10 +155,11 @@ export default function ProfileInfosPage() {
                 <div className="space-y-6">
                     {/* Nom Complet */}
                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <label htmlFor="fullName" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
                             <User className="w-3 h-3" /> Nom et Prénom
                         </label>
                         <input
+                            id="fullName"
                             type="text"
                             required
                             value={formData.full_name}
@@ -168,10 +171,11 @@ export default function ProfileInfosPage() {
 
                     {/* Ville */}
                     <div className="space-y-3">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <label htmlFor="city" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
                             <MapPin className="w-3 h-3" /> Ville de résidence
                         </label>
                         <input
+                            id="city"
                             type="text"
                             required
                             value={formData.city}
@@ -183,10 +187,11 @@ export default function ProfileInfosPage() {
 
                     {/* Email (Readonly) */}
                     <div className="space-y-3 opacity-60">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
+                        <label htmlFor="email" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-2">
                             <Mail className="w-3 h-3" /> Adresse Email (non modifiable)
                         </label>
                         <input
+                            id="email"
                             type="email"
                             readOnly
                             value={formData.email}

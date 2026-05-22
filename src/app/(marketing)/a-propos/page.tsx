@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Recycle, Target, Eye, ShieldCheck, ArrowRight } from "lucide-react";
+import { Target, Eye, ShieldCheck, ArrowRight } from "lucide-react";
 
 export default function AboutPage() {
     return (
@@ -86,7 +86,7 @@ export default function AboutPage() {
     );
 }
 
-function ValueItem({ title, desc }: { title: string; desc: string }) {
+function ValueItem({ title, desc }: Readonly<{ title: string; desc: string }>) {
     return (
         <div className="space-y-3">
             <h4 className="flex items-center gap-2 text-lg font-black text-gray-900 dark:text-white uppercase italic tracking-tighter">

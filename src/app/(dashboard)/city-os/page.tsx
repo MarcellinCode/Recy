@@ -1,6 +1,6 @@
 "use client";
 
-import { MapPin, Navigation, Plus, Search, Filter, CheckCircle2, XCircle, Clock, ArrowUpRight, Building2, ShieldCheck, Activity, Trash2, AlertOctagon, Megaphone, Gavel, ShieldAlert, BarChart3, FileDown, Truck, Lock, Leaf, Globe, TrendingUp, DollarSign, Eye, FileText, Calendar, Printer, AlertTriangle, Zap, Star, Handshake } from "lucide-react";
+import { MapPin, Navigation, Plus, CheckCircle2, XCircle, ArrowUpRight, Building2, ShieldCheck, Activity, Trash2, AlertOctagon, Megaphone, Gavel, ShieldAlert, BarChart3, Truck, Globe, TrendingUp, DollarSign, FileText, Printer, AlertTriangle, Zap, Search, Filter } from "lucide-react";
 import React, { useState, useEffect, Suspense } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,7 +22,6 @@ import {
     getPoliceAgents 
 } from "@/app/actions/police-agents";
 import { 
-    reportInfraction, 
     updateInfractionStatus, 
     convertInfractionToSanction, 
     getInfractionStats 
@@ -59,6 +58,150 @@ const enrichZonesData = (zonesData: any[], concessionsData: any[], profilesData:
     })) || [];
 };
 
+function getPerformanceBarColor(s: number, score: number, isSuspended: boolean): string {
+    if (s > score) return "bg-zinc-800";
+    return isSuspended ? "bg-red-500" : "bg-emerald-500";
+}
+
+interface MairieRawDataPayload {
+    zones: any[];
+    wastes: any[];
+    tenders: any[];
+    transactions: any[];
+    sanctions: any[];
+    infractions: any[];
+    policeAgents: any[];
+    infractionStats: any;
+    fiscalRates: { commissionRate: number; ecoTaxRate: number } | null;
+    organizations: any[];
+    vehicles: any[];
+    fleetPositions: any[];
+    mairieCity: string;
+}
+
+async function fetchRawMairieData(
+    supabase: any,
+    currentUserProfile: any,
+    targetMairieId: string | null,
+    mairieId: string
+): Promise<MairieRawDataPayload> {
+    let mairieCity = currentUserProfile?.city || "Abidjan";
+    if (currentUserProfile?.role === 'super_admin' && targetMairieId) {
+        const { data: targetProfile } = await supabase
+            .from('profiles')
+            .select('city')
+            .eq('id', targetMairieId)
+            .single();
+        mairieCity = targetProfile?.city || "Abidjan";
+    }
+
+    let zonesQuery = supabase.from('zones').select('*');
+    if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
+        zonesQuery = zonesQuery.eq('created_by', mairieId);
+    }
+
+    // Parallel Stage 1 queries
+    const [
+        zonesRes,
+        wastesRes,
+        tendersRes,
+        bidsRes,
+        txRes,
+        sanctionsRes,
+        agentsRes,
+        infractionStatsRes,
+        fetchedRates,
+        orgsResult,
+        vehiclesRes,
+        posRes
+    ] = await Promise.all([
+        zonesQuery.catch((e: any) => { console.error("Error fetching zones:", e); return { data: null }; }),
+        supabase.from('wastes').select('id, status, created_at, estimated_weight').catch((e: any) => { console.error("Error fetching wastes:", e); return { data: null }; }),
+        supabase.from('tenders').select('*').eq('mairie_id', mairieId).catch((e: any) => { console.error("Error fetching tenders:", e); return { data: null }; }),
+        supabase.from('tender_bids').select('*').catch((e: any) => { console.error("Error fetching tender bids:", e); return { data: null }; }),
+        supabase.from('transactions').select('*').eq('profile_id', mairieId).order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching transactions:", e); return { data: null }; }),
+        supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching sanctions:", e); return { data: null }; }),
+        getPoliceAgents().catch((e: any) => { console.error("Error fetching agents:", e); return { success: false, agents: [] }; }),
+        getInfractionStats().catch((e: any) => { console.error("Error fetching infraction stats:", e); return { success: false, stats: null }; }),
+        getFiscalConfig().catch((e: any) => { console.error("Error fetching fiscal config:", e); return null; }),
+        getOrganizationsForConcession().catch((e: any) => { console.error("Error fetching organizations:", e); return { success: false, organizations: [] }; }),
+        supabase.from('vehicles').select('*').catch((e: any) => { console.error("Error fetching vehicles:", e); return { data: null }; }),
+        supabase.from('agent_live_positions').select('*').catch((e: any) => { console.error("Error fetching agent live positions:", e); return { data: null }; })
+    ]);
+
+    const zonesData = zonesRes?.data || [];
+    const wastesData = wastesRes?.data || [];
+    const tendersData = tendersRes?.data || [];
+    const bidsData = bidsRes?.data || [];
+    const txData = txRes?.data || [];
+    const sanctionsData = sanctionsRes?.data || [];
+    const vehiclesData = vehiclesRes?.data || [];
+    const posData = posRes?.data || [];
+
+    // Stage 2: Concessions & infractions (which depend on zoneIds from zonesData)
+    const zoneIds = zonesData.map((z: any) => z.id) || [];
+
+    let concessionsQuery = supabase.from('concessions').select('*');
+    if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
+        if (zoneIds.length > 0) {
+            concessionsQuery = concessionsQuery.in('zone_id', zoneIds);
+        } else {
+            concessionsQuery = concessionsQuery.eq('id', 'NO_DATA_PREVENT_FETCH');
+        }
+    }
+
+    let infractionsQuery = supabase.from('environmental_infractions').select('*, zones(name)');
+    if (zoneIds.length > 0) {
+        infractionsQuery = infractionsQuery.in('zone_id', zoneIds);
+    }
+    infractionsQuery = infractionsQuery.order('created_at', { ascending: false });
+
+    const [concessionsRes, infractionsRes] = await Promise.all([
+        concessionsQuery.catch((e: any) => { console.error("Error fetching concessions:", e); return { data: null }; }),
+        infractionsQuery.catch((e: any) => { console.error("Error fetching infractions:", e); return { data: null }; })
+    ]);
+
+    const concessionsData = concessionsRes?.data || [];
+    const infractionsData = infractionsRes?.data || [];
+
+    // Stage 3: Fetch profiles based on concession organization IDs and profiles IDs
+    const profileIds = [...new Set([
+        ...(concessionsData.map((c: any) => c.organization_id) || []),
+        ...(concessionsData.map((c: any) => c.profiles?.id) || [])
+    ].filter(Boolean))];
+
+    let profilesData: any[] = [];
+    if (profileIds.length > 0) {
+        const profilesRes = await supabase.from('profiles').select('id, full_name, role').in('id', profileIds).catch((e: any) => { console.error("Error fetching profiles:", e); return { data: null }; });
+        profilesData = profilesRes?.data || [];
+    }
+
+    // Enrich zones and tenders using resolved values
+    const enrichedZones = enrichZonesData(zonesData, concessionsData, profilesData);
+    const enrichedTenders = enrichTendersData(tendersData, bidsData, profilesData);
+
+    const enrichedOrgs = (orgsResult?.success ? orgsResult.organizations || [] : []).map((org: any) => ({
+        ...org,
+        isSuspended: (org.performance_score || 5) < 2.5
+    }));
+
+    return {
+        zones: enrichedZones,
+        wastes: wastesData,
+        tenders: enrichedTenders,
+        transactions: txData,
+        sanctions: sanctionsData,
+        infractions: infractionsData,
+        policeAgents: agentsRes?.success ? agentsRes.agents || [] : [],
+        infractionStats: infractionStatsRes?.success ? infractionStatsRes.stats : null,
+        fiscalRates: fetchedRates,
+        organizations: enrichedOrgs,
+        vehicles: vehiclesData,
+        fleetPositions: posData,
+        mairieCity
+    };
+}
+
 const enrichTendersData = (tendersData: any[], bidsData: any[], profilesData: any[]) => {
     return tendersData?.map((t: any) => ({
         ...t,
@@ -80,7 +223,6 @@ function MairieDashboardContent() {
     const [activeTab, setActiveTab] = useState('overview');
     const [mairieCity, setMairieCity] = useState("");
     const [zones, setZones] = useState<any[]>([]);
-    const [pendingConcessions, setPendingConcessions] = useState<any[]>([]);
     const [wastes, setWastes] = useState<any[]>([]);
     const [tenders, setTenders] = useState<any[]>([]);
     const [transactions, setTransactions] = useState<any[]>([]);
@@ -110,7 +252,7 @@ function MairieDashboardContent() {
     const [isAttributingDirectly, setIsAttributingDirectly] = useState(false);
     const [selectedOrgId, setSelectedOrgId] = useState("");
     const [concessionDuration, setConcessionDuration] = useState(12);
-    const [fiscalRates, setFiscalRates] = useState({ commissionRate: 0.10, ecoTaxRate: 0.02 });
+    const [fiscalRates, setFiscalRates] = useState({ commissionRate: 0.1, ecoTaxRate: 0.02 });
 
     // Sync forms with mairie location
     useEffect(() => {
@@ -144,122 +286,25 @@ function MairieDashboardContent() {
 
             let mairieId = user.id;
             const { data: currentUserProfile } = await supabase.from('profiles').select('role, city').eq('id', user.id).single();
-            
             if (currentUserProfile?.role === 'super_admin' && targetMairieId) {
                 mairieId = targetMairieId;
-                const { data: targetProfile } = await supabase.from('profiles').select('city').eq('id', targetMairieId).single();
-                setMairieCity(targetProfile?.city || "Abidjan");
-            } else {
-                setMairieCity(currentUserProfile?.city || "Abidjan");
             }
 
-            let zonesQuery = supabase.from('zones').select('*');
-            if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
-                zonesQuery = zonesQuery.eq('created_by', mairieId);
-            }
+            const payload = await fetchRawMairieData(supabase, currentUserProfile, targetMairieId, mairieId);
 
-            // Start all stage 1 parallel queries
-            const [
-                zonesRes,
-                wastesRes,
-                tendersRes,
-                bidsRes,
-                txRes,
-                sanctionsRes,
-                agentsRes,
-                infractionStatsRes,
-                fetchedRates,
-                orgsResult,
-                vehiclesRes,
-                posRes
-            ] = await Promise.all([
-                zonesQuery.catch((e: any) => { console.error("Error fetching zones:", e); return { data: null }; }),
-                supabase.from('wastes').select('id, status, created_at, estimated_weight').catch((e: any) => { console.error("Error fetching wastes:", e); return { data: null }; }),
-                supabase.from('tenders').select('*').eq('mairie_id', mairieId).catch((e: any) => { console.error("Error fetching tenders:", e); return { data: null }; }),
-                supabase.from('tender_bids').select('*').catch((e: any) => { console.error("Error fetching tender bids:", e); return { data: null }; }),
-                supabase.from('transactions').select('*').eq('profile_id', mairieId).order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching transactions:", e); return { data: null }; }),
-                supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching sanctions:", e); return { data: null }; }),
-                getPoliceAgents().catch((e: any) => { console.error("Error fetching agents:", e); return { success: false, agents: [] }; }),
-                getInfractionStats().catch((e: any) => { console.error("Error fetching infraction stats:", e); return { success: false, stats: null }; }),
-                getFiscalConfig().catch((e: any) => { console.error("Error fetching fiscal config:", e); return null; }),
-                getOrganizationsForConcession().catch((e: any) => { console.error("Error fetching organizations:", e); return { success: false, organizations: [] }; }),
-                supabase.from('vehicles').select('*').catch((e: any) => { console.error("Error fetching vehicles:", e); return { data: null }; }),
-                supabase.from('agent_live_positions').select('*').catch((e: any) => { console.error("Error fetching agent live positions:", e); return { data: null }; })
-            ]);
-
-            const zonesData = zonesRes?.data || [];
-            const wastesData = wastesRes?.data || [];
-            const tendersData = tendersRes?.data || [];
-            const bidsData = bidsRes?.data || [];
-            const txData = txRes?.data || [];
-            const sanctionsData = sanctionsRes?.data || [];
-            const vehiclesData = vehiclesRes?.data || [];
-            const posData = posRes?.data || [];
-
-            // Stage 2: Concessions & infractions (which depend on zoneIds from zonesData)
-            const zoneIds = zonesData.map((z: any) => z.id) || [];
-
-            let concessionsQuery = supabase.from('concessions').select('*');
-            if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
-                if (zoneIds.length > 0) {
-                    concessionsQuery = concessionsQuery.in('zone_id', zoneIds);
-                } else {
-                    concessionsQuery = concessionsQuery.eq('id', 'NO_DATA_PREVENT_FETCH');
-                }
-            }
-
-            let infractionsQuery = supabase.from('environmental_infractions').select('*, zones(name)');
-            if (zoneIds.length > 0) {
-                infractionsQuery = infractionsQuery.in('zone_id', zoneIds);
-            }
-            infractionsQuery = infractionsQuery.order('created_at', { ascending: false });
-
-            const [concessionsRes, infractionsRes] = await Promise.all([
-                concessionsQuery.catch((e: any) => { console.error("Error fetching concessions:", e); return { data: null }; }),
-                infractionsQuery.catch((e: any) => { console.error("Error fetching infractions:", e); return { data: null }; })
-            ]);
-
-            const concessionsData = concessionsRes?.data || [];
-            const infractionsData = infractionsRes?.data || [];
-
-            // Stage 3: Fetch profiles based on concession organization IDs and profiles IDs
-            const profileIds = [...new Set([
-                ...(concessionsData.map((c: any) => c.organization_id) || []),
-                ...(concessionsData.map((c: any) => c.profiles?.id) || [])
-            ].filter(Boolean))];
-
-            let profilesData: any[] = [];
-            if (profileIds.length > 0) {
-                const profilesRes = await supabase.from('profiles').select('id, full_name, role').in('id', profileIds).catch((e: any) => { console.error("Error fetching profiles:", e); return { data: null }; });
-                profilesData = profilesRes?.data || [];
-            }
-
-            // Enrich zones and tenders using resolved values
-            const enrichedZones = enrichZonesData(zonesData, concessionsData, profilesData);
-            const enrichedTenders = enrichTendersData(tendersData, bidsData, profilesData);
-
-            // Update all states
-            setZones(enrichedZones);
-            setWastes(wastesData);
-            setTenders(enrichedTenders);
-            setTransactions(txData);
-            setSanctions(sanctionsData);
-            setInfractions(infractionsData);
-
-            if (agentsRes?.success) setPoliceAgents(agentsRes.agents || []);
-            if (infractionStatsRes?.success) setInfractionStats(infractionStatsRes.stats);
-            if (fetchedRates) setFiscalRates(fetchedRates);
-            
-            if (orgsResult?.success) {
-                const enrichedOrgs = (orgsResult.organizations || []).map((org: any) => ({
-                    ...org,
-                    isSuspended: (org.performance_score || 5) < 2.5
-                }));
-                setOrganizations(enrichedOrgs);
-            }
-
-            setVehicles(vehiclesData);
-            setFleetPositions(posData);
+            setMairieCity(payload.mairieCity);
+            setZones(payload.zones);
+            setWastes(payload.wastes);
+            setTenders(payload.tenders);
+            setTransactions(payload.transactions);
+            setSanctions(payload.sanctions);
+            setInfractions(payload.infractions);
+            setPoliceAgents(payload.policeAgents);
+            setInfractionStats(payload.infractionStats);
+            if (payload.fiscalRates) setFiscalRates(payload.fiscalRates);
+            setOrganizations(payload.organizations);
+            setVehicles(payload.vehicles);
+            setFleetPositions(payload.fleetPositions);
 
             setLiveEvents(prev => [{ id: Date.now(), type: "SYSTÈME", message: "Radar initialisé avec succès.", timestamp: new Date() }, ...prev.slice(0, 5)]);
         } catch (err: any) {
@@ -413,6 +458,11 @@ function MairieDashboardContent() {
     const now = new Date().getTime();
     const slaBreaches = wastes.filter(w => w.status === 'published' && (now - new Date(w.created_at).getTime() > 48 * 3600 * 1000)).length;
 
+    let actionButtonLabel = "DÉPLOYER NOUVELLE ZONE";
+    if (activeTab === 'fleet') {
+        actionButtonLabel = isIAOptimizing ? "DÉSACTIVER OPTIMISATION" : "LANCER OPTIMISATION IA";
+    }
+
     return (
         <div className="flex h-screen w-full bg-zinc-950 text-white overflow-hidden select-none">
             {/* Sidebar : Live Intel Feed */}
@@ -465,7 +515,7 @@ function MairieDashboardContent() {
                                         : "text-zinc-500 hover:text-white hover:bg-white/5"
                                 )}
                             >
-                                {tab.id === 'police' ? <img src="/images/police_verte_logo.png" className={cn("w-3.5 h-3.5 object-contain", activeTab === 'police' ? "brightness-0 invert" : "")} /> : <tab.icon size={14} />}
+                                {tab.id === 'police' ? <img src="/images/police_verte_logo.png" alt="Police Verte Logo" className={cn("w-3.5 h-3.5 object-contain", activeTab === 'police' ? "brightness-0 invert" : "")} /> : <tab.icon size={14} />}
                                 {tab.label}
                             </button>
                         ))}
@@ -483,7 +533,7 @@ function MairieDashboardContent() {
                                 : "bg-zinc-900 text-white shadow-zinc-900/10"
                         )}
                     >
-                        {activeTab === 'fleet' ? (isIAOptimizing ? "DÉSACTIVER OPTIMISATION" : "LANCER OPTIMISATION IA") : "DÉPLOYER NOUVELLE ZONE"}
+                        {actionButtonLabel}
                     </button>
                 </header>
 
@@ -671,7 +721,7 @@ function MairieDashboardContent() {
                                                                 {[1,2,3,4,5].map(s => (
                                                                     <div key={s} className={cn(
                                                                         "w-3 h-1 rounded-full",
-                                                                        s <= (org.performance_score || 5) ? (org.isSuspended ? "bg-red-500" : "bg-emerald-500") : "bg-zinc-800"
+                                                                        getPerformanceBarColor(s, org.performance_score || 5, org.isSuspended)
                                                                     )} />
                                                                 ))}
                                                             </div>
@@ -749,7 +799,7 @@ function MairieDashboardContent() {
                                                 <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white leading-none">Impact Territorial</h3>
                                                 <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-2">Mesure de la performance environnementale</p>
                                             </div>
-                                            <span className="px-5 py-2.5 bg-emerald-50 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-3 border border-emerald-100 shadow-sm"><img src="/images/police_verte_logo.png" className="w-3.5 h-3.5 object-contain" />Performance ÉCO</span>
+                                            <span className="px-5 py-2.5 bg-emerald-50 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-3 border border-emerald-100 shadow-sm"><img src="/images/police_verte_logo.png" alt="Police Verte Logo" className="w-3.5 h-3.5 object-contain" />Performance ÉCO</span>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                                             <div className="space-y-6">
@@ -777,7 +827,10 @@ function MairieDashboardContent() {
                                             <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4 leading-none">Rapport <br/> Décisionnel</h3>
                                             <p className="text-zinc-500 text-[11px] font-bold uppercase tracking-widest leading-loose mb-10 opacity-60">Accédez à l'analyse complète multicritères et prévisionnelle de votre commune.</p>
                                         </div>
-                                        <button onClick={() => router.push(`/city-os/rapports${targetMairieId ? `?id=${targetMairieId}` : ''}`)} className="w-full py-6 bg-emerald-500 text-white rounded-[2.5rem] text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-4 group-hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20">CONSULTER LE RAPPORT GLOBAL<ArrowUpRight size={18} /></button>
+                                        <button onClick={() => {
+                                            const rapportUrl = targetMairieId ? `/city-os/rapports?id=${targetMairieId}` : "/city-os/rapports";
+                                            router.push(rapportUrl);
+                                        }} className="w-full py-6 bg-emerald-500 text-white rounded-[2.5rem] text-[11px] font-black uppercase tracking-widest flex items-center justify-center gap-4 group-hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-emerald-500/20">CONSULTER LE RAPPORT GLOBAL<ArrowUpRight size={18} /></button>
                                     </div>
                                 </div>
                             </motion.div>
@@ -800,7 +853,7 @@ function MairieDashboardContent() {
                                         {/* Infraction Markers (Simulation visual markers on map) */}
                                         <div className="absolute inset-0 z-20 pointer-events-none p-20">
                                             {infractions.filter(i => i.status === 'open').slice(0, 5).map((inf, idx) => (
-                                                <div key={idx} className="absolute animate-bounce" style={{ top: `${20 + idx * 15}%`, left: `${30 + idx * 10}%` }}>
+                                                <div key={inf.id} className="absolute animate-bounce" style={{ top: `${20 + idx * 15}%`, left: `${30 + idx * 10}%` }}>
                                                     <div className="p-3 bg-red-600 text-white rounded-2xl shadow-2xl shadow-red-600/40 flex items-center gap-2">
                                                         <AlertTriangle size={14} className="animate-pulse" />
                                                         <span className="text-[8px] font-black uppercase tracking-widest">{inf.type}</span>
@@ -945,7 +998,7 @@ function MairieDashboardContent() {
                         <textarea id="tenderDesc" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-medium min-h-[100px] outline-none text-zinc-900 placeholder:text-zinc-300" placeholder="Détails techniques..." value={newTender.description} onChange={(e) => setNewTender({...newTender, description: e.target.value})} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2"><label htmlFor="tenderBudget" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Budget (CFA)</label><input id="tenderBudget" type="number" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900" placeholder="CFA" value={newTender.budget_estimate} onChange={(e) => setNewTender({...newTender, budget_estimate: parseInt(e.target.value)})} /></div>
+                        <div className="space-y-2"><label htmlFor="tenderBudget" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Budget (CFA)</label><input id="tenderBudget" type="number" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900" placeholder="CFA" value={newTender.budget_estimate} onChange={(e) => setNewTender({...newTender, budget_estimate: Number.parseInt(e.target.value, 10)})} /></div>
                         <div className="space-y-2"><label htmlFor="tenderEndDate" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Clôture</label><input id="tenderEndDate" type="date" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900" value={newTender.end_date} onChange={(e) => setNewTender({...newTender, end_date: e.target.value})} /></div>
                     </div>
                     <button type="submit" disabled={loading} className="w-full py-5 bg-emerald-500 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 hover:scale-[1.01] transition-all disabled:opacity-50">
@@ -979,7 +1032,7 @@ function MairieDashboardContent() {
                                     <option value="">Choisir une entreprise...</option>
                                     {organizations.map(org => (<option key={org.id} value={org.id}>{org.full_name}</option>))}
                                 </select>
-                                <select id="directDuration" className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900" value={concessionDuration} onChange={(e) => setConcessionDuration(parseInt(e.target.value))}>
+                                <select id="directDuration" className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900" value={concessionDuration} onChange={(e) => setConcessionDuration(Number.parseInt(e.target.value, 10))}>
                                     <option value={6}>Contrat : 6 mois</option>
                                     <option value={12}>Contrat : 12 mois</option>
                                     <option value={24}>Contrat : 24 mois</option>
@@ -1048,7 +1101,7 @@ function MairieDashboardContent() {
                             className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900"
                             placeholder="Montant en CFA"
                             value={sanctionForm.amount}
-                            onChange={(e) => setSanctionForm({...sanctionForm, amount: parseInt(e.target.value)})}
+                            onChange={(e) => setSanctionForm({...sanctionForm, amount: Number.parseInt(e.target.value, 10)})}
                         />
                     </div>
 
@@ -1120,7 +1173,7 @@ function MairieDashboardContent() {
                         </div>
                     </div>
 
-                    <button onClick={() => window.print()} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-zinc-900/30 flex items-center justify-center gap-4 hover:scale-[1.01] transition-transform">
+                    <button onClick={() => globalThis.print()} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-zinc-900/30 flex items-center justify-center gap-4 hover:scale-[1.01] transition-transform">
                         <Printer size={18} />
                         Générer l'Audit Certifié (PDF)
                     </button>
@@ -1153,7 +1206,7 @@ function MairieDashboardContent() {
                                 <div className="space-y-4">
                                     <h4 className="text-[10px] font-black uppercase text-zinc-400 tracking-widest ml-4">Preuve Capturée</h4>
                                     <div className="aspect-video w-full bg-zinc-100 rounded-[2.5rem] border border-zinc-200 overflow-hidden flex items-center justify-center italic text-[10px] text-zinc-400">
-                                        {selectedInfraction.images?.[0] ? <img src={selectedInfraction.images[0]} className="w-full h-full object-cover" /> : "Image Terrain Indisponible"}
+                                        {selectedInfraction.images?.[0] ? <img src={selectedInfraction.images[0]} alt="Preuve terrain" className="w-full h-full object-cover" /> : "Image Terrain Indisponible"}
                                     </div>
                                 </div>
                             </div>
@@ -1178,7 +1231,7 @@ function MairieDashboardContent() {
                                                 type="number" 
                                                 className="w-24 bg-transparent border-none text-right font-black text-sm outline-none text-red-600"
                                                 value={penaltyAmount}
-                                                onChange={(e) => setPenaltyAmount(parseInt(e.target.value))}
+                                                onChange={(e) => setPenaltyAmount(Number.parseInt(e.target.value, 10))}
                                             />
                                         </div>
                                         
@@ -1262,8 +1315,9 @@ function MairieDashboardContent() {
 
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Commission CITICLINE (%)</label>
+                                <label htmlFor="commission-rate" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Commission CITICLINE (%)</label>
                                 <input 
+                                    id="commission-rate"
                                     type="number" 
                                     step="0.1"
                                     min="0"
@@ -1271,14 +1325,15 @@ function MairieDashboardContent() {
                                     required 
                                     className="w-full px-6 py-4 bg-white border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900 focus:border-emerald-500/50 transition-all" 
                                     value={fiscalRates.commissionRate * 100} 
-                                    onChange={(e) => setFiscalRates({...fiscalRates, commissionRate: parseFloat(e.target.value) / 100})} 
+                                    onChange={(e) => setFiscalRates({...fiscalRates, commissionRate: Number.parseFloat(e.target.value) / 100})} 
                                 />
                                 <p className="text-[8px] text-zinc-400 italic px-4 uppercase tracking-widest">Taux standard : 10%</p>
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Éco-Taxe Municipale (%)</label>
+                                <label htmlFor="eco-tax-rate" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Éco-Taxe Municipale (%)</label>
                                 <input 
+                                    id="eco-tax-rate"
                                     type="number" 
                                     step="0.1"
                                     min="0"
@@ -1286,7 +1341,7 @@ function MairieDashboardContent() {
                                     required 
                                     className="w-full px-6 py-4 bg-white border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900 focus:border-emerald-500/50 transition-all" 
                                     value={fiscalRates.ecoTaxRate * 100} 
-                                    onChange={(e) => setFiscalRates({...fiscalRates, ecoTaxRate: parseFloat(e.target.value) / 100})} 
+                                    onChange={(e) => setFiscalRates({...fiscalRates, ecoTaxRate: Number.parseFloat(e.target.value) / 100})} 
                                 />
                                 <p className="text-[8px] text-zinc-400 italic px-4 uppercase tracking-widest">Taux standard : 2%</p>
                             </div>

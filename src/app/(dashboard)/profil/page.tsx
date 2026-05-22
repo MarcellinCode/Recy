@@ -8,6 +8,16 @@ import { navigateSafe } from "@/utils/navigation";
 import { userService } from "@/services/userService";
 import { cn } from "@/lib/utils";
 
+const ROLE_CONFIG: Record<string, { badgeClass: string; label: string }> = {
+    vendeur: { badgeClass: 'bg-primary shadow-primary/20', label: 'Citoyen' },
+    collecteur: { badgeClass: 'bg-amber-600 shadow-amber-600/20', label: 'Collecteur' },
+    agent_police_verte: { badgeClass: 'bg-emerald-600 shadow-emerald-600/20', label: 'Agent Police Verte' }
+};
+
+function getRoleDetails(role: string) {
+    return ROLE_CONFIG[role] || { badgeClass: 'bg-blue-600 shadow-blue-600/20', label: 'Partenaire / Entreprise' };
+}
+
 export default function ProfilePage() {
     const router = useRouter();
     const [profile, setProfile] = useState<any>(null);
@@ -68,6 +78,7 @@ export default function ProfilePage() {
     }
 
     const initials = profile?.full_name?.split(' ').map((n: string) => n[0]).join('').toUpperCase() || "??";
+    const roleDetails = getRoleDetails(profile?.role || "");
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -107,12 +118,9 @@ export default function ProfilePage() {
                     <div className="mt-6 flex flex-wrap justify-center sm:justify-start gap-3">
                         <span className={cn(
                             "text-white text-[9px] font-black px-5 py-2 rounded-full uppercase tracking-[0.2em] shadow-lg",
-                            profile?.role === 'vendeur' ? 'bg-primary shadow-primary/20' :
-                                profile?.role === 'collecteur' ? 'bg-amber-600 shadow-amber-600/20' :
-                                    profile?.role === 'agent_police_verte' ? 'bg-emerald-600 shadow-emerald-600/20' :
-                                        'bg-blue-600 shadow-blue-600/20'
+                            roleDetails.badgeClass
                         )}>
-                            {profile?.role === 'vendeur' ? 'Citoyen' : profile?.role === 'collecteur' ? 'Collecteur' : profile?.role === 'agent_police_verte' ? 'Agent Police Verte' : 'Partenaire / Entreprise'}
+                            {roleDetails.label}
                         </span>
                         {profile?.role === 'vendeur' && (
                             <div className="bg-green-500/10 text-green-600 text-[9px] font-black px-5 py-2 rounded-full border border-green-500/20 uppercase tracking-[0.2em] flex items-center gap-2">
@@ -135,7 +143,7 @@ export default function ProfilePage() {
             <div className="bg-white dark:bg-zinc-900 rounded-[3rem] border border-gray-100 dark:border-zinc-800 shadow-sm overflow-hidden mb-10">
                 {menuItems.map((item, index) => (
                     <button
-                        key={index}
+                        key={item.route}
                         onClick={() => navigateSafe(router, item.route as any)}
                         className={cn(
                             "w-full flex items-center justify-between p-8 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all group",

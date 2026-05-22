@@ -333,8 +333,9 @@ export default function WalletPage() {
                             <>
                                 <div className="space-y-6">
                                     <div>
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Montant (CFA)</label>
+                                        <label htmlFor="depositAmount" className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Montant (CFA)</label>
                                         <input
+                                            id="depositAmount"
                                             type="number"
                                             value={amount}
                                             onChange={(e) => setAmount(e.target.value)}
@@ -394,8 +395,9 @@ export default function WalletPage() {
                             <>
                                 <div className="space-y-6">
                                     <div>
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Montant (CFA)</label>
+                                        <label htmlFor="withdrawAmount" className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Montant (CFA)</label>
                                         <input
+                                            id="withdrawAmount"
                                             type="number"
                                             value={amount}
                                             onChange={(e) => setAmount(e.target.value)}
@@ -405,10 +407,11 @@ export default function WalletPage() {
                                     </div>
                                     
                                     <div>
-                                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Numéro Mobile Money</label>
+                                        <label htmlFor="mobileMoneyPhone" className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Numéro Mobile Money</label>
                                         <div className="relative">
                                             <Phone className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                                             <input
+                                                id="mobileMoneyPhone"
                                                 type="tel"
                                                 value={phone}
                                                 onChange={(e) => setPhone(e.target.value)}
@@ -417,7 +420,7 @@ export default function WalletPage() {
                                             />
                                         </div>
                                     </div>
-
+                                    
                                     <div className="p-4 bg-gray-50 dark:bg-zinc-800 rounded-2xl border border-gray-200 dark:border-zinc-700">
                                         <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Solde disponible</p>
                                         <p className="text-xl font-black text-gray-900 dark:text-white italic">{(profile?.wallet_balance || 0).toLocaleString()} CFA</p>

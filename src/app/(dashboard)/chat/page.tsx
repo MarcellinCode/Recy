@@ -42,6 +42,13 @@ type Message = {
     is_read: boolean;
 };
 
+// --- Helpers ---
+function rejectAfter(ms: number): Promise<never> {
+    return new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Timeout")), ms);
+    });
+}
+
 // --- Sub-components ---
 
 function Bubble({ msg, isMe, isLast }: { msg: Message; isMe: boolean; isLast: boolean }) {
@@ -156,7 +163,7 @@ function ChatContainer() {
         const fetchInitialData = async () => {
             const { data: { session } } = await Promise.race([
                 supabase.auth.getSession(),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000))
+                rejectAfter(5000)
             ]) as any;
 
             const user = session?.user;

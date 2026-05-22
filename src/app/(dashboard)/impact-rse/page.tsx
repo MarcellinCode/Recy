@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import { 
     Leaf, 
-    TrendingUp, 
     Users, 
     Globe, 
     ArrowUpRight, 
@@ -15,6 +14,16 @@ import {
 import { motion } from "framer-motion";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
+
+const PROGRESSION_DATA = [
+    { id: "week-1", height: 45, label: "S01" },
+    { id: "week-2", height: 60, label: "S02" },
+    { id: "week-3", height: 35, label: "S03" },
+    { id: "week-4", height: 80, label: "S04" },
+    { id: "week-5", height: 55, label: "S05" },
+    { id: "week-6", height: 90, label: "S06" },
+    { id: "week-7", height: 75, label: "S07" }
+];
 
 export default function ImpactRSEPage() {
     const supabase = createClient();
@@ -119,17 +128,17 @@ export default function ImpactRSEPage() {
                     <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 dark:text-white">Progression Mensuelle</h3>
                     
                     <div className="h-64 flex items-end justify-between gap-4 px-4 font-black">
-                        {[45, 60, 35, 80, 55, 90, 75].map((h, i) => (
-                            <div key={i} className="flex-1 space-y-2">
+                        {PROGRESSION_DATA.map((item) => (
+                            <div key={item.id} className="flex-1 space-y-2">
                                 <div 
                                     className="bg-emerald-500/20 hover:bg-emerald-500 transition-all rounded-t-xl group relative" 
-                                    style={{ height: `${h}%` }}
+                                    style={{ height: `${item.height}%` }}
                                 >
                                     <span className="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">
-                                        {h}kg
+                                        {item.height}kg
                                     </span>
                                 </div>
-                                <p className="text-[8px] text-center text-zinc-400">S0{i+1}</p>
+                                <p className="text-[8px] text-center text-zinc-400">{item.label}</p>
                             </div>
                         ))}
                     </div>
@@ -147,7 +156,7 @@ export default function ImpactRSEPage() {
                         </p>
                     </div>
 
-                    <button onClick={() => window.print()} className="w-full py-5 bg-white text-zinc-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all">
+                    <button onClick={() => globalThis.print()} className="w-full py-5 bg-white text-zinc-900 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-500 hover:text-white transition-all">
                         Télécharger le PDF
                     </button>
                 </div>

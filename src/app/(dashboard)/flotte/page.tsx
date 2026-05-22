@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import { 
     Truck, 
     AlertTriangle, 
-    CheckCircle2, 
-    Clock, 
     Wrench, 
     ShieldAlert, 
     Plus,
@@ -88,7 +86,7 @@ export default function FleetPage() {
             newVehicle.name, 
             newVehicle.type, 
             newVehicle.regNumber,
-            parseInt(newVehicle.initialMileage) || 0,
+            Number.parseInt(newVehicle.initialMileage, 10) || 0,
             newVehicle.insuranceExpiry
         );
         if (res.success) {
@@ -150,22 +148,27 @@ export default function FleetPage() {
                         { label: "VÉHICULES", value: stats.total, icon: Truck, color: "emerald" },
                         { label: "EN MAINTENANCE", value: stats.maintenance, icon: Wrench, color: "amber" },
                         { label: "ALERTES ENTRETIEN", value: stats.alert, icon: ShieldAlert, color: "red" }
-                    ].map((card, i) => (
-                        <div key={i} className="bg-zinc-900/40 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/5 shadow-2xl flex items-center gap-6 group hover:border-white/10 transition-all">
-                            <div className={cn(
-                                "w-16 h-16 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110 shadow-inner",
-                                card.color === "emerald" ? "bg-emerald-500/10 text-emerald-500" :
-                                card.color === "amber" ? "bg-amber-500/10 text-amber-500" :
-                                "bg-red-500/10 text-red-500"
-                            )}>
-                                <card.icon size={32} />
+                    ].map((card) => {
+                        const cardBgAndTextColor = card.color === "emerald" 
+                            ? "bg-emerald-500/10 text-emerald-500" 
+                            : card.color === "amber" 
+                                ? "bg-amber-500/10 text-amber-500" 
+                                : "bg-red-500/10 text-red-500";
+                        return (
+                            <div key={card.label} className="bg-zinc-900/40 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/5 shadow-2xl flex items-center gap-6 group hover:border-white/10 transition-all">
+                                <div className={cn(
+                                    "w-16 h-16 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110 shadow-inner",
+                                    cardBgAndTextColor
+                                )}>
+                                    <card.icon size={32} />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">{card.label}</p>
+                                    <p className="text-4xl font-black italic tracking-tighter">{card.value}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">{card.label}</p>
-                                <p className="text-4xl font-black italic tracking-tighter">{card.value}</p>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
 
                 {/* Search Bar Section */}
@@ -198,8 +201,9 @@ export default function FleetPage() {
                 <form onSubmit={handleAddVehicle} className="space-y-8">
                     <div className="space-y-6">
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Nom du véhicule (ex: Camion 01)</label>
+                            <label htmlFor="vehicle-name" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Nom du véhicule (ex: Camion 01)</label>
                             <input 
+                                id="vehicle-name"
                                 required
                                 className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black uppercase text-white focus:border-emerald-500/50 transition-all"
                                 placeholder="NOM DU VÉHICULE"
@@ -208,8 +212,9 @@ export default function FleetPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Numéro d'immatriculation</label>
+                            <label htmlFor="vehicle-reg-number" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Numéro d'immatriculation</label>
                             <input 
+                                id="vehicle-reg-number"
                                 required
                                 className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black uppercase text-white focus:border-emerald-500/50 transition-all"
                                 placeholder="AA-000-AA"
@@ -218,8 +223,9 @@ export default function FleetPage() {
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Type de véhicule</label>
+                            <label htmlFor="vehicle-type" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Type de véhicule</label>
                             <select 
+                                id="vehicle-type"
                                 className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black uppercase text-white focus:border-emerald-500/50 transition-all appearance-none"
                                 value={newVehicle.type}
                                 onChange={(e) => setNewVehicle({...newVehicle, type: e.target.value})}
@@ -232,8 +238,9 @@ export default function FleetPage() {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Km Initial</label>
+                                <label htmlFor="vehicle-initial-mileage" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Km Initial</label>
                                 <input 
+                                    id="vehicle-initial-mileage"
                                     type="number"
                                     required
                                     className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black text-white focus:border-emerald-500/50 transition-all"
@@ -243,8 +250,9 @@ export default function FleetPage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Assurance (Exp)</label>
+                                <label htmlFor="vehicle-insurance-expiry" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Assurance (Exp)</label>
                                 <input 
+                                    id="vehicle-insurance-expiry"
                                     type="date"
                                     required
                                     className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black uppercase text-white focus:border-emerald-500/50 transition-all"
@@ -276,7 +284,7 @@ export default function FleetPage() {
 }
 
 
-function VehicleCard({ vehicle }: { vehicle: any }) {
+function VehicleCard({ vehicle }: { readonly vehicle: any }) {
     const isMaintenanceNeeded = vehicle.status === 'in_maintenance';
     
     // Calculate maintenance progress based on real mileage
@@ -290,6 +298,12 @@ function VehicleCard({ vehicle }: { vehicle: any }) {
     // Insurance delay check
     const isInsuranceExpiring = vehicle.insurance_expiry_date ? new Date(vehicle.insurance_expiry_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : false;
     const isInsuranceOverdue = vehicle.insurance_expiry_date ? new Date(vehicle.insurance_expiry_date) < new Date() : false;
+
+    const insuranceColorClass = isInsuranceOverdue 
+        ? "text-red-500" 
+        : isInsuranceExpiring 
+            ? "text-amber-500" 
+            : "text-white";
 
     return (
         <div className="bg-zinc-900/40 backdrop-blur-xl p-8 rounded-[3rem] border border-white/5 hover:border-emerald-500/30 transition-all group relative overflow-hidden shadow-2xl">
@@ -355,7 +369,7 @@ function VehicleCard({ vehicle }: { vehicle: any }) {
                         </p>
                         <p className={cn(
                             "text-sm font-black uppercase italic tracking-tighter",
-                            isInsuranceOverdue ? "text-red-500" : isInsuranceExpiring ? "text-amber-500" : "text-white"
+                            insuranceColorClass
                         )}>
                             {vehicle.insurance_expiry_date ? new Date(vehicle.insurance_expiry_date).toLocaleDateString('fr-FR', { month: 'short', year: 'numeric' }) : 'NON RÉGLÉ'}
                         </p>

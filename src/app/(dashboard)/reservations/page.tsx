@@ -34,6 +34,23 @@ type Reservation = {
     collector: { full_name: string; id: string } | null;
 };
 
+// --- Helpers ---
+function rejectAfter(ms: number, errorMsg: string = "Timeout"): Promise<never> {
+    return new Promise((_, reject) => {
+        setTimeout(() => reject(new Error(errorMsg)), ms);
+    });
+}
+
+function getFilteredReservations(reservations: Reservation[], currentUser: any, currentTab: string): Reservation[] {
+    if (!currentUser) return [];
+    if (currentUser.role === 'mairie') return reservations;
+    return reservations.filter(res => 
+        currentTab === "collectes" 
+            ? res.collector?.id === currentUser.id 
+            : res.seller?.id === currentUser.id
+    );
+}
+
 export default function ReservationsPage() {
     const supabase = createClient();
     const [currentTab, setCurrentTab] = useState<"collectes" | "ventes">("collectes");
@@ -44,9 +61,7 @@ export default function ReservationsPage() {
     useEffect(() => {
         const fetchReservations = async () => {
             try {
-                const timeoutPromise = new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error("Timeout Auth")), 5000)
-                );
+                const timeoutPromise = rejectAfter(5000, "Timeout Auth");
                 
                 const { data: { user } } = await Promise.race([
                     supabase.auth.getUser(),
@@ -101,13 +116,7 @@ export default function ReservationsPage() {
         fetchReservations();
     }, []);
 
-    const filteredReservations = reservations.filter(res => {
-        if (!currentUser) return false;
-        if (currentUser.role === 'mairie') return true;
-        return currentTab === "collectes" 
-            ? res.collector?.id === currentUser.id 
-            : res.seller?.id === currentUser.id;
-    });
+    const filteredReservations = getFilteredReservations(reservations, currentUser, currentTab);
 
     if (loading) {
         return (
@@ -403,10 +412,11 @@ function ReservationCard({ reservation, role, onFinalized }: { reservation: Rese
                                 Veuillez confirmer le poids réel pour le paiement.
                             </p>
                             
-                            <label className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">
+                            <label htmlFor={`final-weight-${reservation.id}`} className="block text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-2">
                                 Poids Réel (kg)
                             </label>
                             <input 
+                                id={`final-weight-${reservation.id}`}
                                 type="number" 
                                 value={finalWeight} 
                                 onChange={(e) => setFinalWeight(e.target.value)}

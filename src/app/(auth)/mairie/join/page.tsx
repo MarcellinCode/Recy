@@ -8,6 +8,16 @@ import { createClient } from "@/lib/supabase";
 import { validateInvitation, consumeInvitation } from "@/app/actions/invitations";
 import { motion, AnimatePresence } from "framer-motion";
 
+function getStepStatusClasses(currentStep: number, targetStep: number): string {
+    if (currentStep > targetStep) {
+        return "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30";
+    }
+    if (currentStep === targetStep) {
+        return "border-2 border-emerald-500 text-emerald-500 bg-emerald-500/10";
+    }
+    return "bg-zinc-900 border border-zinc-800 text-zinc-600";
+}
+
 function MairieJoinForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -181,8 +191,7 @@ function MairieJoinForm() {
                             <div key={s.num} className="flex flex-col items-center gap-2">
                                 <div className={cn(
                                     "w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black transition-all",
-                                    step > s.num ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/30" : 
-                                    step === s.num ? "border-2 border-emerald-500 text-emerald-500 bg-emerald-500/10" : "bg-zinc-900 border border-zinc-800 text-zinc-600"
+                                    getStepStatusClasses(step, s.num)
                                 )}>
                                     {step > s.num ? <CheckCircle2 size={14} /> : s.num}
                                 </div>

@@ -3,22 +3,13 @@
 import { 
     Activity, 
     ArrowLeft, 
-    Calendar, 
     Download, 
-    Filter, 
     Leaf, 
     TrendingUp, 
-    Zap,
-    Trash2,
-    CheckCircle2,
-    BarChart3,
-    DollarSign,
-    PieChart,
-    Layers,
-    Clock,
-    Printer,
-    ArrowUpRight,
-    MapPin
+    DollarSign, 
+    PieChart, 
+    Layers, 
+    Printer 
 } from "lucide-react";
 import { useState, useEffect, Suspense } from "react";
 import { createClient } from "@/lib/supabase";
@@ -26,6 +17,21 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { showToast } from "@/components/ui/toast";
+
+function getProgressBarColor(index: number): string {
+    switch (index) {
+        case 0:
+            return "bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.3)]";
+        case 1:
+            return "bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.3)]";
+        case 2:
+            return "bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.3)]";
+        case 3:
+            return "bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.3)]";
+        default:
+            return "bg-zinc-400";
+    }
+}
 
 function GlobalRapportContent() {
     const router = useRouter();
@@ -103,11 +109,11 @@ function GlobalRapportContent() {
                         </div>
                     </div>
                     <div className="flex gap-4">
-                        <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white dark:bg-white dark:text-black rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all">
+                        <button onClick={() => globalThis.print()} className="flex items-center gap-2 px-6 py-3 bg-zinc-900 text-white dark:bg-white dark:text-black rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all">
                             <Download size={14} />
                             Exporter PDF
                         </button>
-                        <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg shadow-primary/20">
+                        <button onClick={() => globalThis.print()} className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-[1.02] transition-all shadow-lg shadow-primary/20">
                             <Printer size={14} />
                             Imprimer
                         </button>
@@ -176,10 +182,7 @@ function GlobalRapportContent() {
                                             animate={{ width: `${(cat.weight / (totalWeight || 1)) * 100}%` }}
                                             className={cn(
                                                 "h-full rounded-full transition-all",
-                                                i === 0 ? "bg-emerald-500 shadow-[0_0_12px_rgba(16,185,129,0.3)]" : 
-                                                i === 1 ? "bg-blue-500 shadow-[0_0_12px_rgba(59,130,246,0.3)]" : 
-                                                i === 2 ? "bg-amber-500 shadow-[0_0_12px_rgba(245,158,11,0.3)]" : 
-                                                i === 3 ? "bg-indigo-500 shadow-[0_0_12px_rgba(99,102,241,0.3)]" : "bg-zinc-400"
+                                                getProgressBarColor(i)
                                             )}
                                         />
                                     </div>

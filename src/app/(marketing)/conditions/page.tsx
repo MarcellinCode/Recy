@@ -1,4 +1,4 @@
-import { Shield, FileText, Scale, AlertCircle } from "lucide-react";
+import { Scale, AlertCircle } from "lucide-react";
 
 export default function ConditionsPage() {
     return (
@@ -61,7 +61,7 @@ export default function ConditionsPage() {
     );
 }
 
-function Section({ title, content }: { title: string; content: string }) {
+function Section({ title, content }: Readonly<{ title: string; content: string }>) {
     return (
         <div className="space-y-6">
             <h3 className="text-2xl font-black text-gray-900 dark:text-white border-l-4 border-primary pl-4">{title}</h3>

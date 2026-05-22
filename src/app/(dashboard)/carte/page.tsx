@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { MapPin, Info, Layers } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase";
 

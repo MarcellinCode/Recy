@@ -11,14 +11,13 @@ import {
     Plus,
     Wallet,
     MoreVertical,
-    AlertTriangle
+    Lock
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { Lock, Settings, ShieldCheck } from "lucide-react";
 
 const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
     ssr: false,
@@ -32,6 +31,15 @@ import { submitBid } from "@/app/actions/tenders";
 import { topUpWallet } from "@/app/actions/wallet";
 import { AddAgentForm } from "@/components/organisation/AddAgentForm";
 import { getOrganizationContext } from "@/app/actions/organisation";
+
+const MISSION_STATUS_CONFIG: Record<string, { badge: string; label: string }> = {
+    in_progress: { badge: "bg-amber-100 text-amber-600", label: "EN COURS" },
+    collected: { badge: "bg-emerald-100 text-emerald-600", label: "TERMINÉ" }
+};
+
+function getMissionStatusDetails(status: string) {
+    return MISSION_STATUS_CONFIG[status] || { badge: "bg-blue-100 text-blue-600", label: "EN ATTENTE" };
+}
 
 export default function OrganizationDashboard() {
     const router = useRouter();
@@ -201,7 +209,7 @@ export default function OrganizationDashboard() {
                                 Votre organisation doit souscrire à l'abonnement **"Platform Standard" (20 000 F / mois)** pour activer la gestion de flotte, le suivi des agents et le pilotage des concessions.
                             </p>
                             <button 
-                                onClick={() => window.location.href = '/abonnements'}
+                                onClick={() => globalThis.location.href = '/abonnements'}
                                 className="px-12 py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest shadow-xl shadow-primary/20 hover:scale-105 transition-all"
                             >
                                 Activer les Outils Pro
@@ -259,26 +267,28 @@ export default function OrganizationDashboard() {
                                             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Aucune mission sur le terrain</p>
                                         </div>
                                     )}
-                                    {activeMissions.map(mission => (
-                                        <div key={mission.id} className="flex items-center justify-between p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm">
-                                            <div>
-                                                <div className="flex items-center gap-3 mb-1">
-                                                    <p className="text-sm font-black uppercase italic dark:text-white">{mission.profiles?.full_name || 'Client Inconnu'}</p>
-                                                    <span className={cn(
-                                                        "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest",
-                                                        mission.status === 'in_progress' ? "bg-amber-100 text-amber-600" :
-                                                        mission.status === 'collected' ? "bg-emerald-100 text-emerald-600" : "bg-blue-100 text-blue-600"
-                                                    )}>
-                                                        {mission.status === 'in_progress' ? 'EN COURS' : mission.status === 'collected' ? 'TERMINÉ' : 'EN ATTENTE'}
-                                                    </span>
+                                    {activeMissions.map(mission => {
+                                        const statusDetails = getMissionStatusDetails(mission.status);
+                                        return (
+                                            <div key={mission.id} className="flex items-center justify-between p-6 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-3xl shadow-sm">
+                                                <div>
+                                                    <div className="flex items-center gap-3 mb-1">
+                                                        <p className="text-sm font-black uppercase italic dark:text-white">{mission.profiles?.full_name || 'Client Inconnu'}</p>
+                                                        <span className={cn(
+                                                            "px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest",
+                                                            statusDetails.badge
+                                                        )}>
+                                                            {statusDetails.label}
+                                                        </span>
+                                                    </div>
+                                                    <p className="text-[10px] text-zinc-400 font-bold uppercase">{mission.mission_type === 'subscription_pickup' ? 'Abonnement' : 'Marketplace'} • Agent: {agents.find(a => a.id === mission.assigned_agent_id)?.full_name || 'Inconnu'}</p>
                                                 </div>
-                                                <p className="text-[10px] text-zinc-400 font-bold uppercase">{mission.mission_type === 'subscription_pickup' ? 'Abonnement' : 'Marketplace'} • Agent: {agents.find(a => a.id === mission.assigned_agent_id)?.full_name || 'Inconnu'}</p>
+                                                <div className="text-right">
+                                                    <p className="text-sm font-black text-primary">{mission.final_weight || mission.estimated_weight} KG</p>
+                                                </div>
                                             </div>
-                                            <div className="text-right">
-                                                <p className="text-sm font-black text-primary">{mission.final_weight || mission.estimated_weight} KG</p>
-                                            </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
                             <div className="space-y-8">
@@ -393,14 +403,14 @@ export default function OrganizationDashboard() {
                            <TrendingUp className="absolute -bottom-10 -right-10 w-64 h-64 text-zinc-50 group-hover:text-emerald-500/10 transition-all" />
                            <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4">La Bourse</h3>
                            <p className="text-zinc-500 text-xs font-bold uppercase tracking-tight mb-8">Revendez vos stocks de matières premières recyclées aux industries de transformation.</p>
-                           <button onClick={() => router.push('/marketplace')} className="px-10 py-5 bg-emerald-500 text-white rounded-[2.5rem] text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-emerald-500/20">Accéder au Marché</button>
+                            <button onClick={() => router.push('/marketplace')} className="px-10 py-5 bg-emerald-500 text-white rounded-[2.5rem] text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl shadow-emerald-500/20">Accéder au Marché</button>
                         </div>
                         <div className="bg-white dark:bg-zinc-900 p-12 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 shadow-sm">
                             <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4">Rapports ESG</h3>
                             <p className="text-zinc-500 text-xs font-bold uppercase tracking-tight mb-8">Générez vos manifestes de traçabilité et rapports d'impact environnemental certifiés.</p>
                             <div className="flex gap-4">
                                 <button onClick={() => showToast("Génération du rapport de traçabilité...", "success")} className="flex-1 py-5 bg-zinc-100 dark:bg-zinc-800 rounded-[2rem] text-[10px] font-black uppercase tracking-widest">Traçabilité</button>
-                                <button onClick={() => window.print()} className="flex-1 py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest">Export PDF</button>
+                                <button onClick={() => globalThis.print()} className="flex-1 py-5 bg-primary text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest">Export PDF</button>
                             </div>
                         </div>
                     </motion.div>
@@ -414,13 +424,14 @@ export default function OrganizationDashboard() {
                         <p className="text-lg font-black uppercase italic text-zinc-900 dark:text-white">{selectedTender?.title}</p>
                     </div>
                     <div className="space-y-4">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Votre Offre Financière (CFA)</label>
+                        <label htmlFor="bidAmount" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Votre Offre Financière (CFA)</label>
                         <input 
+                            id="bidAmount"
                             type="number"
                             required
                             className="w-full px-8 py-6 bg-gray-50 dark:bg-zinc-800 border-2 border-transparent focus:border-primary rounded-[2rem] text-2xl font-black italic outline-none transition-all"
                             value={bidAmount}
-                            onChange={(e) => setBidAmount(parseInt(e.target.value))}
+                            onChange={(e) => setBidAmount(Number.parseInt(e.target.value, 10))}
                         />
                         <p className="text-[9px] text-zinc-400 font-bold uppercase italic ml-4">* Une commission de service de 2% sera prélevée en cas d'attribution.</p>
                     </div>

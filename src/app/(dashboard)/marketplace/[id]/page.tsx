@@ -152,8 +152,7 @@ function WasteDetailsContent({ id }: { id: string }) {
         error: fetchError, 
         actionLoading, 
         setActionLoading,
-        reserve,
-        refresh 
+        reserve
     } = useWasteDetails(id);
 
     const [currentUser, setCurrentUser] = useState<any>(null);
@@ -375,14 +374,13 @@ function WasteDetailsContent({ id }: { id: string }) {
                                                         <button 
                                                             onClick={async () => {
                                                                 // Simulate QR Code Scan
-                                                                const pin = waste.id.slice(0, 6).toUpperCase();
                                                                 showToast("QR Code reconnu ! Validation en cours...", "success");
                                                                 
                                                                 // Artificial delay for realism
                                                                 await new Promise(r => setTimeout(r, 1000));
                                                                 
                                                                 const weight = prompt("Confirmez le poids final en KG :", waste.estimated_weight.toString());
-                                                                if (weight && !isNaN(Number(weight))) {
+                                                                if (weight && !Number.isNaN(Number(weight))) {
                                                                     setActionLoading(true);
                                                                     const { confirmCollection } = await import("@/app/actions/collection");
                                                                     const result = await confirmCollection(waste.id, Number(weight));
@@ -430,7 +428,7 @@ function WasteDetailsContent({ id }: { id: string }) {
                                                                         const targetPin = waste.id.slice(0, 6).toUpperCase();
                                                                         if (pin === targetPin) {
                                                                             const weight = prompt("Confirmez le poids final en KG :", waste.estimated_weight.toString());
-                                                                            if (weight && !isNaN(Number(weight))) {
+                                                                            if (weight && !Number.isNaN(Number(weight))) {
                                                                                 setActionLoading(true);
                                                                                 const { confirmCollection } = await import("@/app/actions/collection");
                                                                                 const result = await confirmCollection(waste.id, Number(weight));

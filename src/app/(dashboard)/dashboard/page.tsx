@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { 
     BarChart3, 
     Leaf, 
@@ -27,8 +26,13 @@ import { createClient } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 import { useUnreadBadges } from "@/hooks/useUnreadBadges";
 
+function rejectAfter(ms: number): Promise<never> {
+    return new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Timeout")), ms);
+    });
+}
+
 export default function DashboardPage() {
-    const router = useRouter();
     const supabase = createClient();
     const { unreadMessages, unreadReservations } = useUnreadBadges();
     
@@ -41,14 +45,14 @@ export default function DashboardPage() {
     });
     const [loading, setLoading] = useState(true);
     const [profile, setProfile] = useState<any>(null);
-    const [activeSub, setActiveSub] = useState<any>(null);
+    const [activeSub] = useState<any>(null);
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
                 // Timeout de 3 secondes pour l'auth
                 const sessionPromise = supabase.auth.getSession();
-                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000));
+                const timeoutPromise = rejectAfter(3000);
                 
                 const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
                 const user = session?.user;
@@ -93,17 +97,6 @@ export default function DashboardPage() {
                         collectionsCount: wastes.length,
                         citizenCount
                     });
-
-                    /* 
-                    // Temporairement désactivé pour éviter les erreurs 400/404 qui bloquent l'UI
-                    const { data: sub } = await supabase
-                        .from('subscriptions')
-                        .select('*, plan:subscription_plans(name, tier)')
-                        .eq('user_id', user.id)
-                        .eq('status', 'active')
-                        .maybeSingle();
-                    setActiveSub(sub);
-                    */
                 }
             } catch (err) {
                 console.error("Dashboard fetch error:", err);
@@ -113,15 +106,6 @@ export default function DashboardPage() {
         };
         fetchStats();
     }, []);
-
-    // Redirection automatique supprimée pour permettre l'accès au Hub
-    /*
-    useEffect(() => {
-        if (!loading && profile?.role === 'mairie') {
-            router.push('/city-os');
-        }
-    }, [loading, profile, router]);
-    */
 
     if (loading) {
         return (
@@ -202,7 +186,7 @@ export default function DashboardPage() {
                 href: "/appels-offres", 
                 color: "bg-indigo-500" 
             },
-            ...(profile?.role !== 'collecteur' ? [
+            ...(profile?.role === 'collecteur' ? [] : [
                 { 
                     title: "Mission Control", 
                     description: "Gestion agents & concessions", 
@@ -217,7 +201,7 @@ export default function DashboardPage() {
                     href: "/flotte", 
                     color: "bg-primary" 
                 }
-            ] : []),
+            ]),
                 { 
                     title: "Impact RSE", 
                     description: "Votre bilan écologique", 
@@ -227,6 +211,12 @@ export default function DashboardPage() {
                 }
         ] : []),
     ];
+
+    const welcomeSubText = activeSub?.plan?.name?.toLowerCase().includes('usine') 
+        ? "Tableau de bord industriel Citicline" 
+        : activeSub?.plan?.name?.toLowerCase().includes('entreprise')
+        ? "Espace de gestion entreprise"
+        : "Prêt pour votre prochaine action écologique ?";
 
     return (
         <div className="bg-zinc-950 min-h-screen">
@@ -247,11 +237,7 @@ export default function DashboardPage() {
                             Bonjour, <span className="text-primary">{profile?.full_name?.split(' ')[0] || "Eco-Guerrier"}</span>
                         </h1>
                         <p className="text-sm font-medium text-zinc-500 mt-2">
-                            {activeSub?.plan?.name?.toLowerCase().includes('usine') 
-                                ? "Tableau de bord industriel Citicline" 
-                                : activeSub?.plan?.name?.toLowerCase().includes('entreprise')
-                                ? "Espace de gestion entreprise"
-                                : "Prêt pour votre prochaine action écologique ?"}
+                            {welcomeSubText}
                         </p>
                     </div>
                     
