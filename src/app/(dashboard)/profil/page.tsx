@@ -140,23 +140,25 @@ export default function ProfilePage() {
             </div>
 
             {/* Menu List */}
-            <div className="bg-white dark:bg-zinc-900 rounded-[3rem] border border-gray-100 dark:border-zinc-800 shadow-sm overflow-hidden mb-10">
+            <div className="bg-white dark:bg-zinc-900 rounded-[3rem] border-2 border-gray-100 dark:border-zinc-800 shadow-xl overflow-hidden mb-10">
                 {menuItems.map((item, index) => (
                     <button
                         key={item.route}
                         onClick={() => navigateSafe(router, item.route as any)}
                         className={cn(
-                            "w-full flex items-center justify-between p-8 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all group",
-                            index !== menuItems.length - 1 && "border-b border-gray-50 dark:border-zinc-800"
+                            "w-full flex items-center justify-between p-8 hover:bg-gray-50 dark:hover:bg-zinc-800/50 transition-all group",
+                            index !== menuItems.length - 1 && "border-b border-gray-100 dark:border-zinc-800/50",
+                            index === 0 && "rounded-t-[calc(3rem-2px)]",
+                            index === menuItems.length - 1 && "rounded-b-[calc(3rem-2px)]"
                         )}
                     >
                         <div className="flex items-center gap-6">
-                            <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all shadow-inner">
+                            <div className="w-14 h-14 rounded-2xl bg-gray-50 dark:bg-zinc-800 flex items-center justify-center group-hover:bg-white dark:group-hover:bg-zinc-900 group-hover:scale-110 group-hover:rotate-6 transition-all shadow-inner group-hover:shadow-md">
                                 {item.icon}
                             </div>
                             <span className="font-black text-gray-700 dark:text-gray-300 uppercase text-xs tracking-widest">{item.label}</span>
                         </div>
-                        <ChevronRight className="w-6 h-6 text-gray-200 group-hover:text-primary group-hover:translate-x-1 transition-all" />
+                        <ChevronRight className="w-6 h-6 text-gray-400 dark:text-gray-600 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                     </button>
                 ))}
             </div>
