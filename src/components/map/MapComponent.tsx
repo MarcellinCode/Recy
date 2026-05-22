@@ -207,7 +207,7 @@ export default function MapComponent({
 
             const { data: wastesData } = await wastesQuery;
 
-            // Ajout fetch infractions avec filtrage
+            // Ajout fetch infractions avec filtrage STRICT
             if (isMairie) {
                 let infractionsQuery = supabase
                     .from('environmental_infractions')
@@ -215,9 +215,10 @@ export default function MapComponent({
                     .not('latitude', 'is', null)
                     .not('longitude', 'is', null);
                 
+                // On force le filtrage par ville si targetCity est présent
                 if (targetCity) {
-                    // Si on a la ville, on filtre. On peut aussi filtrer par zone_id si besoin
-                    infractionsQuery = infractionsQuery.eq('city', targetCity);
+                    const cityMatch = targetCity.replace(/Mairie de |Commune de |Ville de /gi, "").trim();
+                    infractionsQuery = infractionsQuery.ilike('city', `%${cityMatch}%`);
                 }
 
                 const { data: infractionsData } = await infractionsQuery;
