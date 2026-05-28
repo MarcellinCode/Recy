@@ -50,9 +50,9 @@ export default function DashboardPage() {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                // Timeout de 3 secondes pour l'auth
+                // Timeout de 15 secondes pour l'auth (évite les faux positifs sur connexions lentes)
                 const sessionPromise = supabase.auth.getSession();
-                const timeoutPromise = rejectAfter(3000);
+                const timeoutPromise = rejectAfter(15000);
                 
                 const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
                 const user = session?.user;
