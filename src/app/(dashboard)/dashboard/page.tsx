@@ -52,11 +52,21 @@ export default function DashboardPage() {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                // Timeout de 15 secondes pour l'auth (évite les faux positifs sur connexions lentes)
-                const sessionPromise = supabase.auth.getSession();
-                const timeoutPromise = rejectAfter(15000);
+                // Try to get session, fallback if slow but do not crash the UI
+                let session = null;
+                try {
+                    const sessionPromise = supabase.auth.getSession();
+                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 15000));
+                    const res = await Promise.race([sessionPromise, timeoutPromise]) as any;
+                    session = res?.data?.session;
+                } catch (e) {
+                    console.warn("Dashboard Auth session fetch timed out, attempting direct user check:", e);
+                    const { data } = await supabase.auth.getUser();
+                    if (data?.user) {
+                        session = { user: data.user } as any;
+                    }
+                }
                 
-                const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
                 const user = session?.user;
                 
                 if (!user) {

@@ -162,13 +162,26 @@ function ChatContainer() {
 
     useEffect(() => {
         const fetchInitialData = async () => {
-            const { data: { session } } = await Promise.race([
-                supabase.auth.getSession(),
-                rejectAfter(5000)
-            ]) as any;
+            // Try to get session, fallback if slow but do not crash the UI
+            let session = null;
+            try {
+                const sessionPromise = supabase.auth.getSession();
+                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 8000));
+                const res = await Promise.race([sessionPromise, timeoutPromise]) as any;
+                session = res?.data?.session;
+            } catch (e) {
+                console.warn("Chat Auth session fetch timed out, attempting direct user check:", e);
+                const { data } = await supabase.auth.getUser();
+                if (data?.user) {
+                    session = { user: data.user } as any;
+                }
+            }
 
             const user = session?.user;
-            if (!user) return;
+            if (!user) {
+                setLoading(false);
+                return;
+            }
             setCurrentUser(user);
             
             const { data: allWastes } = await supabase
