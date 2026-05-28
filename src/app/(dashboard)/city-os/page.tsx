@@ -118,7 +118,7 @@ async function fetchRawMairieData(
         posRes
     ] = await Promise.all([
         zonesQuery.catch((e: any) => { console.error("Error fetching zones:", e); return { data: null }; }),
-        supabase.from('wastes').select('id, status, created_at, estimated_weight').catch((e: any) => { console.error("Error fetching wastes:", e); return { data: null }; }),
+        supabase.from('wastes').select('id, status, created_at, estimated_weight, collector_id').catch((e: any) => { console.error("Error fetching wastes:", e); return { data: null }; }),
         supabase.from('tenders').select('*').eq('mairie_id', mairieId).catch((e: any) => { console.error("Error fetching tenders:", e); return { data: null }; }),
         supabase.from('tender_bids').select('*').catch((e: any) => { console.error("Error fetching tender bids:", e); return { data: null }; }),
         supabase.from('transactions').select('*').eq('user_id', mairieId).order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching transactions:", e); return { data: null }; }),
@@ -126,7 +126,7 @@ async function fetchRawMairieData(
         getPoliceAgents().catch((e: any) => { console.error("Error fetching agents:", e); return { success: false, agents: [] }; }),
         getInfractionStats().catch((e: any) => { console.error("Error fetching infraction stats:", e); return { success: false, stats: null }; }),
         getFiscalConfig().catch((e: any) => { console.error("Error fetching fiscal config:", e); return null; }),
-        getOrganizationsForConcession().catch((e: any) => { console.error("Error fetching organizations:", e); return { success: false, organizations: [] }; }),
+        supabase.from('profiles').select('id, full_name, agent_count, role').in('role', ['entreprise', 'organisation_admin', 'collecteur']).catch((e: any) => { console.error("Error fetching profiles for concessions:", e); return { data: null }; }),
         supabase.from('vehicles').select('*').catch((e: any) => { console.error("Error fetching vehicles:", e); return { data: null }; }),
         supabase.from('agent_live_positions').select('*').catch((e: any) => { console.error("Error fetching agent live positions:", e); return { data: null }; })
     ]);
@@ -182,10 +182,25 @@ async function fetchRawMairieData(
     const enrichedZones = enrichZonesData(zonesData, concessionsData, profilesData);
     const enrichedTenders = enrichTendersData(tendersData, bidsData, profilesData);
 
-    const enrichedOrgs = (orgsResult?.success ? orgsResult.organizations || [] : []).map((org: any) => ({
-        ...org,
-        isSuspended: (org.performance_score || 5) < 2.5
-    }));
+    const orgsData = orgsResult?.data || [];
+    const wastesForPerformance = wastesData || [];
+    
+    const enrichedOrgs = orgsData.map((org: any) => {
+        const orgCollections = wastesForPerformance.filter((w: any) => w.collector_id === org.id);
+        const successCount = orgCollections.filter((w: any) => w.status === 'collected').length;
+        const totalCount = orgCollections.length;
+        
+        let score = totalCount > 0 ? (successCount / totalCount) * 5 : 0;
+        if (org.agent_count && Number.parseInt(org.agent_count, 10) > 10) score += 0.5;
+        const scoreFormatted = Math.min(5, Math.max(0, score)).toFixed(1);
+        
+        return {
+            ...org,
+            performanceScore: scoreFormatted,
+            totalCollections: successCount,
+            isSuspended: Number(scoreFormatted) < 2.5
+        };
+    }).sort((a: any, b: any) => Number(b.performanceScore) - Number(a.performanceScore));
 
     return {
         zones: enrichedZones,
