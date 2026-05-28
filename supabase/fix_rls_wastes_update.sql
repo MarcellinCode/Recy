@@ -1,20 +1,24 @@
 -- ======================================================================
--- CORRECTIF RLS : AUTORISER LA RÉSERVATION ET LA MISE À JOUR DES DÉCHETS
+-- CORRECTIF GLOBAL : COLONNES MANQUANTES & AUTORISATIONS DE RÉSERVATION
 -- ======================================================================
--- Ce script ajoute les politiques RLS "FOR UPDATE" nécessaires sur la table 
--- "wastes" pour permettre aux collecteurs de réserver un lot, et aux 
--- vendeurs/collecteurs de modifier leurs lots respectifs.
+-- Ce script :
+-- 1. Ajoute les colonnes de suivi temporel manquantes dans la table wastes.
+-- 2. Configure la politique de sécurité RLS pour autoriser la réservation.
 -- ======================================================================
 
--- 1. S'assurer que RLS est bien activé sur la table wastes
+-- 1. AJOUT DES COLONNES MANQUANTES DANS LA TABLE wastes
+ALTER TABLE public.wastes ADD COLUMN IF NOT EXISTS reserved_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.wastes ADD COLUMN IF NOT EXISTS collected_at TIMESTAMP WITH TIME ZONE;
+
+-- 2. ACTIVATION DE LA SÉCURITÉ RLS
 ALTER TABLE public.wastes ENABLE ROW LEVEL SECURITY;
 
--- 2. Supprimer les anciennes politiques d'update pour repartir sur une base propre
+-- 3. NETTOYAGE DES ANCIENNES POLITIQUES
 DROP POLICY IF EXISTS "Sellers can update their own wastes" ON public.wastes;
 DROP POLICY IF EXISTS "Collectors can reserve wastes" ON public.wastes;
 DROP POLICY IF EXISTS "Users can update wastes" ON public.wastes;
 
--- 3. Créer la politique globale de mise à jour sécurisée
+-- 4. CRÉATION DE LA NOUVELLE POLITIQUE DE MISE À JOUR ULTRA-SÉCURISÉE
 CREATE POLICY "Users can update wastes" ON public.wastes
 FOR UPDATE
 USING (
@@ -31,11 +35,11 @@ WITH CHECK (
   -- Le vendeur a tous les droits de modification sur son propre lot
   auth.uid() = seller_id 
   OR 
-  -- Un collecteur ne peut QUE réserver le lot en y associant son ID et le statut 'reserved'
+  -- Un collecteur ne peut QUE réserver le lot en y associant son ID, reserved_at et le statut 'reserved'
   (status = 'reserved' AND collector_id = auth.uid())
   OR
   -- Le collecteur assigné peut finaliser la collecte en passant à 'collected'
   (auth.uid() = collector_id AND status IN ('collected', 'reserved'))
 );
 
--- Note : Ce script doit être exécuté dans l'éditeur SQL de votre console Supabase.
+-- Note : Copiez ce script complet et exécutez-le dans le SQL Editor de votre console Supabase.

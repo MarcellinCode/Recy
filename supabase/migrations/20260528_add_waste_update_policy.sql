@@ -1,6 +1,11 @@
--- Migration: Add waste update policy for RLS
+-- Migration: Add missing temporal columns and update RLS policies for wastes
 -- Created on 2026-05-28
 
+-- 1. Add missing temporal columns
+ALTER TABLE public.wastes ADD COLUMN IF NOT EXISTS reserved_at TIMESTAMP WITH TIME ZONE;
+ALTER TABLE public.wastes ADD COLUMN IF NOT EXISTS collected_at TIMESTAMP WITH TIME ZONE;
+
+-- 2. Configure RLS update policy
 ALTER TABLE public.wastes ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can update wastes" ON public.wastes;
