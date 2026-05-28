@@ -161,33 +161,51 @@ function ChatContainer() {
     // --- Data Fetching ---
 
     useEffect(() => {
-        const fetchInitialData = async () => {
-            // Try to get session, fallback if slow but do not crash the UI
-            let session = null;
-            try {
-                const sessionPromise = supabase.auth.getSession();
-                const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 8000));
-                const res = await Promise.race([sessionPromise, timeoutPromise]) as any;
-                session = res?.data?.session;
-            } catch (e) {
-                console.warn("Chat Auth session fetch timed out, attempting direct user check:", e);
-                const { data } = await supabase.auth.getUser();
-                if (data?.user) {
-                    session = { user: data.user } as any;
-                }
-            }
+        let isMounted = true;
 
-            const user = session?.user;
-            if (!user) {
+        // Coupe-circuit absolu : désactive le loader de force après 6 secondes quoi qu'il arrive
+        const safetyTimeout = setTimeout(() => {
+            if (isMounted) {
+                console.warn("Chat Safety timeout triggered: forcing loader off.");
                 setLoading(false);
-                return;
             }
-            setCurrentUser(user);
-            
-            const { data: allWastes } = await supabase
-                .from('wastes')
-                .select('id, status, seller_id, collector_id, estimated_weight')
-                .order('created_at', { ascending: false });
+        }, 6000);
+
+        const fetchInitialData = async () => {
+            try {
+                // Try to get session, fallback if slow but do not crash the UI
+                let session = null;
+                try {
+                    const sessionPromise = supabase.auth.getSession();
+                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 4000));
+                    const res = await Promise.race([sessionPromise, timeoutPromise]) as any;
+                    session = res?.data?.session;
+                } catch (e) {
+                    console.warn("Chat Auth session fetch timed out, attempting direct user check:", e);
+                    try {
+                        const userPromise = supabase.auth.getUser();
+                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000));
+                        const res = await Promise.race([userPromise, timeoutPromise]) as any;
+                        if (res?.data?.user) {
+                            session = { user: res.data.user } as any;
+                        }
+                    } catch (err2) {
+                        console.error("All chat auth checks failed or timed out:", err2);
+                    }
+                }
+
+                if (!isMounted) return;
+                const user = session?.user;
+                if (!user) {
+                    setLoading(false);
+                    return;
+                }
+                setCurrentUser(user);
+                
+                const { data: allWastes } = await supabase
+                    .from('wastes')
+                    .select('id, status, seller_id, collector_id, estimated_weight')
+                    .order('created_at', { ascending: false });
 
             const { data: userMessages } = await supabase
                 .from('messages')
@@ -222,9 +240,21 @@ function ChatContainer() {
                 const found = conversationsWithBadges.find((c: any) => c.id === targetWasteId);
                 if (found) setSelectedConv(found as any);
             }
-            setLoading(false);
+            } catch (err) {
+                console.error("Chat initial fetch error:", err);
+            } finally {
+                if (isMounted) {
+                    setLoading(false);
+                    clearTimeout(safetyTimeout);
+                }
+            }
         };
         fetchInitialData();
+
+        return () => {
+            isMounted = false;
+            clearTimeout(safetyTimeout);
+        };
     }, [targetWasteId]);
 
     // --- Actions ---

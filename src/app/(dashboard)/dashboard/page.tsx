@@ -50,23 +50,39 @@ export default function DashboardPage() {
     const [activeSub] = useState<any>(null);
 
     useEffect(() => {
+        let isMounted = true;
+
+        // Coupe-circuit absolu : désactive le loader de force après 6 secondes quoi qu'il arrive
+        const safetyTimeout = setTimeout(() => {
+            if (isMounted) {
+                console.warn("Safety timeout triggered: forcing loader off.");
+                setLoading(false);
+            }
+        }, 6000);
+
         const fetchStats = async () => {
             try {
-                // Try to get session, fallback if slow but do not crash the UI
                 let session = null;
                 try {
                     const sessionPromise = supabase.auth.getSession();
-                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 15000));
+                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 4000));
                     const res = await Promise.race([sessionPromise, timeoutPromise]) as any;
                     session = res?.data?.session;
                 } catch (e) {
                     console.warn("Dashboard Auth session fetch timed out, attempting direct user check:", e);
-                    const { data } = await supabase.auth.getUser();
-                    if (data?.user) {
-                        session = { user: data.user } as any;
+                    try {
+                        const userPromise = supabase.auth.getUser();
+                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000));
+                        const res = await Promise.race([userPromise, timeoutPromise]) as any;
+                        if (res?.data?.user) {
+                            session = { user: res.data.user } as any;
+                        }
+                    } catch (err2) {
+                        console.error("All auth checks failed or timed out:", err2);
                     }
                 }
                 
+                if (!isMounted) return;
                 const user = session?.user;
                 
                 if (!user) {
@@ -80,6 +96,8 @@ export default function DashboardPage() {
                     supabase.from('wastes').select('id,final_weight,estimated_weight,status').or(`seller_id.eq.${user.id},collector_id.eq.${user.id}`)
                 ]);
 
+                if (!isMounted) return;
+
                 const prof = profRes.data;
                 setProfile(prof);
 
@@ -90,7 +108,6 @@ export default function DashboardPage() {
                     let citizenCount = 0;
                     if (prof?.role === 'mairie' && prof?.city) {
                         try {
-                            
                             const { count } = await supabase
                                 .from('profiles')
                                 .select('*', { count: 'exact', head: true })
@@ -102,21 +119,32 @@ export default function DashboardPage() {
                         }
                     }
 
-                    setStats({
-                        totalWeight,
-                        co2Saved: totalWeight * 1.22,
-                        ecoPoints: prof?.eco_points || 0,
-                        collectionsCount: wastes.length,
-                        citizenCount
-                    });
+                    if (isMounted) {
+                        setStats({
+                            totalWeight,
+                            co2Saved: totalWeight * 1.22,
+                            ecoPoints: prof?.eco_points || 0,
+                            collectionsCount: wastes.length,
+                            citizenCount
+                        });
+                    }
                 }
             } catch (err) {
                 console.error("Dashboard fetch error:", err);
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                    clearTimeout(safetyTimeout);
+                }
             }
         };
+
         fetchStats();
+
+        return () => {
+            isMounted = false;
+            clearTimeout(safetyTimeout);
+        };
     }, []);
 
     if (loading) {
