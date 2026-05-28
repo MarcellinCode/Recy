@@ -123,9 +123,9 @@ async function fetchRawMairieData(
         supabase.from('tender_bids').select('*').catch((e: any) => { console.error("Error fetching tender bids:", e); return { data: null }; }),
         supabase.from('transactions').select('*').eq('user_id', mairieId).order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching transactions:", e); return { data: null }; }),
         supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching sanctions:", e); return { data: null }; }),
-        getPoliceAgents().catch((e: any) => { console.error("Error fetching agents:", e); return { success: false, agents: [] }; }),
-        getInfractionStats().catch((e: any) => { console.error("Error fetching infraction stats:", e); return { success: false, stats: null }; }),
-        getFiscalConfig().catch((e: any) => { console.error("Error fetching fiscal config:", e); return null; }),
+        supabase.from('profiles').select('*, zones:zone_id(name)').eq('role', 'agent_police_verte').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching agents:", e); return { data: [] }; }),
+        supabase.from('environmental_infractions').select('status, severity, type').catch((e: any) => { console.error("Error fetching infraction stats:", e); return { data: [] }; }),
+        supabase.from('platform_settings').select('key, value').in('key', ['commission_rate', 'eco_tax_rate']).catch((e: any) => { console.error("Error fetching fiscal config:", e); return { data: null }; }),
         supabase.from('profiles').select('id, full_name, agent_count, role').in('role', ['entreprise', 'organisation_admin', 'collecteur']).catch((e: any) => { console.error("Error fetching profiles for concessions:", e); return { data: null }; }),
         supabase.from('vehicles').select('*').catch((e: any) => { console.error("Error fetching vehicles:", e); return { data: null }; }),
         supabase.from('agent_live_positions').select('*').catch((e: any) => { console.error("Error fetching agent live positions:", e); return { data: null }; })
@@ -202,6 +202,30 @@ async function fetchRawMairieData(
         };
     }).sort((a: any, b: any) => Number(b.performanceScore) - Number(a.performanceScore));
 
+    const agentsData = agentsRes?.data || [];
+    
+    const infractionStatsData = infractionStatsRes?.data || [];
+    const computedStats = {
+        total: infractionStatsData.length,
+        open: infractionStatsData.filter((i: any) => i.status === 'open').length,
+        critical: infractionStatsData.filter((i: any) => i.severity === 'critical').length,
+        types: infractionStatsData.reduce((acc: any, i: any) => {
+            acc[i.type] = (acc[i.type] || 0) + 1;
+            return acc;
+        }, {})
+    };
+
+    const ratesData = fetchedRates?.data || [];
+    const mapRates: Record<string, number> = {};
+    for (const row of ratesData) {
+        const parsed = parseFloat(row.value);
+        if (!isNaN(parsed)) mapRates[row.key] = parsed;
+    }
+    const computedRates = {
+        commissionRate: mapRates['commission_rate'] ?? 0.10,
+        ecoTaxRate:     mapRates['eco_tax_rate']    ?? 0.02,
+    };
+
     return {
         zones: enrichedZones,
         wastes: wastesData,
@@ -209,9 +233,9 @@ async function fetchRawMairieData(
         transactions: txData,
         sanctions: sanctionsData,
         infractions: infractionsData,
-        policeAgents: agentsRes?.success ? agentsRes.agents || [] : [],
-        infractionStats: infractionStatsRes?.success ? infractionStatsRes.stats : null,
-        fiscalRates: fetchedRates,
+        policeAgents: agentsData,
+        infractionStats: computedStats,
+        fiscalRates: computedRates,
         organizations: enrichedOrgs,
         vehicles: vehiclesData,
         fleetPositions: posData,
@@ -1037,17 +1061,11 @@ function MairieDashboardContent() {
                 </form>
             </Modal>
 
-            <Modal isOpen={isAddZoneModalOpen} onClose={() => setIsAddZoneModalOpen(false)} title="🏛️ CENTRE DE COMMANDE : NOUVELLE ZONE">
+             <Modal isOpen={isAddZoneModalOpen} onClose={() => setIsAddZoneModalOpen(false)} title="🏛️ CENTRE DE COMMANDE : NOUVELLE ZONE">
                  <form onSubmit={handleAddZoneSubmit} className="space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label htmlFor="zoneName" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Nom de la Zone</label>
-                            <input id="zoneName" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black uppercase outline-none text-zinc-900 placeholder:text-zinc-300" placeholder="Ex: Zone Nord..." value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} />
-                        </div>
-                        <div className="space-y-2">
-                            <label htmlFor="zoneCity" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Ville</label>
-                            <input id="zoneCity" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black uppercase outline-none text-zinc-900" placeholder="Ville" value={newZone.city} onChange={(e) => setNewZone({...newZone, city: e.target.value})} />
-                        </div>
+                    <div className="space-y-2">
+                        <label htmlFor="zoneName" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Nom de la Zone</label>
+                        <input id="zoneName" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black uppercase outline-none text-zinc-900 placeholder:text-zinc-300" placeholder="Ex: Zone Nord..." value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
