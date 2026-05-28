@@ -22,8 +22,8 @@ export async function assignConcessionDirectly(data: {
     }
 
     // 🛡️ VÉRIFICATION DE LA PROPRIÉTÉ DE LA ZONE (Protection IDOR)
-    const { data: zone } = await supabase.from('zones').select('created_by').eq('id', data.zone_id).single();
-    if (!zone || zone.created_by !== user.id) {
+    const { data: zone } = await supabase.from('zones').select('organization_id').eq('id', data.zone_id).single();
+    if (!zone || zone.organization_id !== user.id) {
         return { success: false, error: "Action non autorisée. Cette zone n'appartient pas à votre juridiction." };
     }
 
@@ -61,8 +61,8 @@ export async function revokeConcession(concessionId: string, zoneId: string) {
     if (!user) return { success: false, error: "Non authentifié" };
 
     // 🛡️ VÉRIFICATION DE LA PROPRIÉTÉ DE LA ZONE (Protection IDOR)
-    const { data: zone } = await supabase.from('zones').select('created_by').eq('id', zoneId).single();
-    if (!zone || zone.created_by !== user.id) {
+    const { data: zone } = await supabase.from('zones').select('organization_id').eq('id', zoneId).single();
+    if (!zone || zone.organization_id !== user.id) {
         return { success: false, error: "Action non autorisée. Cette zone n'appartient pas à votre juridiction." };
     }
 

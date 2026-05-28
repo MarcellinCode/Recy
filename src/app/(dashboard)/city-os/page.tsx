@@ -97,7 +97,7 @@ async function fetchRawMairieData(
 
     let zonesQuery = supabase.from('zones').select('*');
     if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
-        zonesQuery = zonesQuery.eq('created_by', mairieId);
+        zonesQuery = zonesQuery.eq('organization_id', mairieId);
     }
 
     // Parallel Stage 1 queries
@@ -119,7 +119,7 @@ async function fetchRawMairieData(
         supabase.from('wastes').select('id, status, created_at, estimated_weight').catch((e: any) => { console.error("Error fetching wastes:", e); return { data: null }; }),
         supabase.from('tenders').select('*').eq('mairie_id', mairieId).catch((e: any) => { console.error("Error fetching tenders:", e); return { data: null }; }),
         supabase.from('tender_bids').select('*').catch((e: any) => { console.error("Error fetching tender bids:", e); return { data: null }; }),
-        supabase.from('transactions').select('*').eq('profile_id', mairieId).order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching transactions:", e); return { data: null }; }),
+        supabase.from('transactions').select('*').eq('user_id', mairieId).order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching transactions:", e); return { data: null }; }),
         supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching sanctions:", e); return { data: null }; }),
         getPoliceAgents().catch((e: any) => { console.error("Error fetching agents:", e); return { success: false, agents: [] }; }),
         getInfractionStats().catch((e: any) => { console.error("Error fetching infraction stats:", e); return { success: false, stats: null }; }),
@@ -353,7 +353,7 @@ function MairieDashboardContent() {
         // On s'assure que la zone est liée à la mairie actuelle
         const zoneToCreate = {
             ...newZone,
-            created_by: targetMairieId || user.id
+            organization_id: targetMairieId || user.id
         };
 
         const { data: createdZone, error: zoneError } = await supabase.from('zones').insert([zoneToCreate]).select().single();
