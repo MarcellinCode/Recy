@@ -45,8 +45,7 @@ export const wasteService = {
       .from('wastes')
       .update({
         status: 'reserved',
-        collector_id: collectorId,
-        reserved_at: new Date().toISOString()
+        collector_id: collectorId
       })
       .eq('id', id)
       .eq('status', 'published')   // ← verrou optimiste : échoue si déjà réservé
@@ -96,7 +95,7 @@ export const wasteService = {
       .from('wastes')
       .select('*', { count: 'exact', head: true })
       .eq('collector_id', collectorId)
-      .gte('reserved_at', startOfMonth.toISOString());
+      .gte('created_at', startOfMonth.toISOString()); // Utilise created_at qui existe à 100% dans la structure de base
 
     if (error) {
       console.error("Error fetching reservation count:", error);
