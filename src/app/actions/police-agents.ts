@@ -95,15 +95,27 @@ export async function getPoliceAgents() {
     const supabaseAdmin = createAdminClient(supabaseUrl, serviceRoleKey);
 
     try {
-        const { data: agents, error } = await supabaseAdmin
+        const { data: agents, error: agentsError } = await supabaseAdmin
             .from('profiles')
-            .select('*, zones:zone_id(name)')
+            .select('*')
             .eq('role', 'agent_police_verte')
             .order('created_at', { ascending: false });
 
-        if (error) throw error;
+        if (agentsError) throw agentsError;
 
-        return { success: true, agents };
+        // Fetch all zones to map them in memory
+        const { data: zones, error: zonesError } = await supabaseAdmin
+            .from('zones')
+            .select('id, name');
+
+        if (zonesError) console.error("Error fetching zones in getPoliceAgents:", zonesError);
+
+        const enrichedAgents = (agents || []).map(agent => ({
+            ...agent,
+            zones: zones ? zones.find(z => z.id === agent.zone_id) : null
+        }));
+
+        return { success: true, agents: enrichedAgents };
     } catch (error: any) {
         return { success: false, error: error.message };
     }

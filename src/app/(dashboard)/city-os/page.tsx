@@ -123,7 +123,7 @@ async function fetchRawMairieData(
         supabase.from('tender_bids').select('*').catch((e: any) => { console.error("Error fetching tender bids:", e); return { data: null }; }),
         supabase.from('transactions').select('*').eq('user_id', mairieId).order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching transactions:", e); return { data: null }; }),
         supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching sanctions:", e); return { data: null }; }),
-        supabase.from('profiles').select('*, zones(name)').eq('role', 'agent_police_verte').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching agents:", e); return { data: [] }; }),
+        supabase.from('profiles').select('*').eq('role', 'agent_police_verte').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching agents:", e); return { data: [] }; }),
         supabase.from('environmental_infractions').select('status, severity, type').catch((e: any) => { console.error("Error fetching infraction stats:", e); return { data: [] }; }),
         Promise.resolve({ data: null }),
         supabase.from('profiles').select('id, full_name, agent_count, role').in('role', ['entreprise', 'organisation_admin', 'collecteur']).catch((e: any) => { console.error("Error fetching profiles for concessions:", e); return { data: null }; }),
@@ -152,7 +152,7 @@ async function fetchRawMairieData(
         }
     }
 
-    let infractionsQuery = supabase.from('environmental_infractions').select('*, zones(name)');
+    let infractionsQuery = supabase.from('environmental_infractions').select('*');
     if (zoneIds.length > 0) {
         infractionsQuery = infractionsQuery.in('zone_id', zoneIds);
     }
@@ -164,7 +164,11 @@ async function fetchRawMairieData(
     ]);
 
     const concessionsData = concessionsRes?.data || [];
-    const infractionsData = infractionsRes?.data || [];
+    const rawInfractionsData = infractionsRes?.data || [];
+    const infractionsData = rawInfractionsData.map((inf: any) => ({
+        ...inf,
+        zones: zonesData.find((z: any) => z.id === inf.zone_id)
+    }));
 
     // Stage 3: Fetch profiles based on concession organization IDs and profiles IDs
     const profileIds = [...new Set([
@@ -202,7 +206,11 @@ async function fetchRawMairieData(
         };
     }).sort((a: any, b: any) => Number(b.performanceScore) - Number(a.performanceScore));
 
-    const agentsData = agentsRes?.data || [];
+    const rawAgentsData = agentsRes?.data || [];
+    const agentsData = rawAgentsData.map((agent: any) => ({
+        ...agent,
+        zones: zonesData.find((z: any) => z.id === agent.zone_id)
+    }));
     
     const infractionStatsData = infractionStatsRes?.data || [];
     const computedStats = {
