@@ -53,14 +53,14 @@ export function VehicleCard({ vehicle, position }: Readonly<{ vehicle: Vehicle, 
     return (
         <motion.div 
             whileHover={{ y: -5 }}
-            className="bg-zinc-900 border border-white/5 p-7 rounded-[2.5rem] shadow-2xl group relative overflow-hidden transition-all hover:border-emerald-500/30"
+            className="bg-gradient-to-br from-emerald-950/90 via-slate-900/95 to-slate-950/90 border border-emerald-500/15 p-7 rounded-[2.5rem] shadow-2xl group relative overflow-hidden transition-all hover:border-emerald-500/30 backdrop-blur-xl"
         >
             <div className="absolute -right-6 -top-6 text-white opacity-[0.03] group-hover:opacity-[0.08] transition-opacity">
                 <Truck size={140} />
             </div>
  
             <div className="flex justify-between items-start mb-8 relative z-10">
-                <div className={cn("w-14 h-14 rounded-2xl border flex items-center justify-center shadow-2xl bg-zinc-950", 
+                <div className={cn("w-14 h-14 rounded-2xl border flex items-center justify-center shadow-2xl bg-emerald-950/50 backdrop-blur-sm", 
                     vehicle.status === 'in_maintenance' ? "text-amber-500 border-amber-500/20" : "text-emerald-500 border-emerald-500/20")}>
                     <Truck size={28} />
                 </div>
@@ -76,11 +76,11 @@ export function VehicleCard({ vehicle, position }: Readonly<{ vehicle: Vehicle, 
  
             <div className="grid grid-cols-1 gap-6 mb-8 relative z-10">
                 <div className="space-y-3">
-                    <div className="flex justify-between items-center text-[9px] font-black uppercase text-zinc-500 tracking-widest">
+                    <div className="flex justify-between items-center text-[9px] font-black uppercase text-zinc-400 tracking-widest">
                         <span className="flex items-center gap-2"><Battery size={12} className="text-emerald-500" /> ÉNERGIE BATT.</span>
-                        <span className={cn(batteryLevel < 20 ? "text-red-500" : "text-emerald-500")}>{batteryLevel}%</span>
+                        <span className={cn(batteryLevel < 20 ? "text-red-500" : "text-emerald-400")}>{batteryLevel}%</span>
                     </div>
-                    <div className="h-2 bg-zinc-950 rounded-full overflow-hidden border border-white/5">
+                    <div className="h-2 bg-emerald-950/60 rounded-full overflow-hidden border border-emerald-500/10">
                         <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${batteryLevel}%` }}
@@ -89,23 +89,23 @@ export function VehicleCard({ vehicle, position }: Readonly<{ vehicle: Vehicle, 
                     </div>
                 </div>
                 <div className="space-y-3">
-                    <div className="flex justify-between items-center text-[9px] font-black uppercase text-zinc-500 tracking-widest">
-                        <span className="flex items-center gap-2"><Activity size={12} className="text-blue-500" /> CHARGE UTILE</span>
+                    <div className="flex justify-between items-center text-[9px] font-black uppercase text-zinc-400 tracking-widest">
+                        <span className="flex items-center gap-2"><Activity size={12} className="text-blue-550" /> CHARGE UTILE</span>
                         <span className="text-blue-400">{loadLevel}%</span>
                     </div>
-                    <div className="h-2 bg-zinc-950 rounded-full overflow-hidden border border-white/5">
+                    <div className="h-2 bg-emerald-950/60 rounded-full overflow-hidden border border-emerald-500/10">
                         <motion.div 
                             initial={{ width: 0 }}
                             animate={{ width: `${loadLevel}%` }}
-                            className="h-full bg-blue-500 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-1000" 
+                            className="h-full bg-blue-550 rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)] transition-all duration-1000" 
                         />
                     </div>
                 </div>
             </div>
  
-            <div className="pt-6 border-t border-white/5 flex items-center justify-between relative z-10">
+            <div className="pt-6 border-t border-emerald-500/10 flex items-center justify-between relative z-10">
                 <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-zinc-800 border border-white/5 flex items-center justify-center text-zinc-400">
+                    <div className="w-8 h-8 rounded-full bg-emerald-950/40 border border-emerald-500/10 flex items-center justify-center text-emerald-300">
                         <User size={14} />
                     </div>
                     <span className="text-[10px] font-black text-zinc-300 uppercase tracking-tight">{vehicle.driver_name || "Agent Non-Assigné"}</span>
@@ -131,7 +131,7 @@ export function MaintenanceIntel({ vehicles }: Readonly<{ vehicles: readonly Veh
     }).length;
  
     return (
-        <div className="bg-zinc-900 border border-white/5 p-10 rounded-[3.5rem] shadow-2xl relative overflow-hidden group">
+        <div className="bg-gradient-to-br from-emerald-950/90 via-slate-900/95 to-slate-950/90 border border-emerald-500/15 p-10 rounded-[3.5rem] shadow-2xl relative overflow-hidden group backdrop-blur-xl">
             <Wrench size={180} className="absolute -right-12 -bottom-12 text-white/5 rotate-12 transition-transform group-hover:scale-110" />
             
             <div className="relative z-10">
@@ -141,7 +141,7 @@ export function MaintenanceIntel({ vehicles }: Readonly<{ vehicles: readonly Veh
                     </div>
                     <div>
                         <h3 className="text-2xl font-black italic uppercase tracking-tighter leading-none text-white">Santé Flotte</h3>
-                        <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.2em] mt-2">ANALYSE TÉLÉMÉTRIQUE</p>
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] mt-2">ANALYSE TÉLÉMÉTRIQUE</p>
                     </div>
                 </div>
  
@@ -149,28 +149,28 @@ export function MaintenanceIntel({ vehicles }: Readonly<{ vehicles: readonly Veh
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
-                            <span className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Opérationnels</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest text-zinc-300">Opérationnels</span>
                         </div>
                         <span className="text-2xl font-black italic text-white">{vehicles.filter(v => v.status === 'active' || v.status === 'en_mouvement').length}</span>
                     </div>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="w-2.5 h-2.5 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
-                            <span className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Révisions</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest text-zinc-300">Révisions</span>
                         </div>
                         <span className="text-2xl font-black italic text-amber-500">{criticalHealth}</span>
                     </div>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
-                            <span className="text-[11px] font-black uppercase tracking-widest text-zinc-400">Immobilisés</span>
+                            <span className="text-[11px] font-black uppercase tracking-widest text-zinc-300">Immobilisés</span>
                         </div>
                         <span className="text-2xl font-black italic text-red-500">{maintenanceNeeded}</span>
                     </div>
                 </div>
  
                 <Link href="/flotte" className="block w-full mt-12">
-                    <button className="w-full py-6 bg-zinc-950 border border-white/5 text-white rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:border-emerald-500 transition-all shadow-2xl">
+                    <button className="w-full py-6 bg-emerald-950/50 backdrop-blur-sm border border-emerald-500/20 text-emerald-200 rounded-2xl text-[11px] font-black uppercase tracking-widest hover:bg-emerald-600 hover:text-white hover:border-emerald-500 transition-all shadow-xl">
                         Registre de Maintenance
                     </button>
                 </Link>
@@ -197,16 +197,16 @@ export function TelemetryFeed() {
             </h3>
             <div className="space-y-4">
                 {logs.map(log => (
-                    <div key={log.id} className="p-5 bg-zinc-950 border border-white/5 rounded-3xl flex items-center justify-between group hover:border-emerald-500/30 transition-all shadow-xl">
+                    <div key={log.id} className="p-5 bg-emerald-950/60 backdrop-blur-sm border border-emerald-500/10 rounded-3xl flex items-center justify-between group hover:border-emerald-500/30 transition-all shadow-xl">
                         <div className="flex items-center gap-5">
-                            <span className="text-[10px] font-black text-white bg-zinc-800 border border-white/10 px-3 py-1.5 rounded-xl">{log.v}</span>
+                            <span className="text-[10px] font-black text-emerald-200 bg-emerald-950/80 border border-emerald-500/25 px-3 py-1.5 rounded-xl">{log.v}</span>
                             <span className={cn("text-[10px] font-black uppercase tracking-tight transition-colors", 
                                 getLogColorClass(log.type)
                             )}>
                                 {log.msg}
                             </span>
                         </div>
-                        <span className="text-[9px] font-mono text-zinc-600 group-hover:text-emerald-500 transition-colors">{log.time}</span>
+                        <span className="text-[9px] font-mono text-zinc-550 group-hover:text-emerald-400 transition-colors">{log.time}</span>
                     </div>
                 ))}
             </div>

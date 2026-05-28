@@ -464,17 +464,17 @@ function MairieDashboardContent() {
     }
 
     return (
-        <div className="flex h-screen w-full bg-gray-50/50 text-zinc-900 overflow-hidden select-none">
+        <div className="flex h-screen w-full bg-gradient-to-br from-slate-50 via-emerald-50/20 to-slate-100 text-zinc-900 overflow-hidden select-none">
             {/* Sidebar : Live Intel Feed */}
-            <aside className="w-[320px] hidden lg:flex flex-col border-r border-gray-100 bg-white p-6">
+            <aside className="w-[320px] hidden lg:flex flex-col border-r border-slate-200/50 bg-white/70 backdrop-blur-md p-6 shadow-sm">
                 <div className="mb-10">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center overflow-hidden">
                             <img src="/images/police_verte_logo.png" alt="City OS" className="w-6 h-6 object-contain" />
                         </div>
                         <div>
-                            <h1 className="text-lg font-black italic tracking-tighter uppercase leading-none text-zinc-900 text-shadow-glow-emerald">City OS</h1>
-                            <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-1">Souveraineté Numérique</p>
+                            <h1 className="text-lg font-black italic tracking-tighter uppercase leading-none text-emerald-950 text-shadow-glow-emerald">City OS</h1>
+                            <p className="text-[8px] font-black text-emerald-600/70 uppercase tracking-widest mt-1">Souveraineté Numérique</p>
                         </div>
                     </div>
                 </div>
@@ -483,7 +483,7 @@ function MairieDashboardContent() {
                     <LiveTicker events={liveEvents} />
                 </div>
 
-                <div className="pt-6 border-t border-gray-100 space-y-4">
+                <div className="pt-6 border-t border-slate-100 space-y-4">
                     <StatusIndicator label="Système Radar" status="active" />
                     <StatusIndicator label="Collecte Live" status="active" />
                     <StatusIndicator label="Signalements" status={slaBreaches > 0 ? "warning" : "active"} />
@@ -492,11 +492,11 @@ function MairieDashboardContent() {
 
             {/* Main Cockpit Area */}
             <main className="flex-1 flex flex-col relative overflow-hidden">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-500/[0.03] blur-[120px] rounded-full pointer-events-none" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-blue-500/[0.03] blur-[100px] rounded-full pointer-events-none" />
+                <div className="absolute top-[-10%] left-[-10%] w-[45%] h-[45%] bg-emerald-500/[0.06] blur-[130px] rounded-full pointer-events-none animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[35%] h-[35%] bg-blue-500/[0.06] blur-[110px] rounded-full pointer-events-none" />
 
                 <header className="p-8 flex items-center justify-between z-50">
-                    <nav className="flex gap-2 p-1.5 bg-white border border-gray-200 rounded-2xl shadow-sm">
+                    <nav className="flex gap-2 p-1.5 bg-white/80 backdrop-blur-md border border-slate-200/60 rounded-2xl shadow-sm">
                         {[
                             { id: 'overview', label: 'RADAR CENTRAL', icon: Activity },
                             { id: 'tenders', label: 'APPELS D\'OFFRES', icon: Gavel },
@@ -511,8 +511,8 @@ function MairieDashboardContent() {
                                 className={cn(
                                     "px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-3 transition-all",
                                     activeTab === tab.id 
-                                        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-105" 
-                                        : "text-zinc-500 hover:text-zinc-900 hover:bg-gray-50"
+                                        ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20 scale-105" 
+                                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-100/50"
                                 )}
                             >
                                 {tab.id === 'police' ? <img src="/images/police_verte_logo.png" alt="Police Verte Logo" className={cn("w-3.5 h-3.5 object-contain", activeTab === 'police' ? "brightness-0 invert" : "")} /> : <tab.icon size={14} />}
@@ -527,10 +527,10 @@ function MairieDashboardContent() {
                             else setIsAddZoneModalOpen(true);
                         }}
                         className={cn(
-                            "px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl",
+                            "px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-lg",
                             activeTab === 'fleet' 
-                                ? "bg-emerald-500 text-white shadow-emerald-500/20" 
-                                : "bg-white border border-gray-200 text-zinc-900 shadow-sm"
+                                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20" 
+                                : "bg-white/85 backdrop-blur-md border border-slate-200/60 text-slate-850 hover:bg-slate-50 shadow-sm"
                         )}
                     >
                         {actionButtonLabel}
@@ -542,12 +542,12 @@ function MairieDashboardContent() {
                         {activeTab === 'overview' && (
                             <motion.div key="overview" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} className="space-y-8">
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    <div className="lg:col-span-2 relative h-[550px] rounded-[3.5rem] overflow-hidden border border-gray-100 bg-white shadow-md group">
+                                    <div className="lg:col-span-2 relative h-[550px] rounded-[3.5rem] overflow-hidden border border-slate-200/40 bg-white/75 backdrop-blur-md shadow-lg shadow-slate-100 group">
                                         <div className="absolute inset-0 z-0"><MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} /></div>
                                         <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.1)_100%)]" />
                                     </div>
                                     <div className="space-y-8 overflow-y-auto pr-2 no-scrollbar">
-                                        <div className="flex justify-center bg-white border border-gray-100 rounded-[3rem] py-10 shadow-md">
+                                        <div className="flex justify-center bg-zinc-900 border border-emerald-500/20 rounded-[3rem] py-10 shadow-2xl backdrop-blur-xl bg-gradient-to-br from-emerald-950/90 via-slate-900/95 to-emerald-950/90">
                                             <HoloGauge value={collectionRate} label="SALUBRITÉ COMMUNE" />
                                         </div>
                                         <NeonCard title="SIGNALEMENTS ACTIFS" value={totalWastes} icon={AlertTriangle} color="blue" trend="+12 AUJOURD'HUI" />
@@ -557,18 +557,18 @@ function MairieDashboardContent() {
                                 </div>
 
                                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                                    <div className="bg-white rounded-[3rem] border border-gray-100 p-8 shadow-md relative overflow-hidden group">
+                                    <div className="bg-white/80 backdrop-blur-md rounded-[3rem] border border-slate-200/60 p-8 shadow-lg shadow-slate-100 relative overflow-hidden group">
                                         <h2 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900">SOUVERAINETÉ & CONCESSIONS</h2>
                                         <div className="space-y-4 relative z-10">
                                             {zones.filter(z => z.status === 'occupied').map((zone) => {
                                                 const concession = zone.concessions?.[0];
                                                 return (
-                                                    <div key={zone.id} className="flex items-center justify-between p-6 bg-gray-50 border border-gray-100 rounded-[2.5rem] hover:border-emerald-500/30 transition-all">
+                                                    <div key={zone.id} className="flex items-center justify-between p-6 bg-slate-50/50 border border-slate-200/40 rounded-[2.5rem] hover:border-emerald-500/30 hover:bg-white transition-all">
                                                         <div className="flex items-center gap-5">
                                                             <div className="w-14 h-14 rounded-2xl bg-white border border-gray-200 flex items-center justify-center text-emerald-500 shadow-sm"><Building2 size={24} /></div>
                                                             <div>
-                                                                <p className="font-black italic uppercase text-xl text-zinc-900 leading-none mb-2">{concession?.profiles?.full_name || "MUNICIPAL"}</p>
-                                                                <p className="text-[10px] font-black text-emerald-500/50 uppercase tracking-[0.2em]">{zone.name}</p>
+                                                                 <p className="font-black italic uppercase text-xl text-zinc-900 leading-none mb-2">{concession?.profiles?.full_name || "MUNICIPAL"}</p>
+                                                                 <p className="text-[10px] font-black text-emerald-500/50 uppercase tracking-[0.2em]">{zone.name}</p>
                                                             </div>
                                                         </div>
                                                         <button onClick={() => handleRevokeConcessionClick(concession.id, zone.id)} className="w-12 h-12 rounded-2xl bg-red-500/10 text-red-500 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-xl"><XCircle size={20} /></button>
@@ -582,7 +582,7 @@ function MairieDashboardContent() {
                                             )}
                                         </div>
                                     </div>
-                                    <div className="bg-white rounded-[3rem] p-8 flex flex-col justify-between overflow-hidden shadow-md relative border border-gray-100">
+                                    <div className="bg-white/85 backdrop-blur-md rounded-[3rem] p-8 flex flex-col justify-between overflow-hidden shadow-lg shadow-slate-100 relative border border-slate-200/60">
                                         <TrendingUp className="absolute -right-4 -top-4 text-zinc-900/5 w-48 h-48" />
                                         <div className="relative z-10">
                                             <h3 className="text-3xl font-black italic tracking-tighter text-zinc-900 mb-2 leading-none">AUDIT <br /> TERRITORIAL</h3>
@@ -598,7 +598,7 @@ function MairieDashboardContent() {
                             <motion.div key="tenders" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                     {tenders.map((tender) => (
-                                        <div key={tender.id} className="bg-white border border-gray-100 p-8 rounded-[3.5rem] shadow-md group hover:border-emerald-500/30 transition-all relative overflow-hidden">
+                                        <div key={tender.id} className="bg-white/80 backdrop-blur-md border border-slate-200/50 p-8 rounded-[3.5rem] shadow-lg shadow-slate-100 group hover:border-emerald-500/30 transition-all relative overflow-hidden">
                                             <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity text-zinc-900"><Gavel size={64} /></div>
                                             <h3 className="text-2xl font-black italic uppercase text-zinc-900 mb-2 leading-none">{tender.title}</h3>
                                             <p className="text-zinc-500 text-[10px] font-bold mb-10 line-clamp-3 uppercase tracking-wider leading-relaxed">{tender.description}</p>
@@ -606,14 +606,14 @@ function MairieDashboardContent() {
                                             <div className="space-y-4">
                                                 <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Offres Reçues ({tender.tender_bids?.length || 0})</p>
                                                 {tender.tender_bids?.map((bid: any) => (
-                                                    <div key={bid.id} className="p-5 bg-gray-50 rounded-2xl flex items-center justify-between border border-gray-100 hover:border-emerald-500/30 transition-all">
+                                                    <div key={bid.id} className="p-5 bg-slate-50/50 rounded-2xl flex items-center justify-between border border-slate-200/40 hover:border-emerald-500/30 transition-all">
                                                         <div>
                                                             <p className="text-[10px] font-black text-zinc-900 italic uppercase">{bid.profiles?.full_name}</p>
                                                             <p className="text-[8px] font-bold text-emerald-500">SCORE: {bid.profiles?.performanceScore || '4.8'}/5</p>
                                                         </div>
                                                         <button 
                                                             onClick={() => handleAwardTender(tender.id, bid.id, bid.organization_id, tender.zone_id)} 
-                                                            className="px-5 py-2.5 bg-gray-100 text-zinc-800 rounded-xl text-[8px] font-black uppercase hover:shadow-md hover:bg-gray-200 transition-all"
+                                                            className="px-5 py-2.5 bg-slate-200/50 text-slate-800 rounded-xl text-[8px] font-black uppercase hover:shadow-md hover:bg-slate-200 transition-all"
                                                         >
                                                             Attribuer
                                                         </button>
@@ -629,7 +629,7 @@ function MairieDashboardContent() {
                                     ))}
                                     <button 
                                         onClick={() => setIsAddTenderModalOpen(true)} 
-                                        className="aspect-square bg-white border-2 border-dashed border-gray-200 rounded-[3.5rem] flex flex-col items-center justify-center gap-6 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group shadow-md"
+                                        className="aspect-square bg-white/70 backdrop-blur-md border-2 border-dashed border-slate-200 rounded-[3.5rem] flex flex-col items-center justify-center gap-6 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group shadow-lg shadow-slate-100"
                                     >
                                         <div className="w-20 h-20 rounded-[2rem] bg-gray-50 border border-gray-100 flex items-center justify-center text-zinc-650 group-hover:text-emerald-500 transition-all shadow-inner"><Plus size={40} /></div>
                                         <div>
@@ -644,7 +644,7 @@ function MairieDashboardContent() {
                         {activeTab === 'sovereignty' && (
                             <motion.div key="sovereignty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                    <div className="bg-white border border-gray-100 p-12 rounded-[4rem] shadow-md flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
+                                    <div className="bg-white/80 backdrop-blur-md border border-slate-200/50 p-12 rounded-[4rem] shadow-lg shadow-slate-100 flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
                                         <AlertOctagon className="absolute -right-12 -top-12 text-red-500/5 w-64 h-64 rotate-12 transition-transform group-hover:scale-110" />
                                         <div className="relative z-10">
                                             <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><ShieldAlert size={32} /></div>
@@ -653,7 +653,7 @@ function MairieDashboardContent() {
                                         </div>
                                         <button onClick={() => setIsSanctionModalOpen(true)} className="w-full py-7 bg-red-600 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-xl hover:scale-[1.01] transition-transform relative z-10">ÉMETTRE UNE SANCTION</button>
                                     </div>
-                                    <div className="bg-white border border-gray-100 p-12 rounded-[4rem] shadow-md flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
+                                    <div className="bg-white/80 backdrop-blur-md border border-slate-200/50 p-12 rounded-[4rem] shadow-lg shadow-slate-100 flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
                                         <DollarSign className="absolute -right-12 -top-12 text-emerald-500/5 w-64 h-64 -rotate-12 transition-transform group-hover:scale-110" />
                                         <div className="relative z-10">
                                             <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><Activity size={32} /></div>
@@ -667,11 +667,11 @@ function MairieDashboardContent() {
                                     </div>
                                 </div>
 
-                                <div className="bg-white rounded-[3rem] border border-gray-100 p-10 shadow-md">
+                                <div className="bg-white/80 backdrop-blur-md rounded-[3rem] border border-slate-200/50 p-10 shadow-lg shadow-slate-100">
                                     <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900">Registre des Sanctions Administratives</h3>
                                     <div className="space-y-4">
                                         {sanctions.map((s) => (
-                                            <div key={s.id} className="flex items-center justify-between p-6 bg-gray-50 border border-gray-100 rounded-[2rem] hover:border-red-500/30 transition-all">
+                                            <div key={s.id} className="flex items-center justify-between p-6 bg-slate-50/50 border border-slate-200/40 rounded-[2rem] hover:border-red-500/30 transition-all">
                                                 <div className="flex items-center gap-6">
                                                     <div className={cn(
                                                         "w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xs",
@@ -696,7 +696,7 @@ function MairieDashboardContent() {
                                     </div>
                                 </div>
 
-                                <div className="bg-white rounded-[3rem] border border-gray-100 p-10 shadow-md">
+                                <div className="bg-white/80 backdrop-blur-md rounded-[3rem] border border-slate-200/50 p-10 shadow-lg shadow-slate-100">
                                     <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900 flex items-center justify-between">
                                         <span>Annuaire des Partenaires Certifiés</span>
                                         <span className="text-[10px] font-black text-zinc-400">SEUIL D'EXCLUSION : 2.5/5.0</span>
@@ -705,7 +705,7 @@ function MairieDashboardContent() {
                                         {organizations.map((org) => (
                                             <div key={org.id} className={cn(
                                                 "p-8 rounded-[2.5rem] border flex items-center justify-between transition-all",
-                                                org.isSuspended ? "bg-red-500/10 border-red-500/20 opacity-80" : "bg-gray-50 border border-gray-100 hover:border-emerald-500/30"
+                                                org.isSuspended ? "bg-red-500/5 border-red-500/20 opacity-80" : "bg-slate-50/50 border border-slate-200/40 hover:border-emerald-500/30"
                                             )}>
                                                 <div className="flex items-center gap-5">
                                                     <div className={cn(
@@ -749,11 +749,11 @@ function MairieDashboardContent() {
                         {activeTab === 'fleet' && (
                             <motion.div key="fleet" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
                                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                                    <div className="lg:col-span-3 relative h-[600px] rounded-[4rem] overflow-hidden border border-zinc-200 bg-white shadow-md">
+                                    <div className="lg:col-span-3 relative h-[600px] rounded-[4rem] overflow-hidden border border-slate-200/55 bg-white shadow-md">
                                         <div className="absolute inset-0 z-0"><MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} /></div>
                                         {isIAOptimizing && <RouteOptimizationOverlay />}
                                         <div className="absolute top-8 left-8 z-20 flex gap-4">
-                                            <div className="px-6 py-3 bg-white/90 backdrop-blur-md rounded-2xl border border-zinc-100 shadow-xl flex items-center gap-3">
+                                            <div className="px-6 py-3 bg-white/85 backdrop-blur-md rounded-2xl border border-slate-200/40 shadow-xl flex items-center gap-3">
                                                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-900">{vehicles.length} UNITÉS ACTIVES</span>
                                             </div>
@@ -761,7 +761,7 @@ function MairieDashboardContent() {
                                     </div>
                                     <div className="space-y-8">
                                         <MaintenanceIntel vehicles={vehicles} />
-                                        <div className="p-8 bg-white border border-gray-100 rounded-[3rem] shadow-md">
+                                        <div className="p-8 bg-white/80 backdrop-blur-md border border-slate-200/50 rounded-[3rem] shadow-lg shadow-slate-100">
                                             <TelemetryFeed />
                                         </div>
                                     </div>
@@ -793,13 +793,13 @@ function MairieDashboardContent() {
                         {activeTab === 'rapports' && (
                             <motion.div key="rapports" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                                    <div className="lg:col-span-2 bg-white p-12 rounded-[4rem] border border-gray-100 shadow-md">
+                                    <div className="lg:col-span-2 bg-white/80 backdrop-blur-md p-12 rounded-[4rem] border border-slate-200/50 shadow-lg shadow-slate-100">
                                         <div className="flex justify-between items-center mb-12">
                                             <div>
                                                 <h3 className="text-3xl font-black uppercase italic tracking-tighter text-zinc-900 leading-none">Impact Territorial</h3>
                                                 <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-2">Mesure de la performance environnementale</p>
                                             </div>
-                                            <span className="px-5 py-2.5 bg-emerald-50 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-3 border border-emerald-100 shadow-sm"><img src="/images/police_verte_logo.png" alt="Police Verte Logo" className="w-3.5 h-3.5 object-contain" />Performance ÉCO</span>
+                                            <span className="px-5 py-2.5 bg-emerald-50/70 text-emerald-600 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-3 border border-emerald-100 shadow-sm"><img src="/images/police_verte_logo.png" alt="Police Verte Logo" className="w-3.5 h-3.5 object-contain" />Performance ÉCO</span>
                                         </div>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                                             <div className="space-y-6">
@@ -820,7 +820,7 @@ function MairieDashboardContent() {
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="bg-white p-12 rounded-[4rem] text-zinc-900 flex flex-col justify-between group relative overflow-hidden shadow-md border border-gray-100 min-h-[450px]">
+                                    <div className="bg-white/80 backdrop-blur-md p-12 rounded-[4rem] text-zinc-900 flex flex-col justify-between group relative overflow-hidden shadow-lg shadow-slate-100 border border-slate-200/50 min-h-[450px]">
                                         <TrendingUp className="absolute top-10 right-10 text-zinc-900/[0.03] w-48 h-48 -rotate-12 transition-transform group-hover:scale-110" />
                                         <div>
                                             <div className="w-16 h-16 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center mb-10"><BarChart3 size={28} className="text-emerald-500" /></div>
@@ -839,7 +839,7 @@ function MairieDashboardContent() {
                         {activeTab === 'police' && (
                             <motion.div key="police" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="space-y-10">
                                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                                    <div className="lg:col-span-3 h-[600px] rounded-[4rem] overflow-hidden border border-zinc-200 bg-white relative shadow-md">
+                                    <div className="lg:col-span-3 h-[600px] rounded-[4rem] overflow-hidden border border-slate-200/55 bg-white relative shadow-md">
                                         <div className="absolute inset-0 z-0">
                                             <RadarErrorBoundary>
                                                 <MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} />
@@ -862,7 +862,7 @@ function MairieDashboardContent() {
                                             ))}
                                         </div>
 
-                                        <div className="absolute bottom-10 left-10 z-30 p-8 bg-white text-zinc-900 rounded-[2.5rem] border border-gray-100 shadow-xl space-y-4 max-w-[320px]">
+                                        <div className="absolute bottom-10 left-10 z-30 p-8 bg-white/85 backdrop-blur-md text-zinc-900 rounded-[2.5rem] border border-slate-200/40 shadow-xl space-y-4 max-w-[320px]">
                                             <h4 className="text-xl font-black italic uppercase tracking-tighter leading-none border-b border-gray-100 pb-4">STATUT RADAR</h4>
                                             <div className="space-y-3">
                                                 <div className="flex justify-between items-center"><span className="text-[9px] font-bold text-zinc-400 uppercase">Alertes Actives</span><span className="text-sm font-black text-red-500">{infractionStats?.open || 0}</span></div>
@@ -878,7 +878,7 @@ function MairieDashboardContent() {
                                             <button 
                                                 key={inf.id} 
                                                 onClick={() => { setSelectedInfraction(inf); setIsInfractionDetailModalOpen(true); }}
-                                                className="w-full text-left p-6 bg-white border border-gray-100 rounded-[2.5rem] hover:border-red-500/30 transition-all group relative overflow-hidden shadow-sm"
+                                                className="w-full text-left p-6 bg-white/80 backdrop-blur-md border border-slate-200/50 rounded-[2.5rem] hover:border-red-500/30 transition-all group relative overflow-hidden shadow-md shadow-slate-50"
                                             >
                                                 <div className={cn(
                                                     "absolute top-0 right-0 p-3 text-[7px] font-black uppercase tracking-widest rounded-bl-xl",

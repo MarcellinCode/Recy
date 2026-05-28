@@ -30,17 +30,17 @@ export function NeonCard({
     color?: "emerald" | "blue" | "amber" | "red";
 }>) {
     const colors = {
-        emerald: "border-emerald-500/20 text-emerald-400 shadow-emerald-500/5",
-        blue: "border-blue-500/20 text-blue-400 shadow-blue-500/5",
-        amber: "border-amber-500/20 text-amber-400 shadow-amber-500/5",
-        red: "border-red-500/20 text-red-400 shadow-red-500/5"
+        emerald: "bg-gradient-to-br from-emerald-950/90 via-slate-900/95 to-emerald-950/90 border-emerald-500/25 text-emerald-300 shadow-xl shadow-emerald-950/30",
+        blue: "bg-gradient-to-br from-blue-950/90 via-slate-900/95 to-blue-950/90 border-blue-500/25 text-blue-300 shadow-xl shadow-blue-950/30",
+        amber: "bg-gradient-to-br from-amber-950/90 via-slate-900/95 to-amber-950/90 border-amber-500/25 text-amber-300 shadow-xl shadow-amber-950/30",
+        red: "bg-gradient-to-br from-red-950/90 via-slate-900/95 to-red-950/90 border-red-500/25 text-red-300 shadow-xl shadow-red-950/30"
     };
  
     const iconBgs = {
-        emerald: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-        blue: "bg-blue-500/10 text-blue-500 border-blue-500/20",
-        amber: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-        red: "bg-red-500/10 text-red-500 border-red-500/20"
+        emerald: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+        blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+        amber: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+        red: "bg-red-500/10 text-red-400 border-red-500/20"
     };
  
     return (
@@ -48,7 +48,7 @@ export function NeonCard({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className={cn(
-                "relative group bg-zinc-900 border p-6 rounded-[2.5rem] overflow-hidden transition-all hover:border-emerald-500/30 shadow-2xl",
+                "relative group border p-6 rounded-[2.5rem] overflow-hidden transition-all hover:border-emerald-500/40 shadow-2xl backdrop-blur-xl",
                 colors[color],
                 className
             )}
@@ -63,14 +63,14 @@ export function NeonCard({
                         <Icon size={20} />
                     </div>
                     {trend && (
-                        <span className="text-[10px] font-black tracking-widest uppercase italic text-zinc-500">
+                        <span className="text-[10px] font-black tracking-widest uppercase italic text-zinc-400/70">
                             {trend}
                         </span>
                     )}
                 </div>
                 
                 <div>
-                    <h3 className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.3em] mb-1">
+                    <h3 className="text-zinc-450 text-[10px] font-black uppercase tracking-[0.3em] mb-1">
                         {title}
                     </h3>
                     <div className="flex items-baseline gap-2">
@@ -108,7 +108,7 @@ export function HoloGauge({ value, label = "Souveraineté" }: Readonly<{ value: 
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="4"
-                    className="text-white/5"
+                    className="text-emerald-500/10"
                 />
                 {/* Progress Circle */}
                 <motion.circle
@@ -136,7 +136,7 @@ export function HoloGauge({ value, label = "Souveraineté" }: Readonly<{ value: 
                 >
                     {value}<span className="text-2xl opacity-30">%</span>
                 </motion.div>
-                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500 mt-2">
+                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-400 mt-2">
                     {label}
                 </div>
                 <div className="flex justify-center gap-1.5 mt-5">
@@ -145,7 +145,7 @@ export function HoloGauge({ value, label = "Souveraineté" }: Readonly<{ value: 
                             key={i} 
                             className={cn(
                                 "w-1.5 h-4 rounded-full transition-all duration-500",
-                                i <= (value/20) ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" : "bg-zinc-800"
+                                i <= (value/20) ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]" : "bg-emerald-950/50"
                             )} 
                         />
                     ))}
@@ -173,7 +173,7 @@ export function LiveTicker({ events }: Readonly<{ events: readonly EventType[] }
                     <Activity className="text-emerald-500" size={16} />
                     <div className="absolute inset-0 bg-emerald-500 blur-[8px] opacity-40 animate-pulse" />
                 </div>
-                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-500/70">Live Intel Feed</h3>
+                <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600/80">Live Intel Feed</h3>
             </div>
             
             <div className="flex-1 space-y-3 overflow-y-auto no-scrollbar scroll-smooth pb-10">
@@ -184,17 +184,17 @@ export function LiveTicker({ events }: Readonly<{ events: readonly EventType[] }
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             exit={{ x: 20, opacity: 0 }}
-                            className="bg-zinc-900 border-l-4 border-emerald-500 p-5 rounded-r-2xl shadow-2xl border border-white/5 group hover:border-emerald-500/30 transition-all"
+                            className="bg-emerald-950/80 backdrop-blur-md border-l-4 border-emerald-500 p-5 rounded-r-2xl shadow-xl border border-emerald-500/10 group hover:border-emerald-500/30 transition-all"
                         >
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-[9px] font-black text-emerald-400 tracking-widest uppercase italic">
                                     {event.type}
                                 </span>
-                                <span className="text-[8px] font-mono text-zinc-500">
+                                <span className="text-[8px] font-mono text-emerald-350/50">
                                     {new Date(event.timestamp || Date.now()).toLocaleTimeString()}
                                 </span>
                             </div>
-                            <p className="text-[11px] font-bold text-zinc-300 leading-relaxed uppercase group-hover:text-white transition-colors">
+                            <p className="text-[11px] font-bold text-emerald-100 leading-relaxed uppercase group-hover:text-white transition-colors">
                                 {event.message}
                             </p>
                         </motion.div>
@@ -202,7 +202,7 @@ export function LiveTicker({ events }: Readonly<{ events: readonly EventType[] }
                 </AnimatePresence>
             </div>
             
-            <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-zinc-950 to-transparent pointer-events-none" />
+            <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none" />
         </div>
     );
 }
@@ -215,9 +215,9 @@ export function StatusIndicator({ label, status = "active" }: Readonly<{ label: 
     };
  
     return (
-        <div className="flex items-center gap-3 px-5 py-3 bg-zinc-900 border border-white/5 rounded-2xl shadow-xl hover:border-white/10 transition-colors">
+        <div className="flex items-center gap-3 px-5 py-3 bg-slate-900/90 backdrop-blur-md border border-emerald-500/10 rounded-2xl shadow-lg hover:border-emerald-500/20 transition-colors">
             <div className={cn("w-2 h-2 rounded-full animate-pulse", colors[status])} />
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400">{label}</span>
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-150">{label}</span>
         </div>
     );
 }
