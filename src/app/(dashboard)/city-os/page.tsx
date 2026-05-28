@@ -215,15 +215,9 @@ async function fetchRawMairieData(
         }, {})
     };
 
-    const ratesData = fetchedRates?.data || [];
-    const mapRates: Record<string, number> = {};
-    for (const row of ratesData) {
-        const parsed = parseFloat(row.value);
-        if (!isNaN(parsed)) mapRates[row.key] = parsed;
-    }
     const computedRates = {
-        commissionRate: mapRates['commission_rate'] ?? 0.10,
-        ecoTaxRate:     mapRates['eco_tax_rate']    ?? 0.02,
+        commissionRate: 0.10,
+        ecoTaxRate:     0.02,
     };
 
     return {
