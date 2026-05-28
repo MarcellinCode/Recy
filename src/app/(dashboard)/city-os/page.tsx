@@ -123,9 +123,9 @@ async function fetchRawMairieData(
         supabase.from('tender_bids').select('*').catch((e: any) => { console.error("Error fetching tender bids:", e); return { data: null }; }),
         supabase.from('transactions').select('*').eq('user_id', mairieId).order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching transactions:", e); return { data: null }; }),
         supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching sanctions:", e); return { data: null }; }),
-        supabase.from('profiles').select('*, zones:zone_id(name)').eq('role', 'agent_police_verte').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching agents:", e); return { data: [] }; }),
+        supabase.from('profiles').select('*, zones(name)').eq('role', 'agent_police_verte').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching agents:", e); return { data: [] }; }),
         supabase.from('environmental_infractions').select('status, severity, type').catch((e: any) => { console.error("Error fetching infraction stats:", e); return { data: [] }; }),
-        supabase.from('platform_settings').select('key, value').in('key', ['commission_rate', 'eco_tax_rate']).catch((e: any) => { console.error("Error fetching fiscal config:", e); return { data: null }; }),
+        Promise.resolve({ data: null }),
         supabase.from('profiles').select('id, full_name, agent_count, role').in('role', ['entreprise', 'organisation_admin', 'collecteur']).catch((e: any) => { console.error("Error fetching profiles for concessions:", e); return { data: null }; }),
         supabase.from('vehicles').select('*').catch((e: any) => { console.error("Error fetching vehicles:", e); return { data: null }; }),
         supabase.from('agent_live_positions').select('*').catch((e: any) => { console.error("Error fetching agent live positions:", e); return { data: null }; })
@@ -303,6 +303,38 @@ function MairieDashboardContent() {
             setNewAgent(prev => ({ ...prev, city: mairieCity }));
         }
     }, [mairieCity]);
+
+    // Filet de sécurité : Charger les organisations en direct sur le client si la liste est vide à l'ouverture du modal
+    useEffect(() => {
+        if (isAddZoneModalOpen && organizations.length === 0) {
+            const fetchOrgsDirectly = async () => {
+                try {
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .select('id, full_name, agent_count, role')
+                        .in('role', ['entreprise', 'organisation_admin', 'collecteur']);
+                    
+                    if (error) {
+                        console.error("Direct fetch of organizations error:", error.message);
+                        return;
+                    }
+                    
+                    if (data && data.length > 0) {
+                        const enriched = data.map((org: any) => ({
+                            ...org,
+                            performanceScore: "5.0",
+                            totalCollections: 0,
+                            isSuspended: false
+                        }));
+                        setOrganizations(enriched);
+                    }
+                } catch (e: any) {
+                    console.error("Direct fetch of organizations exception:", e?.message);
+                }
+            };
+            fetchOrgsDirectly();
+        }
+    }, [isAddZoneModalOpen, organizations.length]);
     
     const [newTender, setNewTender] = useState({ zone_id: "", title: "", description: "", end_date: "", budget_estimate: 0 });
     const [liveEvents, setLiveEvents] = useState<any[]>([
