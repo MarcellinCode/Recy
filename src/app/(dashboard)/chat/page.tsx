@@ -123,6 +123,7 @@ function ChatContainer() {
     const scrollRef = useRef<HTMLDivElement>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const lastTypingBroadcastRef = useRef<number>(0);
 
     // --- Helpers to reduce nesting ---
     const isDuplicateOrMerged = (prev: Message[], msg: Message) => {
@@ -409,12 +410,16 @@ function ChatContainer() {
 
     const handleTyping = (e: React.ChangeEvent<HTMLInputElement>) => {
         setNewMessage(e.target.value);
-        if (activeChannel) {
-            activeChannel.send({
-                type: 'broadcast',
-                event: 'typing',
-                payload: { user_id: currentUser?.id }
-            });
+        if (activeChannel && currentUser) {
+            const now = Date.now();
+            if (now - lastTypingBroadcastRef.current > 2500) {
+                lastTypingBroadcastRef.current = now;
+                activeChannel.send({
+                    type: 'broadcast',
+                    event: 'typing',
+                    payload: { user_id: currentUser.id }
+                });
+            }
         }
     };
 
