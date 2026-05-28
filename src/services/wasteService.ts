@@ -54,7 +54,11 @@ export const wasteService = {
       .single();
 
     // Si reserveError ou data null → le lot était déjà pris au moment de l'UPDATE
-    if (reserveError || !data) {
+    if (reserveError) {
+      console.error("Supabase reserve update error:", reserveError);
+      throw new Error(`Erreur Base de Données / RLS : ${reserveError.message} (Code: ${reserveError.code})`);
+    }
+    if (!data) {
       throw new Error("Ce lot vient d'être réservé par un autre collecteur. Veuillez en choisir un autre.");
     }
 
