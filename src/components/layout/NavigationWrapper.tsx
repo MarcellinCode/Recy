@@ -17,16 +17,10 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
     const isPublicMairie = pathname?.startsWith("/mairie/");
     const shouldHideNav = isSuperAdmin || isPublicMairie;
 
-    // Initialiser directement avec localStorage pour éviter le flicker blanc/noir
-    const [forceDark, setForceDark] = useState(() => {
-        if (typeof globalThis.window !== 'undefined') {
-            const cachedRole = globalThis.localStorage.getItem('user-role');
-            return ['mairie', 'entreprise', 'organisation_admin'].includes(cachedRole || '');
-        }
-        return false;
-    });
+    // Initialiser à false pour désactiver définitivement le thème sombre forcé
+    const [forceDark, setForceDark] = useState(false);
 
-    // 1. Détecter le rôle et gérer le thème (exécuté UNE SEULE FOIS au montage)
+    // 1. Détecter le rôle (toujours mode clair par défaut)
     useEffect(() => {
         const syncTheme = async () => {
             const { data: { session } } = await supabase.auth.getSession();
@@ -41,7 +35,8 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
                 const role = profile?.role || null;
                 if (role) {
                     globalThis.localStorage.setItem('user-role', role);
-                    setForceDark(['mairie', 'entreprise', 'organisation_admin'].includes(role));
+                    // Forcé à false
+                    setForceDark(false);
                 }
             } else {
                 setForceDark(false);
@@ -50,7 +45,7 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
 
         syncTheme();
 
-        // Écouter les changements d'authentification pour adapter le thème instantanément
+        // Écouter les changements d'authentification
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
             if (session?.user) {
                 syncTheme();

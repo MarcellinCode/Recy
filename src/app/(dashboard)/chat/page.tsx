@@ -436,22 +436,22 @@ function ChatContainer() {
     );
 
     return (
-        <div className="max-w-7xl mx-auto px-0 md:px-4 lg:px-8 py-0 md:py-8 h-[calc(100svh-4rem)] md:h-[calc(100svh-8rem)] flex flex-col relative min-h-0 bg-zinc-950">
-            <div className="bg-zinc-900/50 md:rounded-[2.5rem] md:border-2 border-white/5 md:shadow-2xl overflow-hidden flex-1 flex min-h-0 backdrop-blur-xl">
+        <div className="max-w-7xl mx-auto px-0 md:px-4 lg:px-8 py-0 md:py-8 h-[calc(100svh-4rem)] md:h-[calc(100svh-8rem)] flex flex-col relative min-h-0 bg-transparent">
+            <div className="bg-white md:rounded-[2.5rem] md:border border-gray-150 md:shadow-md overflow-hidden flex-1 flex min-h-0">
                 
                 {/* Sidebar (Conversations) */}
                 <div className={cn(
-                    "w-full md:w-80 lg:w-96 border-r border-white/5 flex flex-col min-h-0 bg-zinc-900/30",
+                    "w-full md:w-80 lg:w-96 border-r border-gray-150 flex flex-col min-h-0 bg-gray-50/30",
                     selectedConv && "hidden md:flex"
                 )}>
-                    <div className="p-6 border-b border-white/5">
-                        <h1 className="text-2xl font-black uppercase italic tracking-tighter mb-4 text-white">Messages</h1>
+                    <div className="p-6 border-b border-gray-150">
+                        <h1 className="text-2xl font-black uppercase italic tracking-tighter mb-4 text-zinc-900">Messages</h1>
                         <div className="relative">
-                            <Search className="absolute left-4 top-3 w-4 h-4 text-zinc-500" />
+                            <Search className="absolute left-4 top-3 w-4 h-4 text-zinc-400" />
                             <input 
                                 type="text" 
                                 placeholder="Rechercher..." 
-                                className="w-full pl-10 pr-4 py-2.5 bg-zinc-800/50 text-white border-none rounded-xl text-xs font-bold outline-none focus:ring-1 ring-primary/30" 
+                                className="w-full pl-10 pr-4 py-2.5 bg-gray-100/50 text-zinc-900 border border-gray-200/50 rounded-xl text-xs font-bold outline-none focus:ring-1 ring-primary/30" 
                             />
                         </div>
                     </div>
@@ -464,12 +464,12 @@ function ChatContainer() {
                                     "w-full p-4 flex items-center gap-4 rounded-[1.5rem] transition-all text-left",
                                     selectedConv?.id === conv.id 
                                         ? "bg-primary text-white shadow-lg shadow-primary/20" 
-                                        : "hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                                        : "hover:bg-gray-100"
                                 )}
                             >
                                 <div className={cn(
                                     "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
-                                    selectedConv?.id === conv.id ? "bg-white/20" : "bg-zinc-100 dark:bg-zinc-700"
+                                    selectedConv?.id === conv.id ? "bg-white/20" : "bg-gray-100 dark:bg-zinc-700"
                                 )}>
                                     <User className={cn("w-6 h-6", selectedConv?.id === conv.id ? "text-white" : "text-zinc-400")} />
                                 </div>
@@ -479,7 +479,7 @@ function ChatContainer() {
                                             {conv.seller_id === currentUser?.id ? conv.collector?.full_name : conv.seller?.full_name}
                                         </h3>
                                         {conv.unreadCount ? (
-                                            <span className="flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-black text-white bg-red-500 rounded-full px-1 shadow-lg border-2 border-white dark:border-zinc-900 group-hover:scale-110 transition-transform">
+                                            <span className="flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-black text-white bg-red-500 rounded-full px-1 shadow-lg border-2 border-white group-hover:scale-110 transition-transform">
                                                 {conv.unreadCount}
                                             </span>
                                         ) : null}
@@ -498,26 +498,26 @@ function ChatContainer() {
 
                 {/* Main Chat Area */}
                 <div className={cn(
-                    "flex-1 flex flex-col bg-zinc-950/20 min-h-0",
+                    "flex-1 flex flex-col bg-gray-50/20 min-h-0",
                     !selectedConv && "hidden md:flex items-center justify-center p-12 text-center"
                 )}>
                     {selectedConv ? (
                         <>
                             {/* Chat Header */}
-                            <div className="p-4 sm:p-6 bg-zinc-900/50 border-b border-white/5 flex items-center justify-between">
+                            <div className="p-4 sm:p-6 bg-white border-b border-gray-150 flex items-center justify-between">
                                 <div className="flex items-center gap-3">
-                                    <button onClick={() => setSelectedConv(null)} className="md:hidden p-2 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-xl">
-                                        <ArrowLeft className="w-5 h-5" />
+                                    <button onClick={() => setSelectedConv(null)} className="md:hidden p-2 hover:bg-gray-100 rounded-xl">
+                                        <ArrowLeft className="w-5 h-5 text-zinc-900" />
                                     </button>
                                     <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                                         <User className="w-5 h-5 text-primary" />
                                     </div>
                                     <div>
-                                        <h2 className="font-black uppercase tracking-tight text-sm">{otherParty?.name}</h2>
+                                        <h2 className="font-black uppercase tracking-tight text-sm text-zinc-900">{otherParty?.name}</h2>
                                         <div className="flex items-center gap-1.5 leading-none">
                                             <div className={cn(
                                                 "w-1.5 h-1.5 rounded-full",
-                                                onlineUsers.has(otherParty?.id || '') ? "bg-green-500 animate-pulse" : "bg-zinc-300"
+                                                onlineUsers.has(otherParty?.id || '') ? "bg-green-500 animate-pulse" : "bg-zinc-350"
                                             )} />
                                             <span className="text-[9px] font-black uppercase tracking-widest text-zinc-400">
                                                 {onlineUsers.has(otherParty?.id || '') ? "En ligne" : "Hors ligne"}
@@ -525,7 +525,7 @@ function ChatContainer() {
                                         </div>
                                     </div>
                                 </div>
-                                <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-zinc-50 dark:bg-zinc-800 rounded-xl text-[10px] font-extrabold uppercase tracking-tighter">
+                                <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-xl text-[10px] font-extrabold uppercase tracking-tighter text-zinc-900">
                                     <Package className="w-3.5 h-3.5 text-primary" />
                                     <span>Lot #{selectedConv.id.split('-')[0]}</span>
                                 </div>
@@ -535,7 +535,7 @@ function ChatContainer() {
                             <div 
                                 ref={scrollRef}
                                 onScroll={handleScroll}
-                                className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:p-8 space-y-2 scroll-smooth hide-scrollbar"
+                                className="flex-1 min-h-0 overflow-y-auto px-4 py-6 sm:p-8 space-y-2 scroll-smooth hide-scrollbar bg-gray-50/10"
                             >
                                 <AnimatePresence initial={false}>
                                     {messages.map((msg, idx) => (
@@ -551,7 +551,7 @@ function ChatContainer() {
                             </div>
 
                             {/* Input Area */}
-                            <div className="relative p-4 sm:p-6 bg-zinc-900/80 border-t border-white/5 shadow-2xl">
+                            <div className="relative p-4 sm:p-6 bg-white border-t border-gray-150 shadow-md">
                                 
                                 {/* New Message Badge */}
                                 <AnimatePresence>

@@ -175,7 +175,7 @@ export function Header() {
                            pathname.includes('/mes-dechets') ||
                            pathname.includes('/marketplace');
 
-    const isDarkRole = ['mairie', 'entreprise', 'organisation_admin'].includes(role || '') || isDashboardPath;
+    const isDarkRole = false;
 
     return (
         <header className={cn(

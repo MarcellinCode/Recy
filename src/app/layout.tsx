@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { NavigationWrapper } from "@/components/layout/NavigationWrapper";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
+const inter = {
+  variable: "font-sans",
+};
 
 // --- SHIELD: Immunize against intrusive browser extensions ---
 if (typeof globalThis.window !== 'undefined') {

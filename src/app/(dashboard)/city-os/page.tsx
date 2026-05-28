@@ -464,17 +464,17 @@ function MairieDashboardContent() {
     }
 
     return (
-        <div className="flex h-screen w-full bg-zinc-950 text-white overflow-hidden select-none">
+        <div className="flex h-screen w-full bg-gray-50/50 text-zinc-900 overflow-hidden select-none">
             {/* Sidebar : Live Intel Feed */}
-            <aside className="w-[320px] hidden lg:flex flex-col border-r border-white/5 bg-zinc-900/50 backdrop-blur-3xl p-6">
+            <aside className="w-[320px] hidden lg:flex flex-col border-r border-gray-100 bg-white p-6">
                 <div className="mb-10">
                     <div className="flex items-center gap-3 mb-2">
                         <div className="w-10 h-10 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center overflow-hidden">
                             <img src="/images/police_verte_logo.png" alt="City OS" className="w-6 h-6 object-contain" />
                         </div>
                         <div>
-                            <h1 className="text-lg font-black italic tracking-tighter uppercase leading-none text-white text-shadow-glow-emerald">City OS</h1>
-                            <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mt-1">Souveraineté Numérique</p>
+                            <h1 className="text-lg font-black italic tracking-tighter uppercase leading-none text-zinc-900 text-shadow-glow-emerald">City OS</h1>
+                            <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mt-1">Souveraineté Numérique</p>
                         </div>
                     </div>
                 </div>
@@ -483,7 +483,7 @@ function MairieDashboardContent() {
                     <LiveTicker events={liveEvents} />
                 </div>
 
-                <div className="pt-6 border-t border-white/5 space-y-4">
+                <div className="pt-6 border-t border-gray-100 space-y-4">
                     <StatusIndicator label="Système Radar" status="active" />
                     <StatusIndicator label="Collecte Live" status="active" />
                     <StatusIndicator label="Signalements" status={slaBreaches > 0 ? "warning" : "active"} />
@@ -496,7 +496,7 @@ function MairieDashboardContent() {
                 <div className="absolute bottom-[-10%] right-[-10%] w-[30%] h-[30%] bg-blue-500/[0.03] blur-[100px] rounded-full pointer-events-none" />
 
                 <header className="p-8 flex items-center justify-between z-50">
-                    <nav className="flex gap-2 p-1.5 bg-zinc-900/50 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl">
+                    <nav className="flex gap-2 p-1.5 bg-white border border-gray-200 rounded-2xl shadow-sm">
                         {[
                             { id: 'overview', label: 'RADAR CENTRAL', icon: Activity },
                             { id: 'tenders', label: 'APPELS D\'OFFRES', icon: Gavel },
@@ -512,7 +512,7 @@ function MairieDashboardContent() {
                                     "px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center gap-3 transition-all",
                                     activeTab === tab.id 
                                         ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20 scale-105" 
-                                        : "text-zinc-500 hover:text-white hover:bg-white/5"
+                                        : "text-zinc-500 hover:text-zinc-900 hover:bg-gray-50"
                                 )}
                             >
                                 {tab.id === 'police' ? <img src="/images/police_verte_logo.png" alt="Police Verte Logo" className={cn("w-3.5 h-3.5 object-contain", activeTab === 'police' ? "brightness-0 invert" : "")} /> : <tab.icon size={14} />}
@@ -530,7 +530,7 @@ function MairieDashboardContent() {
                             "px-8 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl",
                             activeTab === 'fleet' 
                                 ? "bg-emerald-500 text-white shadow-emerald-500/20" 
-                                : "bg-zinc-900 text-white shadow-zinc-900/10"
+                                : "bg-white border border-gray-200 text-zinc-900 shadow-sm"
                         )}
                     >
                         {actionButtonLabel}
@@ -542,12 +542,12 @@ function MairieDashboardContent() {
                         {activeTab === 'overview' && (
                             <motion.div key="overview" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} className="space-y-8">
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    <div className="lg:col-span-2 relative h-[550px] rounded-[3.5rem] overflow-hidden border border-white/5 bg-zinc-900 shadow-2xl group">
+                                    <div className="lg:col-span-2 relative h-[550px] rounded-[3.5rem] overflow-hidden border border-gray-100 bg-white shadow-md group">
                                         <div className="absolute inset-0 z-0"><MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} /></div>
-                                        <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)]" />
+                                        <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.1)_100%)]" />
                                     </div>
                                     <div className="space-y-8 overflow-y-auto pr-2 no-scrollbar">
-                                        <div className="flex justify-center bg-zinc-900 border border-white/5 rounded-[3rem] py-10 shadow-2xl">
+                                        <div className="flex justify-center bg-white border border-gray-100 rounded-[3rem] py-10 shadow-md">
                                             <HoloGauge value={collectionRate} label="SALUBRITÉ COMMUNE" />
                                         </div>
                                         <NeonCard title="SIGNALEMENTS ACTIFS" value={totalWastes} icon={AlertTriangle} color="blue" trend="+12 AUJOURD'HUI" />
@@ -557,17 +557,17 @@ function MairieDashboardContent() {
                                 </div>
 
                                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                                    <div className="bg-zinc-900/50 backdrop-blur-xl rounded-[3rem] border border-white/5 p-8 shadow-2xl relative overflow-hidden group">
-                                        <h2 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-white">SOUVERAINETÉ & CONCESSIONS</h2>
+                                    <div className="bg-white rounded-[3rem] border border-gray-100 p-8 shadow-md relative overflow-hidden group">
+                                        <h2 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900">SOUVERAINETÉ & CONCESSIONS</h2>
                                         <div className="space-y-4 relative z-10">
                                             {zones.filter(z => z.status === 'occupied').map((zone) => {
                                                 const concession = zone.concessions?.[0];
                                                 return (
-                                                    <div key={zone.id} className="flex items-center justify-between p-6 bg-zinc-900/50 border border-white/5 rounded-[2.5rem] hover:border-emerald-500/30 transition-all">
+                                                    <div key={zone.id} className="flex items-center justify-between p-6 bg-gray-50 border border-gray-100 rounded-[2.5rem] hover:border-emerald-500/30 transition-all">
                                                         <div className="flex items-center gap-5">
-                                                            <div className="w-14 h-14 rounded-2xl bg-zinc-800 border border-white/10 flex items-center justify-center text-emerald-500 shadow-xl"><Building2 size={24} /></div>
+                                                            <div className="w-14 h-14 rounded-2xl bg-white border border-gray-200 flex items-center justify-center text-emerald-500 shadow-sm"><Building2 size={24} /></div>
                                                             <div>
-                                                                <p className="font-black italic uppercase text-xl text-white leading-none mb-2">{concession?.profiles?.full_name || "MUNICIPAL"}</p>
+                                                                <p className="font-black italic uppercase text-xl text-zinc-900 leading-none mb-2">{concession?.profiles?.full_name || "MUNICIPAL"}</p>
                                                                 <p className="text-[10px] font-black text-emerald-500/50 uppercase tracking-[0.2em]">{zone.name}</p>
                                                             </div>
                                                         </div>
@@ -582,10 +582,10 @@ function MairieDashboardContent() {
                                             )}
                                         </div>
                                     </div>
-                                    <div className="bg-zinc-900 rounded-[3rem] p-8 flex flex-col justify-between overflow-hidden shadow-2xl shadow-zinc-900/30 relative border border-white/5">
-                                        <TrendingUp className="absolute -right-4 -top-4 text-white/5 w-48 h-48" />
+                                    <div className="bg-white rounded-[3rem] p-8 flex flex-col justify-between overflow-hidden shadow-md relative border border-gray-100">
+                                        <TrendingUp className="absolute -right-4 -top-4 text-zinc-900/5 w-48 h-48" />
                                         <div className="relative z-10">
-                                            <h3 className="text-3xl font-black italic tracking-tighter text-white mb-2 leading-none">AUDIT <br /> TERRITORIAL</h3>
+                                            <h3 className="text-3xl font-black italic tracking-tighter text-zinc-900 mb-2 leading-none">AUDIT <br /> TERRITORIAL</h3>
                                             <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em]">Flux financiers et taxes temps réel.</p>
                                         </div>
                                         <button onClick={() => setIsAuditModalOpen(true)} className="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest relative z-10 hover:scale-[1.02] transition-transform shadow-xl shadow-emerald-500/20">Démarrer l'Audit</button>
@@ -598,30 +598,30 @@ function MairieDashboardContent() {
                             <motion.div key="tenders" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                                     {tenders.map((tender) => (
-                                        <div key={tender.id} className="bg-zinc-900 border border-white/5 p-8 rounded-[3.5rem] shadow-2xl group hover:border-emerald-500/30 transition-all relative overflow-hidden">
-                                            <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity text-white"><Gavel size={64} /></div>
-                                            <h3 className="text-2xl font-black italic uppercase text-white mb-2 leading-none">{tender.title}</h3>
+                                        <div key={tender.id} className="bg-white border border-gray-100 p-8 rounded-[3.5rem] shadow-md group hover:border-emerald-500/30 transition-all relative overflow-hidden">
+                                            <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity text-zinc-900"><Gavel size={64} /></div>
+                                            <h3 className="text-2xl font-black italic uppercase text-zinc-900 mb-2 leading-none">{tender.title}</h3>
                                             <p className="text-zinc-500 text-[10px] font-bold mb-10 line-clamp-3 uppercase tracking-wider leading-relaxed">{tender.description}</p>
                                             
                                             <div className="space-y-4">
-                                                <p className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Offres Reçues ({tender.tender_bids?.length || 0})</p>
+                                                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Offres Reçues ({tender.tender_bids?.length || 0})</p>
                                                 {tender.tender_bids?.map((bid: any) => (
-                                                    <div key={bid.id} className="p-5 bg-white/5 rounded-2xl flex items-center justify-between border border-white/5 hover:border-emerald-500/30 transition-all">
+                                                    <div key={bid.id} className="p-5 bg-gray-50 rounded-2xl flex items-center justify-between border border-gray-100 hover:border-emerald-500/30 transition-all">
                                                         <div>
-                                                            <p className="text-[10px] font-black text-white italic uppercase">{bid.profiles?.full_name}</p>
+                                                            <p className="text-[10px] font-black text-zinc-900 italic uppercase">{bid.profiles?.full_name}</p>
                                                             <p className="text-[8px] font-bold text-emerald-500">SCORE: {bid.profiles?.performanceScore || '4.8'}/5</p>
                                                         </div>
                                                         <button 
                                                             onClick={() => handleAwardTender(tender.id, bid.id, bid.organization_id, tender.zone_id)} 
-                                                            className="px-5 py-2.5 bg-zinc-900 text-white rounded-xl text-[8px] font-black uppercase hover:shadow-lg transition-all"
+                                                            className="px-5 py-2.5 bg-gray-100 text-zinc-800 rounded-xl text-[8px] font-black uppercase hover:shadow-md hover:bg-gray-200 transition-all"
                                                         >
                                                             Attribuer
                                                         </button>
                                                     </div>
                                                 ))}
                                                 {(!tender.tender_bids || tender.tender_bids.length === 0) && (
-                                                    <div className="py-10 text-center border-2 border-dashed border-zinc-100 rounded-3xl">
-                                                        <p className="text-[10px] font-black text-zinc-300 uppercase tracking-widest">En attente d'offres...</p>
+                                                    <div className="py-10 text-center border-2 border-dashed border-zinc-200 rounded-3xl">
+                                                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">En attente d'offres...</p>
                                                     </div>
                                                 )}
                                             </div>
@@ -629,12 +629,12 @@ function MairieDashboardContent() {
                                     ))}
                                     <button 
                                         onClick={() => setIsAddTenderModalOpen(true)} 
-                                        className="aspect-square bg-zinc-900 border-2 border-dashed border-white/10 rounded-[3.5rem] flex flex-col items-center justify-center gap-6 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group shadow-2xl"
+                                        className="aspect-square bg-white border-2 border-dashed border-gray-200 rounded-[3.5rem] flex flex-col items-center justify-center gap-6 hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all group shadow-md"
                                     >
-                                        <div className="w-20 h-20 rounded-[2rem] bg-zinc-800 flex items-center justify-center text-zinc-600 group-hover:text-emerald-500 transition-all shadow-inner"><Plus size={40} /></div>
+                                        <div className="w-20 h-20 rounded-[2rem] bg-gray-50 border border-gray-100 flex items-center justify-center text-zinc-650 group-hover:text-emerald-500 transition-all shadow-inner"><Plus size={40} /></div>
                                         <div>
-                                            <p className="text-[12px] font-black text-white uppercase tracking-widest text-center">Nouveau Marché</p>
-                                            <p className="text-[9px] font-black text-zinc-500 uppercase tracking-[0.2em] mt-1">Appel d'offres public</p>
+                                            <p className="text-[12px] font-black text-zinc-900 uppercase tracking-widest text-center">Nouveau Marché</p>
+                                            <p className="text-[9px] font-black text-zinc-400 uppercase tracking-[0.2em] mt-1">Appel d'offres public</p>
                                         </div>
                                     </button>
                                 </div>
@@ -644,68 +644,68 @@ function MairieDashboardContent() {
                         {activeTab === 'sovereignty' && (
                             <motion.div key="sovereignty" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                                    <div className="bg-zinc-900 border border-white/5 p-12 rounded-[4rem] shadow-2xl flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
+                                    <div className="bg-white border border-gray-100 p-12 rounded-[4rem] shadow-md flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
                                         <AlertOctagon className="absolute -right-12 -top-12 text-red-500/5 w-64 h-64 rotate-12 transition-transform group-hover:scale-110" />
                                         <div className="relative z-10">
                                             <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><ShieldAlert size={32} /></div>
-                                            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white leading-none mb-4">Unités de <br />Sanction</h2>
+                                            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none mb-4">Unités de <br />Sanction</h2>
                                             <p className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Gestion stricte des litiges, retards de collecte et pénalités contractuelles.</p>
                                         </div>
-                                        <button onClick={() => setIsSanctionModalOpen(true)} className="w-full py-7 bg-red-600 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-red-600/30 hover:scale-[1.01] transition-transform relative z-10">ÉMETTRE UNE SANCTION</button>
+                                        <button onClick={() => setIsSanctionModalOpen(true)} className="w-full py-7 bg-red-600 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-xl hover:scale-[1.01] transition-transform relative z-10">ÉMETTRE UNE SANCTION</button>
                                     </div>
-                                    <div className="bg-zinc-900 border border-white/5 p-12 rounded-[4rem] shadow-2xl flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
+                                    <div className="bg-white border border-gray-100 p-12 rounded-[4rem] shadow-md flex flex-col justify-between group overflow-hidden relative min-h-[400px]">
                                         <DollarSign className="absolute -right-12 -top-12 text-emerald-500/5 w-64 h-64 -rotate-12 transition-transform group-hover:scale-110" />
                                         <div className="relative z-10">
                                             <div className="w-16 h-16 bg-emerald-500/10 text-emerald-500 rounded-3xl flex items-center justify-center mb-8 shadow-sm"><Activity size={32} /></div>
-                                            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white leading-none mb-4">Régie <br />Financière</h2>
+                                            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-zinc-900 leading-none mb-4">Régie <br />Financière</h2>
                                             <p className="text-[11px] font-black text-zinc-500 uppercase tracking-[0.2em] max-w-[280px] leading-relaxed">Surveillance temps réel des flux fiscaux et des redevances territoriales.</p>
                                         </div>
                                         <div className="flex flex-col gap-3 relative z-10">
-                                            <button onClick={() => setIsFiscalModalOpen(true)} className="w-full py-4 bg-zinc-800 text-white border border-white/5 rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest hover:bg-zinc-700 transition-colors">CONFIGURER LA FISCALITÉ</button>
-                                            <button onClick={() => setIsAuditModalOpen(true)} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-zinc-900/30 hover:scale-[1.01] transition-transform">LANCER L'AUDIT FISCAL COMPLET</button>
+                                            <button onClick={() => setIsFiscalModalOpen(true)} className="w-full py-4 bg-gray-50 text-zinc-800 border border-gray-200 rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest hover:bg-gray-100 transition-colors">CONFIGURER LA FISCALITÉ</button>
+                                            <button onClick={() => setIsAuditModalOpen(true)} className="w-full py-7 bg-gray-100 text-zinc-850 border border-gray-200 rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-sm hover:scale-[1.01] transition-transform">LANCER L'AUDIT FISCAL COMPLET</button>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="bg-zinc-900/50 backdrop-blur-xl rounded-[3rem] border border-white/5 p-10 shadow-2xl">
-                                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-white">Registre des Sanctions Administratives</h3>
+                                <div className="bg-white rounded-[3rem] border border-gray-100 p-10 shadow-md">
+                                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900">Registre des Sanctions Administratives</h3>
                                     <div className="space-y-4">
                                         {sanctions.map((s) => (
-                                            <div key={s.id} className="flex items-center justify-between p-6 bg-zinc-900 border border-white/5 rounded-[2rem] hover:border-red-500/30 transition-all">
+                                            <div key={s.id} className="flex items-center justify-between p-6 bg-gray-50 border border-gray-100 rounded-[2rem] hover:border-red-500/30 transition-all">
                                                 <div className="flex items-center gap-6">
                                                     <div className={cn(
                                                         "w-12 h-12 rounded-2xl flex items-center justify-center font-black text-xs",
-                                                        s.severity === 'high' || s.severity === 'critical' ? "bg-red-500/10 text-red-600" : "bg-zinc-800 text-zinc-500"
+                                                        s.severity === 'high' || s.severity === 'critical' ? "bg-red-500/10 text-red-600" : "bg-gray-100 text-zinc-400"
                                                     )}>!</div>
                                                     <div>
-                                                        <p className="font-black italic uppercase text-white">{s.profiles?.full_name || "Organisation"}</p>
-                                                        <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{s.type} — {new Date(s.created_at).toLocaleDateString()}</p>
+                                                        <p className="font-black italic uppercase text-zinc-900">{s.profiles?.full_name || "Organisation"}</p>
+                                                        <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{s.type} — {new Date(s.created_at).toLocaleDateString()}</p>
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-sm font-black text-red-500">-{s.penalty_amount.toLocaleString()} CFA</p>
-                                                    <p className="text-[9px] font-black text-zinc-300 uppercase italic">Pénalité Appliquée</p>
+                                                    <p className="text-[9px] font-black text-zinc-400 uppercase italic">Pénalité Appliquée</p>
                                                 </div>
                                             </div>
                                         ))}
                                         {sanctions.length === 0 && (
-                                            <div className="py-20 text-center bg-zinc-800/50 rounded-[3rem] border border-dashed border-white/5">
-                                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em]">Aucune sanction enregistrée.</p>
+                                            <div className="py-20 text-center bg-gray-50 rounded-[3rem] border border-dashed border-gray-200">
+                                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">Aucune sanction enregistrée.</p>
                                             </div>
                                         )}
                                     </div>
                                 </div>
 
-                                <div className="bg-zinc-900/50 backdrop-blur-xl rounded-[3rem] border border-white/5 p-10 shadow-2xl">
-                                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-white flex items-center justify-between">
+                                <div className="bg-white rounded-[3rem] border border-gray-100 p-10 shadow-md">
+                                    <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900 flex items-center justify-between">
                                         <span>Annuaire des Partenaires Certifiés</span>
-                                        <span className="text-[10px] font-black text-zinc-500">SEUIL D'EXCLUSION : 2.5/5.0</span>
+                                        <span className="text-[10px] font-black text-zinc-400">SEUIL D'EXCLUSION : 2.5/5.0</span>
                                     </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {organizations.map((org) => (
                                             <div key={org.id} className={cn(
                                                 "p-8 rounded-[2.5rem] border flex items-center justify-between transition-all",
-                                                org.isSuspended ? "bg-red-500/10 border-red-500/20 opacity-80" : "bg-zinc-900 border-white/5 hover:border-emerald-500/30"
+                                                org.isSuspended ? "bg-red-500/10 border-red-500/20 opacity-80" : "bg-gray-50 border border-gray-100 hover:border-emerald-500/30"
                                             )}>
                                                 <div className="flex items-center gap-5">
                                                     <div className={cn(
@@ -715,7 +715,7 @@ function MairieDashboardContent() {
                                                         {org.full_name?.charAt(0) || "P"}
                                                     </div>
                                                     <div>
-                                                        <p className="font-black italic uppercase text-white">{org.full_name}</p>
+                                                        <p className="font-black italic uppercase text-zinc-900">{org.full_name}</p>
                                                         <div className="flex items-center gap-2 mt-1">
                                                             <div className="flex gap-0.5">
                                                                 {[1,2,3,4,5].map(s => (
@@ -749,7 +749,7 @@ function MairieDashboardContent() {
                         {activeTab === 'fleet' && (
                             <motion.div key="fleet" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
                                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                                    <div className="lg:col-span-3 relative h-[600px] rounded-[4rem] overflow-hidden border border-zinc-200 bg-white shadow-2xl shadow-zinc-200/20">
+                                    <div className="lg:col-span-3 relative h-[600px] rounded-[4rem] overflow-hidden border border-zinc-200 bg-white shadow-md">
                                         <div className="absolute inset-0 z-0"><MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} /></div>
                                         {isIAOptimizing && <RouteOptimizationOverlay />}
                                         <div className="absolute top-8 left-8 z-20 flex gap-4">
@@ -761,7 +761,7 @@ function MairieDashboardContent() {
                                     </div>
                                     <div className="space-y-8">
                                         <MaintenanceIntel vehicles={vehicles} />
-                                        <div className="p-8 bg-zinc-900 border border-white/5 rounded-[3rem] shadow-2xl">
+                                        <div className="p-8 bg-white border border-gray-100 rounded-[3rem] shadow-md">
                                             <TelemetryFeed />
                                         </div>
                                     </div>
@@ -793,11 +793,11 @@ function MairieDashboardContent() {
                         {activeTab === 'rapports' && (
                             <motion.div key="rapports" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                                    <div className="lg:col-span-2 bg-zinc-900 p-12 rounded-[4rem] border border-white/5 shadow-2xl">
+                                    <div className="lg:col-span-2 bg-white p-12 rounded-[4rem] border border-gray-100 shadow-md">
                                         <div className="flex justify-between items-center mb-12">
                                             <div>
-                                                <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white leading-none">Impact Territorial</h3>
-                                                <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mt-2">Mesure de la performance environnementale</p>
+                                                <h3 className="text-3xl font-black uppercase italic tracking-tighter text-zinc-900 leading-none">Impact Territorial</h3>
+                                                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mt-2">Mesure de la performance environnementale</p>
                                             </div>
                                             <span className="px-5 py-2.5 bg-emerald-50 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-3 border border-emerald-100 shadow-sm"><img src="/images/police_verte_logo.png" alt="Police Verte Logo" className="w-3.5 h-3.5 object-contain" />Performance ÉCO</span>
                                         </div>
@@ -815,17 +815,17 @@ function MairieDashboardContent() {
                                                 <p className="text-6xl font-black italic tracking-tighter text-zinc-900">{wastes.reduce((acc, w) => acc + (w.status === 'collected' ? (w.final_weight || w.estimated_weight || 0) : 0), 0)} <span className="text-2xl text-zinc-300">kg</span></p>
                                                 <div className="space-y-2">
                                                     <div className="flex justify-between text-[8px] font-black uppercase tracking-widest text-zinc-400"><span>Objectif Mensuel</span><span>65%</span></div>
-                                                    <div className="w-full h-2.5 bg-zinc-50 rounded-full overflow-hidden shadow-inner"><div className="h-full bg-zinc-900 w-[65%] rounded-full" /></div>
+                                                    <div className="w-full h-2.5 bg-zinc-550 rounded-full overflow-hidden shadow-inner"><div className="h-full bg-zinc-900 w-[65%] rounded-full" /></div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div className="bg-zinc-900 p-12 rounded-[4rem] text-white flex flex-col justify-between group relative overflow-hidden shadow-[0_35px_60px_-15px_rgba(0,0,0,0.3)] min-h-[450px]">
-                                        <TrendingUp className="absolute top-10 right-10 text-white/[0.03] w-48 h-48 -rotate-12 transition-transform group-hover:scale-110" />
+                                    <div className="bg-white p-12 rounded-[4rem] text-zinc-900 flex flex-col justify-between group relative overflow-hidden shadow-md border border-gray-100 min-h-[450px]">
+                                        <TrendingUp className="absolute top-10 right-10 text-zinc-900/[0.03] w-48 h-48 -rotate-12 transition-transform group-hover:scale-110" />
                                         <div>
-                                            <div className="w-16 h-16 bg-white/10 backdrop-blur-xl rounded-[2rem] flex items-center justify-center mb-10"><BarChart3 size={28} className="text-emerald-500" /></div>
+                                            <div className="w-16 h-16 bg-emerald-500/10 rounded-[2rem] flex items-center justify-center mb-10"><BarChart3 size={28} className="text-emerald-500" /></div>
                                             <h3 className="text-3xl font-black uppercase italic tracking-tighter mb-4 leading-none">Rapport <br/> Décisionnel</h3>
-                                            <p className="text-zinc-500 text-[11px] font-bold uppercase tracking-widest leading-loose mb-10 opacity-60">Accédez à l'analyse complète multicritères et prévisionnelle de votre commune.</p>
+                                            <p className="text-zinc-555 text-[11px] font-bold uppercase tracking-widest leading-loose mb-10 opacity-60">Accédez à l'analyse complète multicritères et prévisionnelle de votre commune.</p>
                                         </div>
                                         <button onClick={() => {
                                             const rapportUrl = targetMairieId ? `/city-os/rapports?id=${targetMairieId}` : "/city-os/rapports";
@@ -839,7 +839,7 @@ function MairieDashboardContent() {
                         {activeTab === 'police' && (
                             <motion.div key="police" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} className="space-y-10">
                                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                                    <div className="lg:col-span-3 h-[600px] rounded-[4rem] overflow-hidden border border-zinc-200 bg-white relative shadow-2xl shadow-zinc-200/20">
+                                    <div className="lg:col-span-3 h-[600px] rounded-[4rem] overflow-hidden border border-zinc-200 bg-white relative shadow-md">
                                         <div className="absolute inset-0 z-0">
                                             <RadarErrorBoundary>
                                                 <MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} />
@@ -850,11 +850,11 @@ function MairieDashboardContent() {
                                             <div className="absolute w-[300px] h-[300px] border border-red-500/20 rounded-full animate-pulse opacity-20" />
                                         </div>
                                         
-                                        {/* Infraction Markers (Simulation visual markers on map) */}
+                                        {/* Infraction Markers */}
                                         <div className="absolute inset-0 z-20 pointer-events-none p-20">
                                             {infractions.filter(i => i.status === 'open').slice(0, 5).map((inf, idx) => (
                                                 <div key={inf.id} className="absolute animate-bounce" style={{ top: `${20 + idx * 15}%`, left: `${30 + idx * 10}%` }}>
-                                                    <div className="p-3 bg-red-600 text-white rounded-2xl shadow-2xl shadow-red-600/40 flex items-center gap-2">
+                                                    <div className="p-3 bg-red-600 text-white rounded-2xl shadow-xl flex items-center gap-2">
                                                         <AlertTriangle size={14} className="animate-pulse" />
                                                         <span className="text-[8px] font-black uppercase tracking-widest">{inf.type}</span>
                                                     </div>
@@ -862,12 +862,12 @@ function MairieDashboardContent() {
                                             ))}
                                         </div>
 
-                                        <div className="absolute bottom-10 left-10 z-30 p-8 bg-zinc-900 text-white rounded-[2.5rem] shadow-2xl space-y-4 max-w-[320px]">
-                                            <h4 className="text-xl font-black italic uppercase tracking-tighter leading-none border-b border-white/10 pb-4">STATUT RADAR</h4>
+                                        <div className="absolute bottom-10 left-10 z-30 p-8 bg-white text-zinc-900 rounded-[2.5rem] border border-gray-100 shadow-xl space-y-4 max-w-[320px]">
+                                            <h4 className="text-xl font-black italic uppercase tracking-tighter leading-none border-b border-gray-100 pb-4">STATUT RADAR</h4>
                                             <div className="space-y-3">
                                                 <div className="flex justify-between items-center"><span className="text-[9px] font-bold text-zinc-400 uppercase">Alertes Actives</span><span className="text-sm font-black text-red-500">{infractionStats?.open || 0}</span></div>
                                                 <div className="flex justify-between items-center"><span className="text-[9px] font-bold text-zinc-400 uppercase">Points Critiques</span><span className="text-sm font-black text-amber-500">{infractionStats?.critical || 0}</span></div>
-                                                <div className="flex justify-between items-center pt-2 border-t border-white/5"><span className="text-[9px] font-bold text-emerald-500 uppercase">Système IA</span><span className="text-[9px] font-black bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-400">NOMINAL</span></div>
+                                                <div className="flex justify-between items-center pt-2 border-t border-gray-100"><span className="text-[9px] font-bold text-emerald-500 uppercase">Système IA</span><span className="text-[9px] font-black bg-emerald-500/20 px-2 py-0.5 rounded text-emerald-400">NOMINAL</span></div>
                                             </div>
                                         </div>
                                     </div>
@@ -878,7 +878,7 @@ function MairieDashboardContent() {
                                             <button 
                                                 key={inf.id} 
                                                 onClick={() => { setSelectedInfraction(inf); setIsInfractionDetailModalOpen(true); }}
-                                                className="w-full text-left p-6 bg-zinc-900 border border-white/5 rounded-[2.5rem] hover:border-red-500/30 transition-all group relative overflow-hidden"
+                                                className="w-full text-left p-6 bg-white border border-gray-100 rounded-[2.5rem] hover:border-red-500/30 transition-all group relative overflow-hidden shadow-sm"
                                             >
                                                 <div className={cn(
                                                     "absolute top-0 right-0 p-3 text-[7px] font-black uppercase tracking-widest rounded-bl-xl",
@@ -887,12 +887,12 @@ function MairieDashboardContent() {
                                                     {inf.status}
                                                 </div>
                                                 <div className="flex items-start gap-4">
-                                                    <div className="w-12 h-12 rounded-2xl bg-zinc-800 border border-white/5 flex items-center justify-center text-zinc-500 group-hover:text-red-500 transition-colors">
+                                                    <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-zinc-450 group-hover:text-red-500 transition-colors">
                                                         <Trash2 size={24} />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-black italic uppercase text-white leading-none mb-1">{inf.type}</p>
-                                                        <p className="text-[8px] font-bold text-zinc-500 uppercase tracking-widest">{inf.zones?.name || "Zone non définie"}</p>
+                                                        <p className="text-sm font-black italic uppercase text-zinc-900 leading-none mb-1">{inf.type}</p>
+                                                        <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest">{inf.zones?.name || "Zone non définie"}</p>
                                                     </div>
                                                 </div>
                                             </button>
@@ -906,13 +906,13 @@ function MairieDashboardContent() {
                                 </div>
 
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    <div className="p-10 bg-zinc-950 rounded-[3.5rem] text-white flex flex-col justify-between group overflow-hidden relative min-h-[350px]">
-                                        <Megaphone className="absolute -right-8 -top-8 text-white/5 w-48 h-48 -rotate-12 transition-transform group-hover:rotate-0" />
+                                    <div className="p-10 bg-white border border-gray-100 rounded-[3.5rem] text-zinc-900 flex flex-col justify-between group overflow-hidden relative min-h-[350px] shadow-sm">
+                                        <Megaphone className="absolute -right-8 -top-8 text-zinc-900/5 w-48 h-48 -rotate-12 transition-transform group-hover:rotate-0" />
                                         <div className="relative z-10">
                                             <h3 className="text-3xl font-black italic tracking-tighter mb-4 leading-none text-red-500">ALERTE <br /> GÉNÉRALE</h3>
-                                            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-[0.2em] leading-relaxed mb-10 opacity-70">Diffuser un ordre de salubrité immédiat à tous les collecteurs du district.</p>
+                                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em] leading-relaxed mb-10 opacity-70">Diffuser un ordre de salubrité immédiat à tous les collecteurs du district.</p>
                                         </div>
-                                        <button onClick={() => showToast("Signal d'urgence diffusé à toutes les unités !", "success")} className="w-full py-6 bg-white/10 backdrop-blur-xl border border-white/10 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-white hover:text-zinc-900 transition-all">LANCER LE SIGNAL D'URGENCE</button>
+                                        <button onClick={() => showToast("Signal d'urgence diffusé à toutes les unités !", "success")} className="w-full py-6 bg-gray-50 border border-gray-200 text-zinc-800 rounded-[2rem] text-[10px] font-black uppercase tracking-widest hover:bg-red-500 hover:text-white hover:border-red-500 transition-all shadow-sm">LANCER LE SIGNAL D'URGENCE</button>
                                     </div>
                                     <div className="lg:col-span-2 p-10 bg-white border border-zinc-100 rounded-[3.5rem] shadow-xl shadow-zinc-200/10">
                                         <h3 className="text-xl font-black uppercase italic tracking-tighter mb-8 text-zinc-900">Registre des Infractions Clôturées</h3>
@@ -925,9 +925,9 @@ function MairieDashboardContent() {
                                                              <p className="text-[10px] font-black text-zinc-900 uppercase">{inf.type}</p>
                                                              <p className="text-[8px] font-bold text-zinc-400 uppercase">{new Date(inf.created_at).toLocaleDateString()}</p>
                                                          </div>
-                                                    </div>
-                                                    <ArrowUpRight size={14} className="text-zinc-300" />
-                                                </div>
+                                                     </div>
+                                                     <ArrowUpRight size={14} className="text-zinc-300" />
+                                                 </div>
                                             ))}
                                             {infractions.filter(i => i.status === 'resolved' || i.status === 'sanctionne').length === 0 && (
                                                 <div className="col-span-2 py-12 text-center">
@@ -954,13 +954,13 @@ function MairieDashboardContent() {
                                     
                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                         {policeAgents.map((agent) => (
-                                            <div key={agent.id} className="p-6 bg-zinc-900 border border-white/5 rounded-[2.5rem] hover:border-emerald-500/30 transition-all flex items-center justify-between shadow-2xl">
+                                            <div key={agent.id} className="p-6 bg-white border border-gray-100 rounded-[2.5rem] hover:border-emerald-500/30 transition-all flex items-center justify-between shadow-md">
                                                 <div className="flex items-center gap-4">
                                                     <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center overflow-hidden p-3">
                                                         <img src="/images/police_verte_logo.png" alt="Police Verte" className="w-full h-full object-contain" />
                                                     </div>
                                                     <div>
-                                                        <p className="text-sm font-black italic uppercase text-white">{agent.full_name}</p>
+                                                        <p className="text-sm font-black italic uppercase text-zinc-900">{agent.full_name}</p>
                                                         <p className="text-[9px] font-bold text-emerald-500/50 uppercase tracking-widest">{agent.zones?.name || "Patrouille Libre"}</p>
                                                     </div>
                                                 </div>
@@ -1040,7 +1040,7 @@ function MairieDashboardContent() {
                             </div>
                         )}
                     </div>
-                    <button type="submit" disabled={loading || !newZone.name} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-[0.3em] shadow-2xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all">
+                    <button type="submit" disabled={loading || !newZone.name} className="w-full py-7 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-[0.3em] shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all">
                         {loading ? "Déploiement..." : "VALIDER LA CONCESSION"}
                     </button>
                  </form>
@@ -1140,10 +1140,10 @@ function MairieDashboardContent() {
                                     .toLocaleString()} <span className="text-xl">CFA</span>
                             </p>
                         </div>
-                        <div className="p-10 bg-zinc-900 rounded-[3rem] shadow-2xl relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150" />
-                            <p className="text-[10px] font-black uppercase text-zinc-500 mb-4 tracking-[0.2em] relative z-10">Actes Administratifs</p>
-                            <p className="text-5xl font-black italic tracking-tighter text-white relative z-10">
+                        <div className="p-10 bg-gray-50 border border-gray-200 rounded-[3rem] shadow-sm relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-zinc-500/5 rounded-full -mr-12 -mt-12 transition-transform group-hover:scale-150" />
+                            <p className="text-[10px] font-black uppercase text-zinc-400 mb-4 tracking-[0.2em] relative z-10">Actes Administratifs</p>
+                            <p className="text-5xl font-black italic tracking-tighter text-zinc-900 relative z-10">
                                 {transactions.length}
                             </p>
                         </div>
@@ -1173,7 +1173,7 @@ function MairieDashboardContent() {
                         </div>
                     </div>
 
-                    <button onClick={() => globalThis.print()} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-2xl shadow-zinc-900/30 flex items-center justify-center gap-4 hover:scale-[1.01] transition-transform">
+                    <button onClick={() => globalThis.print()} className="w-full py-7 bg-gray-100 text-zinc-800 border border-gray-200 rounded-[2.5rem] font-black uppercase text-[11px] tracking-widest shadow-sm flex items-center justify-center gap-4 hover:bg-gray-200 transition-all">
                         <Printer size={18} />
                         Générer l'Audit Certifié (PDF)
                     </button>
@@ -1185,14 +1185,14 @@ function MairieDashboardContent() {
                      <div className="space-y-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-6">
-                                <div className="p-8 bg-zinc-900 rounded-[3rem] text-white relative overflow-hidden group">
+                                <div className="p-8 bg-gray-50 border border-gray-150 rounded-[3rem] text-zinc-900 relative overflow-hidden group">
                                     <div className="absolute inset-0 bg-red-600/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                    <h4 className="text-[9px] font-black uppercase text-zinc-500 mb-2 tracking-widest">Type d'Infraction</h4>
+                                    <h4 className="text-[9px] font-black uppercase text-zinc-400 mb-2 tracking-widest">Type d'Infraction</h4>
                                     <p className="text-3xl font-black italic uppercase tracking-tighter text-red-500 leading-none">{selectedInfraction.type}</p>
                                     <div className="mt-8 space-y-3">
                                         <div className="flex items-center gap-3">
-                                            <div className="p-2 bg-white/5 rounded-lg"><MapPin size={12} className="text-zinc-500" /></div>
-                                            <p className="text-[10px] font-bold uppercase text-zinc-300">{selectedInfraction.zones?.name || "Coordonnées GPS directes"}</p>
+                                            <div className="p-2 bg-white/5 rounded-lg"><MapPin size={12} className="text-zinc-400" /></div>
+                                            <p className="text-[10px] font-bold uppercase text-zinc-650">{selectedInfraction.zones?.name || "Coordonnées GPS directes"}</p>
                                         </div>
                                         {selectedInfraction.manual_address && (
                                             <div className="flex items-center gap-3">
@@ -1246,7 +1246,7 @@ function MairieDashboardContent() {
                                         <button 
                                             onClick={handleResolveInfraction}
                                             disabled={loading || selectedInfraction.status === 'resolved'}
-                                            className="w-full py-5 bg-zinc-900 text-white rounded-[2rem] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 disabled:opacity-50"
+                                            className="w-full py-5 bg-gray-100 border border-gray-200 text-zinc-800 rounded-[2rem] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3 disabled:opacity-50 hover:bg-gray-200"
                                         >
                                             <CheckCircle2 size={16} /> CLASSÉ SANS SUITE / RÉSOLU
                                         </button>
@@ -1348,7 +1348,7 @@ function MairieDashboardContent() {
                         </div>
                     </div>
 
-                    <button type="submit" disabled={loading} className="w-full py-7 bg-zinc-900 text-white rounded-[2.5rem] text-[11px] font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all">
+                    <button type="submit" disabled={loading} className="w-full py-7 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[2.5rem] text-[11px] font-black uppercase tracking-[0.3em] shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
                         {loading ? "APPLICATION..." : "APPLIQUER LA NOUVELLE FISCALITÉ"}
                     </button>
                 </form>

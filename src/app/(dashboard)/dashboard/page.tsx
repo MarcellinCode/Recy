@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { 
     BarChart3, 
     Leaf, 
@@ -34,6 +35,7 @@ function rejectAfter(ms: number): Promise<never> {
 
 export default function DashboardPage() {
     const supabase = createClient();
+    const router = useRouter();
     const { unreadMessages, unreadReservations } = useUnreadBadges();
     
     const [stats, setStats] = useState<any>({
@@ -220,7 +222,7 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="bg-zinc-950 min-h-screen">
+        <div className="bg-transparent min-h-screen">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pb-24">
             {/* Header section with User emphasis */}
             <motion.header 
@@ -234,7 +236,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                     <div>
-                        <h1 className="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter leading-none text-white">
+                        <h1 className="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter leading-none text-zinc-900">
                             Bonjour, <span className="text-primary">{profile?.full_name?.split(' ')[0] || "Eco-Guerrier"}</span>
                         </h1>
                         <p className="text-sm font-medium text-zinc-500 mt-2">
@@ -243,15 +245,19 @@ export default function DashboardPage() {
                     </div>
                     
                     {/* Quick Wallet Summary */}
-                    <Link href="/wallet" className="group flex items-center gap-4 bg-zinc-900 p-4 rounded-[2rem] border border-white/5 shadow-2xl self-start sm:self-auto transition-all hover:scale-105">
+                    <Link 
+                        href="/wallet" 
+                        onClick={(e) => { e.preventDefault(); router.push("/wallet"); }}
+                        className="group flex items-center gap-4 bg-white p-4 rounded-[2rem] border border-gray-100 shadow-md self-start sm:self-auto transition-all hover:scale-105"
+                    >
                         <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
                             <CircleDollarSign className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Solde Actuel</p>
-                            <p className="text-lg font-black text-white italic tracking-tighter">{profile?.wallet_balance?.toLocaleString()} F CFA</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-450">Solde Actuel</p>
+                            <p className="text-lg font-black text-zinc-900 italic tracking-tighter">{profile?.wallet_balance?.toLocaleString()} F CFA</p>
                         </div>
-                        <ArrowUpRight className="w-5 h-5 text-zinc-600 group-hover:text-primary transition-colors ml-2" />
+                        <ArrowUpRight className="w-5 h-5 text-zinc-400 group-hover:text-primary transition-colors ml-2" />
                     </Link>
                 </div>
             </motion.header>
@@ -285,7 +291,7 @@ export default function DashboardPage() {
             </section>
 
             {/* Main Hub Navigation */}
-            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400 mb-6">Menu Principal</h3>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-6">Menu Principal</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {hubCards.map((card, idx) => (
                     <motion.div
@@ -296,18 +302,22 @@ export default function DashboardPage() {
                     >
                         <Link 
                             href={card.href}
-                            className="group relative flex flex-col p-8 bg-zinc-900 rounded-[2.5rem] border border-white/5 shadow-xl hover:border-primary/30 transition-all overflow-hidden"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                router.push(card.href);
+                            }}
+                            className="group relative flex flex-col p-8 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-primary/30 transition-all overflow-hidden"
                         >
-                            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-zinc-200/20 relative", card.color)}>
+                            <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-md relative", card.color)}>
                                 <card.icon className="w-7 h-7 text-white" />
                                 {card.badge ? (
-                                    <span className="absolute -top-2 -right-2 flex items-center justify-center min-w-[24px] h-[24px] text-[10px] font-black text-white bg-red-500 rounded-full px-1.5 shadow-lg border-4 border-white dark:border-zinc-900">
+                                    <span className="absolute -top-2 -right-2 flex items-center justify-center min-w-[24px] h-[24px] text-[10px] font-black text-white bg-red-500 rounded-full px-1.5 shadow-lg border-4 border-white">
                                         {card.badge}
                                     </span>
                                 ) : null}
                             </div>
                             
-                            <h4 className="text-xl font-black uppercase italic tracking-tighter text-white mb-2">{card.title}</h4>
+                            <h4 className="text-xl font-black uppercase italic tracking-tighter text-zinc-900 mb-2">{card.title}</h4>
                             <p className="text-xs font-medium text-zinc-500">{card.description}</p>
 
                             <div className="mt-8 flex items-center text-[10px] font-black uppercase tracking-widest text-primary gap-2 group-hover:gap-3 transition-all">
@@ -315,8 +325,8 @@ export default function DashboardPage() {
                             </div>
 
                             {/* Background Pattern */}
-                            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-white/5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                <card.icon className="w-16 h-16 text-white/5" />
+                            <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-gray-100/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                <card.icon className="w-16 h-16 text-zinc-300/30" />
                             </div>
                         </Link>
                     </motion.div>
@@ -331,12 +341,16 @@ export default function DashboardPage() {
                     viewport={{ once: true }}
                     className="mt-12 p-1 bg-gradient-to-r from-primary/40 to-emerald-500/40 rounded-[3rem]"
                 >
-                    <div className="bg-zinc-900 rounded-[2.9rem] p-8 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 border border-white/5">
+                    <div className="bg-white rounded-[2.9rem] p-8 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 border border-gray-100">
                         <div className="text-center lg:text-left">
-                            <h3 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tighter mb-2 text-white">Devenez un <span className="text-primary italic">Partenaire Certifié</span></h3>
+                            <h3 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tighter mb-2 text-zinc-900">Devenez un <span className="text-primary italic">Partenaire Certifié</span></h3>
                             <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-xl">Boostez votre visibilité et accédez à des lots premium en passant au forfait Business.</p>
                         </div>
-                        <Link href="/abonnements" className="px-10 py-5 bg-primary text-white font-black uppercase tracking-widest text-[10px] rounded-full shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all">
+                        <Link 
+                            href="/abonnements" 
+                            onClick={(e) => { e.preventDefault(); router.push("/abonnements"); }}
+                            className="px-10 py-5 bg-primary text-white font-black uppercase tracking-widest text-[10px] rounded-full shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
+                        >
                             En savoir plus
                         </Link>
                     </div>
@@ -353,14 +367,14 @@ function MiniStat({ label, value, icon: Icon, delay }: any) {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay }}
-            className="p-4 bg-zinc-900 rounded-3xl border border-white/5 flex items-center gap-3 sm:gap-4"
+            className="p-4 bg-white rounded-3xl border border-gray-100 shadow-sm flex items-center gap-3 sm:gap-4"
         >
-            <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shadow-inner">
                 <Icon className="w-4 h-4 text-primary" />
             </div>
             <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-500">{label}</p>
-                <p className="text-sm sm:text-base font-black italic tracking-tighter text-white">{value}</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">{label}</p>
+                <p className="text-sm sm:text-base font-black italic tracking-tighter text-zinc-900">{value}</p>
             </div>
         </motion.div>
     );

@@ -112,11 +112,12 @@ export async function middleware(request: NextRequest) {
             return NextResponse.redirect(new URL('/dashboard', request.url))
         }
 
-        // 🏢 Organisation Admin, Mairie, or Super Admin only
-        // entreprise / collecteur / vendeur → redirigé vers /dashboard
+        // 🏢 Organisation Admin, Entreprise, Mairie, or Super Admin only
+        // collecteur / vendeur → redirigé vers /dashboard
         if (
             (pathname.startsWith('/organisation') || pathname.startsWith('/flotte')) &&
             role !== 'organisation_admin' &&
+            role !== 'entreprise' &&
             role !== 'mairie' &&
             role !== 'super_admin'
         ) {

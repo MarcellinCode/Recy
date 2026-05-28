@@ -120,26 +120,26 @@ export default function ReservationsPage() {
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen gap-6 bg-zinc-950">
+            <div className="flex flex-col items-center justify-center min-h-screen gap-6 bg-transparent">
                 <div className="relative">
                     <Loader2 className="w-12 h-12 text-primary animate-spin" />
                     <div className="absolute inset-0 blur-3xl bg-primary/30 animate-pulse" />
                 </div>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-500 animate-pulse">Synchronisation sécurisée...</p>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-zinc-550 animate-pulse">Synchronisation sécurisée...</p>
             </div>
         );
     }
 
     return (
-        <div className="max-w-4xl mx-auto px-4 py-8 sm:py-16 min-h-screen pb-24">
+        <div className="max-w-4xl mx-auto px-4 py-8 sm:py-16 min-h-screen pb-24 bg-transparent">
             <header className="mb-16 relative">
-                <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary/10 rounded-full blur-[100px] -z-10" />
+                <div className="absolute -top-32 -left-32 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -z-10" />
                 
                 <div className="flex items-center gap-6 mb-12">
-                    <Link href="/dashboard" className="group w-14 h-14 flex items-center justify-center bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl hover:bg-primary/20 hover:border-primary/50 transition-all">
-                        <ArrowLeft className="w-6 h-6 text-white group-hover:-translate-x-1 transition-transform" />
+                    <Link href="/dashboard" className="group w-14 h-14 flex items-center justify-center bg-white border border-gray-100 rounded-2xl shadow-md hover:bg-primary/20 hover:border-primary/50 transition-all">
+                        <ArrowLeft className="w-6 h-6 text-zinc-900 group-hover:-translate-x-1 transition-transform" />
                     </Link>
-                    <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                    <div className="h-px flex-1 bg-gradient-to-r from-gray-200 to-transparent" />
                 </div>
 
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-8 mb-12">
@@ -148,24 +148,24 @@ export default function ReservationsPage() {
                             <div className="w-2 h-2 bg-primary rounded-full animate-ping" />
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Live Monitor</span>
                         </div>
-                        <h1 className="text-5xl sm:text-7xl font-black uppercase tracking-tighter text-white leading-[0.8] mb-2">
+                        <h1 className="text-5xl sm:text-7xl font-black uppercase tracking-tighter text-zinc-900 leading-[0.8] mb-2">
                             {currentUser?.role === 'mairie' ? "Supervision" : "Mes"} <br />
                             <span className="text-primary italic font-serif">Réservations</span>
                         </h1>
                     </div>
                     
-                    <div className="bg-white/5 backdrop-blur-md p-4 rounded-[2rem] border border-white/10 shadow-2xl">
-                        <p className="text-[9px] font-black uppercase text-zinc-500 tracking-widest mb-1 leading-none">
+                    <div className="bg-white p-4 rounded-[2rem] border border-gray-100 shadow-md">
+                        <p className="text-[9px] font-black uppercase text-zinc-405 tracking-widest mb-1 leading-none">
                             {currentUser?.role === 'mairie' ? "Activité Ville" : "Total Actif"}
                         </p>
-                        <p className="text-4xl font-black italic text-white leading-none tracking-tighter">
+                        <p className="text-4xl font-black italic text-zinc-900 leading-none tracking-tighter">
                             {reservations.length.toString().padStart(2, '0')}
                         </p>
                     </div>
                 </div>
 
-                {/* Tab Switcher / Activity Bar */}
-                <div className="relative p-1.5 bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] shadow-2xl overflow-hidden group">
+                {/* Tab Switcher / Activity Bar in Light Theme */}
+                <div className="relative p-1.5 bg-gray-100 border border-gray-200/50 rounded-[2.5rem] shadow-sm overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity" />
                     
                     {currentUser?.role === 'mairie' ? (
@@ -175,8 +175,8 @@ export default function ReservationsPage() {
                                     <Navigation className="w-5 h-5 text-primary animate-pulse" />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-white">Flux en temps réel</p>
-                                    <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-tight italic">Secteur : {currentUser?.city}</p>
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-900">Flux en temps réel</p>
+                                    <p className="text-[9px] font-bold text-zinc-550 uppercase tracking-tight italic">Secteur : {currentUser?.city}</p>
                                 </div>
                             </div>
                             <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary/10 rounded-full border border-primary/20">
@@ -191,8 +191,8 @@ export default function ReservationsPage() {
                                 className={cn(
                                     "flex-1 flex items-center justify-center gap-3 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-widest transition-all duration-500",
                                     currentTab === "collectes" 
-                                        ? "bg-white text-zinc-950 shadow-2xl scale-[1.02]" 
-                                        : "text-zinc-500 hover:text-white"
+                                        ? "bg-white text-zinc-950 shadow-md scale-[1.02]" 
+                                        : "text-zinc-500 hover:text-zinc-900"
                                 )}
                             >
                                 <CalendarDays className="w-4 h-4" />
@@ -203,8 +203,8 @@ export default function ReservationsPage() {
                                 className={cn(
                                     "flex-1 flex items-center justify-center gap-3 py-5 rounded-[2rem] text-[10px] font-black uppercase tracking-widest transition-all duration-500",
                                     currentTab === "ventes" 
-                                        ? "bg-white text-zinc-950 shadow-2xl scale-[1.02]" 
-                                        : "text-zinc-500 hover:text-white"
+                                        ? "bg-white text-zinc-950 shadow-md scale-[1.02]" 
+                                        : "text-zinc-500 hover:text-zinc-900"
                                 )}
                             >
                                 <Package className="w-4 h-4" />

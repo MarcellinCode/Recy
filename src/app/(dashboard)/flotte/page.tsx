@@ -114,7 +114,7 @@ export default function FleetPage() {
     );
 
     return (
-        <div className="min-h-screen bg-zinc-950 text-white">
+        <div className="min-h-screen bg-transparent text-zinc-900">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
@@ -124,8 +124,8 @@ export default function FleetPage() {
                                 <Truck className="w-8 h-8 text-emerald-500" />
                             </div>
                             <div>
-                                <h1 className="text-4xl sm:text-5xl font-black tracking-tighter uppercase italic leading-none">
-                                    GESTION <span className="text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.3)]">FLOTTE</span>
+                                <h1 className="text-4xl sm:text-5xl font-black tracking-tighter uppercase italic leading-none text-zinc-900">
+                                    GESTION <span className="text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.15)]">FLOTTE</span>
                                 </h1>
                                 <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mt-2">
                                     Surveillance technique & Télémesure Citicline
@@ -135,7 +135,7 @@ export default function FleetPage() {
                     </div>
                     <button 
                         onClick={() => setIsAddModalOpen(true)}
-                        className="group relative flex items-center gap-3 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all shadow-2xl shadow-emerald-500/20 active:scale-95"
+                        className="group relative flex items-center gap-3 px-8 py-4 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-emerald-500/20 active:scale-95"
                     >
                         <Plus className="w-4 h-4" />
                         Ajouter un véhicule
@@ -156,7 +156,7 @@ export default function FleetPage() {
                             cardBgAndTextColor = "bg-amber-500/10 text-amber-500";
                         }
                         return (
-                            <div key={card.label} className="bg-zinc-900/40 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white/5 shadow-2xl flex items-center gap-6 group hover:border-white/10 transition-all">
+                            <div key={card.label} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm flex items-center gap-6 group hover:border-gray-200 transition-all">
                                 <div className={cn(
                                     "w-16 h-16 rounded-2xl flex items-center justify-center transition-all group-hover:scale-110 shadow-inner",
                                     cardBgAndTextColor
@@ -164,8 +164,8 @@ export default function FleetPage() {
                                     <card.icon size={32} />
                                 </div>
                                 <div>
-                                    <p className="text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-1">{card.label}</p>
-                                    <p className="text-4xl font-black italic tracking-tighter">{card.value}</p>
+                                    <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-1">{card.label}</p>
+                                    <p className="text-4xl font-black italic tracking-tighter text-zinc-900">{card.value}</p>
                                 </div>
                             </div>
                         );
@@ -175,12 +175,12 @@ export default function FleetPage() {
                 {/* Search Bar Section */}
                 <div className="relative group max-w-2xl">
                     <div className="absolute inset-0 bg-emerald-500/5 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="relative flex items-center gap-4 bg-zinc-900/50 backdrop-blur-md p-2 pl-6 rounded-3xl border border-white/5 group-focus-within:border-emerald-500/30 transition-all">
-                        <Search className="w-5 h-5 text-zinc-500" />
+                    <div className="relative flex items-center gap-4 bg-white p-2 pl-6 rounded-3xl border border-gray-100 shadow-sm group-focus-within:border-emerald-500/30 transition-all">
+                        <Search className="w-5 h-5 text-zinc-400" />
                         <input 
                             type="text" 
                             placeholder="RECHERCHER PAR MATRICULE OU MODÈLE..." 
-                            className="bg-transparent border-none focus:ring-0 text-[11px] font-black uppercase tracking-widest w-full text-white placeholder:text-zinc-600 h-14"
+                            className="bg-transparent border-none focus:ring-0 text-[11px] font-black uppercase tracking-widest w-full text-zinc-900 placeholder:text-zinc-400 h-14"
                         />
                     </div>
                 </div>
@@ -197,7 +197,7 @@ export default function FleetPage() {
                 isOpen={isAddModalOpen} 
                 onClose={() => setIsAddModalOpen(false)} 
                 title="Enregistrer un Véhicule"
-                className="dark bg-zinc-900 border-white/10"
+                className="bg-white border-gray-150"
             >
                 <form onSubmit={handleAddVehicle} className="space-y-8">
                     <div className="space-y-6">
@@ -206,7 +206,7 @@ export default function FleetPage() {
                             <input 
                                 id="vehicle-name"
                                 required
-                                className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black uppercase text-white focus:border-emerald-500/50 transition-all"
+                                className="w-full px-6 py-5 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none font-black uppercase text-zinc-900 focus:bg-white focus:border-emerald-500/50 transition-all"
                                 placeholder="NOM DU VÉHICULE"
                                 value={newVehicle.name}
                                 onChange={(e) => setNewVehicle({...newVehicle, name: e.target.value})}
@@ -217,7 +217,7 @@ export default function FleetPage() {
                             <input 
                                 id="vehicle-reg-number"
                                 required
-                                className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black uppercase text-white focus:border-emerald-500/50 transition-all"
+                                className="w-full px-6 py-5 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none font-black uppercase text-zinc-900 focus:bg-white focus:border-emerald-500/50 transition-all"
                                 placeholder="AA-000-AA"
                                 value={newVehicle.regNumber}
                                 onChange={(e) => setNewVehicle({...newVehicle, regNumber: e.target.value.toUpperCase()})}
@@ -227,13 +227,13 @@ export default function FleetPage() {
                             <label htmlFor="vehicle-type" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Type de véhicule</label>
                             <select 
                                 id="vehicle-type"
-                                className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black uppercase text-white focus:border-emerald-500/50 transition-all appearance-none"
+                                className="w-full px-6 py-5 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none font-black uppercase text-zinc-900 focus:bg-white focus:border-emerald-500/50 transition-all appearance-none"
                                 value={newVehicle.type}
                                 onChange={(e) => setNewVehicle({...newVehicle, type: e.target.value})}
                             >
-                                <option value="camion" className="bg-zinc-900">Camion de collecte</option>
-                                <option value="tricycle" className="bg-zinc-900">Tricycle motorisé</option>
-                                <option value="benne" className="bg-zinc-900">Benne tasseuse</option>
+                                <option value="camion" className="bg-white text-zinc-900">Camion de collecte</option>
+                                <option value="tricycle" className="bg-white text-zinc-900">Tricycle motorisé</option>
+                                <option value="benne" className="bg-white text-zinc-900">Benne tasseuse</option>
                             </select>
                         </div>
 
@@ -244,7 +244,7 @@ export default function FleetPage() {
                                     id="vehicle-initial-mileage"
                                     type="number"
                                     required
-                                    className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black text-white focus:border-emerald-500/50 transition-all"
+                                    className="w-full px-6 py-5 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none font-black text-zinc-900 focus:bg-white focus:border-emerald-500/50 transition-all"
                                     placeholder="0"
                                     value={newVehicle.initialMileage}
                                     onChange={(e) => setNewVehicle({...newVehicle, initialMileage: e.target.value})}
@@ -256,7 +256,7 @@ export default function FleetPage() {
                                     id="vehicle-insurance-expiry"
                                     type="date"
                                     required
-                                    className="w-full px-6 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-sm outline-none font-black uppercase text-white focus:border-emerald-500/50 transition-all"
+                                    className="w-full px-6 py-5 bg-gray-50 border border-gray-200 rounded-2xl text-sm outline-none font-black uppercase text-zinc-900 focus:bg-white focus:border-emerald-500/50 transition-all"
                                     value={newVehicle.insuranceExpiry}
                                     onChange={(e) => setNewVehicle({...newVehicle, insuranceExpiry: e.target.value})}
                                 />
@@ -266,7 +266,7 @@ export default function FleetPage() {
                     <button 
                         type="submit" 
                         disabled={isSubmitting}
-                        className="w-full py-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest shadow-2xl shadow-emerald-500/20 disabled:opacity-50 transition-all active:scale-95"
+                        className="w-full py-6 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[2rem] text-[11px] font-black uppercase tracking-widest shadow-xl shadow-emerald-500/20 disabled:opacity-50 transition-all active:scale-95"
                     >
                         {isSubmitting ? "Enregistrement..." : "Confirmer l'Ajout"}
                     </button>
@@ -300,7 +300,7 @@ function VehicleCard({ vehicle }: { readonly vehicle: any }) {
     const isInsuranceExpiring = vehicle.insurance_expiry_date ? new Date(vehicle.insurance_expiry_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : false;
     const isInsuranceOverdue = vehicle.insurance_expiry_date ? new Date(vehicle.insurance_expiry_date) < new Date() : false;
 
-    let insuranceColorClass = "text-white";
+    let insuranceColorClass = "text-zinc-900";
     if (isInsuranceOverdue) {
         insuranceColorClass = "text-red-500";
     } else if (isInsuranceExpiring) {
@@ -308,7 +308,7 @@ function VehicleCard({ vehicle }: { readonly vehicle: any }) {
     }
 
     return (
-        <div className="bg-zinc-900/40 backdrop-blur-xl p-8 rounded-[3rem] border border-white/5 hover:border-emerald-500/30 transition-all group relative overflow-hidden shadow-2xl">
+        <div className="bg-white p-8 rounded-[3rem] border border-gray-100 hover:border-emerald-500/30 transition-all group relative overflow-hidden shadow-md hover:shadow-xl">
             {isMaintenanceNeeded && <div className="absolute inset-0 bg-amber-500/5 pointer-events-none" />}
             {(needsOil || isInsuranceOverdue) && <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 blur-3xl pointer-events-none" />}
             
@@ -323,7 +323,7 @@ function VehicleCard({ vehicle }: { readonly vehicle: any }) {
                         <Truck className="w-7 h-7" />
                     </div>
                     <div>
-                        <h3 className="font-black text-white uppercase text-sm tracking-tight leading-none mb-1">{vehicle.name}</h3>
+                        <h3 className="font-black text-zinc-900 uppercase text-sm tracking-tight leading-none mb-1">{vehicle.name}</h3>
                         <p className="text-[10px] font-black text-emerald-500 uppercase tracking-[0.2em]">{vehicle.registration_number}</p>
                     </div>
                 </div>
@@ -340,12 +340,12 @@ function VehicleCard({ vehicle }: { readonly vehicle: any }) {
             <div className="space-y-6 relative z-10">
                 <div>
                     <div className="flex justify-between items-end mb-2">
-                        <span className="text-[9px] font-black text-zinc-500 uppercase tracking-widest">Maintenance (VIDANGE)</span>
+                        <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Maintenance (VIDANGE)</span>
                         <span className={cn("text-[10px] font-black uppercase italic", needsOil ? "text-red-500" : "text-emerald-500")}>
                             {oilProgress}%
                         </span>
                     </div>
-                    <div className="h-2 bg-zinc-950 rounded-full overflow-hidden border border-white/5">
+                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden border border-gray-200/50">
                         <div 
                             className={cn(
                                 "h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(16,185,129,0.3)]",
@@ -357,15 +357,15 @@ function VehicleCard({ vehicle }: { readonly vehicle: any }) {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="p-4 bg-zinc-950/50 rounded-2xl border border-white/5 group-hover:border-white/10 transition-colors">
-                        <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 group-hover:border-gray-200 transition-colors">
+                        <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-1 flex items-center gap-1">
                             <Gauge className="w-3 h-3 text-emerald-500" />
                             KILOMÉTRAGE
                         </p>
-                        <p className="text-sm font-black text-white uppercase italic tracking-tighter">{mileage.toLocaleString()} KM</p>
+                        <p className="text-sm font-black text-zinc-900 uppercase italic tracking-tighter">{mileage.toLocaleString()} KM</p>
                     </div>
-                    <div className="p-4 bg-zinc-950/50 rounded-2xl border border-white/5 group-hover:border-white/10 transition-colors">
-                        <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest mb-1 flex items-center gap-1">
+                    <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 group-hover:border-gray-200 transition-colors">
+                        <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-1 flex items-center gap-1">
                             <Calendar className="w-3 h-3 text-emerald-500" />
                             ASSURANCE
                         </p>
@@ -379,7 +379,7 @@ function VehicleCard({ vehicle }: { readonly vehicle: any }) {
                 </div>
             </div>
 
-            <button onClick={() => showToast('Détails de maintenance à venir', 'success')} className="w-full mt-8 py-5 bg-zinc-950 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-600 hover:text-white hover:border-emerald-500 transition-all shadow-xl active:scale-95">
+            <button onClick={() => showToast('Détails de maintenance à venir', 'success')} className="w-full mt-8 py-5 bg-gray-50 border border-gray-200 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-emerald-600 hover:text-white hover:border-emerald-500 transition-all shadow-sm active:scale-95 text-zinc-800">
                 DÉTAILS MAINTENANCE
                 <ChevronRight className="w-3.5 h-3.5" />
             </button>
