@@ -40,14 +40,6 @@ export async function assignConcessionDirectly(data: {
 
     if (concessionError) return { success: false, error: concessionError.message };
 
-    // 3. Mettre à jour le statut de la zone
-    const { error: zoneError } = await supabase
-        .from('zones')
-        .update({ status: 'occupied' })
-        .eq('id', data.zone_id);
-
-    if (zoneError) return { success: false, error: zoneError.message };
-
     revalidatePath('/city-os');
     return { success: true };
 }
@@ -74,14 +66,6 @@ export async function revokeConcession(concessionId: string, zoneId: string) {
 
     if (concessionError) return { success: false, error: concessionError.message };
 
-    // 2. Libérer la zone
-    const { error: zoneError } = await supabase
-        .from('zones')
-        .update({ status: 'available' })
-        .eq('id', zoneId);
-
-    if (zoneError) return { success: false, error: zoneError.message };
-
     revalidatePath('/city-os');
     return { success: true };
 }
@@ -107,9 +91,6 @@ export async function checkAndCleanupExpiredConcessions() {
 
     // 2. Marquer comme expirées
     await supabase.from('concessions').update({ status: 'expired' }).in('id', concessionIds);
-
-    // 3. Libérer les zones
-    await supabase.from('zones').update({ status: 'available' }).in('id', zoneIds);
 
     revalidatePath('/city-os');
     return { success: true, count: expired.length };

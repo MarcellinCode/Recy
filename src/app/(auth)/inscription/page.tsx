@@ -60,6 +60,7 @@ function SignupForm() {
         phone: "",
         city: "",
         zoneId: "",
+        commune: "",
         // Citizen
         district: "",
         // Collector
@@ -82,11 +83,10 @@ function SignupForm() {
         setLoading(true);
         setError(null);
 
-        try {
-            let fullName = formData.fullName;
+        try {            let fullName = formData.fullName;
             if (role === 'mairie') fullName = formData.municipalityName;
-            else if (role === 'organisation_admin') fullName = formData.orgName;
-
+            else if (role === 'organisation_admin' || role === 'entreprise') fullName = formData.orgName;
+ 
             const { data, error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
@@ -99,6 +99,7 @@ function SignupForm() {
                         zone_id: formData.zoneId || null,
                         // Role specific metadata
                         district: formData.district,
+                        municipality_name: formData.commune,
                         vehicle_type: formData.vehicleType,
                         id_number: formData.idNumber,
                         rccm: formData.rccm,
@@ -107,7 +108,7 @@ function SignupForm() {
                         official_department: formData.officialDepartment
                     },
                 },
-            });
+            });;
 
             if (authError) throw authError;
             
@@ -138,8 +139,8 @@ function SignupForm() {
                 setError("Veuillez remplir tous les champs (y compris la ville).");
                 return;
             }
-            if (role === 'organisation_admin' && (!formData.orgName || !formData.contactPerson || !formData.rccm || !formData.phone || !formData.city)) {
-                setError("Veuillez remplir tous les champs (y compris la ville).");
+            if ((role === 'organisation_admin' || role === 'entreprise') && (!formData.orgName || !formData.contactPerson || !formData.rccm || !formData.phone || !formData.city || !formData.district || !formData.commune)) {
+                setError("Veuillez remplir tous les champs (y compris la ville, le district et la commune).");
                 return;
             }
             if (role === 'mairie' && (!formData.municipalityName || !formData.officialDepartment || !formData.phone)) {
@@ -214,10 +215,24 @@ function SignupForm() {
                                 <Building2 className="w-5 h-5" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-bold text-gray-900 dark:text-white text-sm uppercase">Organisation</h3>
-                                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-tight">Je gère une zone et ma flotte d'agents.</p>
+                                <h3 className="font-bold text-gray-900 dark:text-white text-sm uppercase">Organisation / ONG</h3>
+                                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-tight">Je gère une zone d'intérêt public sans but lucratif.</p>
                             </div>
                             <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-500" />
+                        </button>
+ 
+                        <button
+                            onClick={() => { setRole("entreprise"); setStep(2); }}
+                            className="flex items-center w-full p-4 transition-all border-2 rounded-2xl border-gray-100 hover:border-blue-500 hover:bg-blue-500/5 group text-left dark:border-zinc-800"
+                        >
+                            <div className="flex items-center justify-center w-10 h-10 mr-4 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/30">
+                                <Building2 className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-bold text-gray-900 dark:text-white text-sm uppercase">Entreprise Privée</h3>
+                                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-tight">Société de collecte, tri et recyclage commerciale.</p>
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-blue-500" />
                         </button>
 
                         <div className="pt-4 mt-4 border-t border-gray-100 dark:border-zinc-800 text-center">
@@ -418,17 +433,17 @@ function SignupForm() {
                                 </>
                              )}
 
-                             {role === "organisation_admin" && (
+                             {(role === "organisation_admin" || role === "entreprise") && (
                                 <>
                                     <div className="space-y-1">
-                                        <label htmlFor="orgName" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom de l'Organisation</label>
+                                        <label htmlFor="orgName" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom de la structure</label>
                                         <input
                                             id="orgName"
                                             type="text"
                                             value={formData.orgName}
                                             onChange={(e) => setFormData({...formData, orgName: e.target.value})}
                                             className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
-                                            placeholder="Nom entreprise / ONG"
+                                            placeholder={role === "entreprise" ? "Ex: RecyCo Côte d'Ivoire" : "Ex: ONG Salubrité Propre"}
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -439,7 +454,7 @@ function SignupForm() {
                                             value={formData.email}
                                             onChange={(e) => setFormData({...formData, email: e.target.value})}
                                             className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
-                                            placeholder="contact@organisation.com"
+                                            placeholder="contact@structure.com"
                                         />
                                     </div>
                                     <div className="space-y-1">
@@ -471,7 +486,49 @@ function SignupForm() {
                                         </select>
                                     </div>
                                     <div className="space-y-1">
-                                        <label htmlFor="zoneId" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Zone de Collecte</label>
+                                        <label htmlFor="district" className="text-[10px] font-black uppercase tracking-widest text-gray-400">District *</label>
+                                        <select
+                                            id="district"
+                                            value={formData.district}
+                                            onChange={(e) => setFormData({...formData, district: e.target.value})}
+                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            required
+                                        >
+                                            <option value="">Sélectionnez le district</option>
+                                            <option value="District Autonome d'Abidjan">District Autonome d'Abidjan</option>
+                                            <option value="District Autonome de Yamoussoukro">District Autonome de Yamoussoukro</option>
+                                            <option value="District des Lacs">District des Lacs</option>
+                                            <option value="District de la Vallée du Bandama">District de la Vallée du Bandama</option>
+                                            <option value="District du Bas-Sassandra">District du Bas-Sassandra</option>
+                                            <option value="Autre District">Autre District</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="commune" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Commune *</label>
+                                        <select
+                                            id="commune"
+                                            value={formData.commune}
+                                            onChange={(e) => setFormData({...formData, commune: e.target.value})}
+                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            required
+                                        >
+                                            <option value="">Sélectionnez la commune</option>
+                                            <option value="Cocody">Cocody</option>
+                                            <option value="Yopougon">Yopougon</option>
+                                            <option value="Plateau">Plateau</option>
+                                            <option value="Treichville">Treichville</option>
+                                            <option value="Marcory">Marcory</option>
+                                            <option value="Koumassi">Koumassi</option>
+                                            <option value="Abobo">Abobo</option>
+                                            <option value="Adjamé">Adjamé</option>
+                                            <option value="Port-Bouët">Port-Bouët</option>
+                                            <option value="Bingerville">Bingerville</option>
+                                            <option value="Songon">Songon</option>
+                                            <option value="Autre Commune">Autre Commune</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="zoneId" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Zone de Collecte Initiale</label>
                                         {zones.length > 0 ? (
                                             <select
                                                 id="zoneId"

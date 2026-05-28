@@ -45,17 +45,19 @@ const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
     loading: () => <div className="w-full h-[60vh] bg-gray-50 dark:bg-zinc-900 rounded-[3rem] animate-pulse border border-gray-100 flex items-center justify-center"><p className="text-[10px] font-black uppercase tracking-widest text-gray-300">Chargement de la carte...</p></div>
 });
 
-// --- Helpers to reduce nesting ---
 const enrichZonesData = (zonesData: any[], concessionsData: any[], profilesData: any[]) => {
-    return zonesData?.map((zone: any) => ({
-        ...zone,
-        concessions: concessionsData
-            ?.filter((c: any) => c.zone_id === zone.id)
-            .map((c: any) => ({
+    return zonesData?.map((zone: any) => {
+        const concessionsForZone = concessionsData?.filter((c: any) => c.zone_id === zone.id) || [];
+        const activeConcession = concessionsForZone.find((c: any) => c.status === 'active');
+        return {
+            ...zone,
+            status: activeConcession ? 'occupied' : 'available',
+            concessions: concessionsForZone.map((c: any) => ({
                 ...c,
                 profiles: profilesData?.find((p: any) => p.id === c.organization_id)
             }))
-    })) || [];
+        };
+    }) || [];
 };
 
 function getPerformanceBarColor(s: number, score: number, isSuspended: boolean): string {
@@ -248,7 +250,8 @@ function MairieDashboardContent() {
     
     const [newAgent, setNewAgent] = useState({ fullName: "", email: "", password: "", phone: "", city: "Abidjan", zoneId: "" });
     const [sanctionForm, setSanctionForm] = useState({ orgId: "", type: "RETARD COLLECTE", description: "", amount: 0, severity: "medium" as any });
-    const [newZone, setNewZone] = useState({ name: "", city: "", status: "available", description: "" });
+    const [newZone, setNewZone] = useState({ name: "", city: "", status: "available", description: "", district: "", commune: "" });
+    const [partnerType, setPartnerType] = useState<"entreprise" | "organisation">("entreprise");
     const [isAttributingDirectly, setIsAttributingDirectly] = useState(false);
     const [selectedOrgId, setSelectedOrgId] = useState("");
     const [concessionDuration, setConcessionDuration] = useState(12);
@@ -350,16 +353,18 @@ function MairieDashboardContent() {
             return;
         }
 
-        // On s'assure que la zone est liée à la mairie actuelle
+        // On s'assure que la zone est liée à la mairie actuelle et on formate
         const zoneToCreate = {
-            ...newZone,
+            name: `${newZone.name} (${newZone.commune || 'Générale'})`,
+            description: `District: ${newZone.district || 'Non spécifié'} | Commune: ${newZone.commune || 'Non spécifiée'} | ${newZone.description || ''}`,
             organization_id: targetMairieId || user.id
         };
 
         const { data: createdZone, error: zoneError } = await supabase.from('zones').insert([zoneToCreate]).select().single();
         
         if (zoneError) {
-            showToast("Erreur zone", "error");
+            showToast("Erreur lors de la création de la zone", "error");
+            console.error("Zone insert error:", zoneError);
             setLoading(false);
             return;
         }
@@ -370,8 +375,18 @@ function MairieDashboardContent() {
                 organization_id: selectedOrgId, 
                 duration_months: concessionDuration 
             });
-            if (assignRes.success) showToast("Concession attribuée", "success");
+            if (assignRes.success) {
+                showToast("Concession attribuée avec succès", "success");
+            } else {
+                showToast(assignRes.error || "Erreur d'attribution", "error");
+            }
         }
+
+        // Réinitialiser le formulaire
+        setNewZone({ name: "", city: mairieCity || "Abidjan", status: "available", description: "", district: "", commune: "" });
+        setSelectedOrgId("");
+        setIsAttributingDirectly(false);
+        setPartnerType("entreprise");
 
         fetchMairieData();
         setIsAddZoneModalOpen(false);
@@ -1012,12 +1027,48 @@ function MairieDashboardContent() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label htmlFor="zoneName" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Nom de la Zone</label>
-                            <input id="zoneName" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black uppercase outline-none text-zinc-900 placeholder:text-zinc-300" placeholder="Ex: Cocody Centre..." value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} />
+                            <input id="zoneName" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black uppercase outline-none text-zinc-900 placeholder:text-zinc-300" placeholder="Ex: Zone Nord..." value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} />
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="zoneCity" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Ville</label>
                             <input id="zoneCity" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black uppercase outline-none text-zinc-900" placeholder="Ville" value={newZone.city} onChange={(e) => setNewZone({...newZone, city: e.target.value})} />
                         </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <label htmlFor="zoneDistrict" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">District *</label>
+                            <select id="zoneDistrict" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900" value={newZone.district} onChange={(e) => setNewZone({...newZone, district: e.target.value})}>
+                                <option value="">Choisir un district...</option>
+                                <option value="District Autonome d'Abidjan">District Autonome d'Abidjan</option>
+                                <option value="District Autonome de Yamoussoukro">District Autonome de Yamoussoukro</option>
+                                <option value="District des Lacs">District des Lacs</option>
+                                <option value="District de la Vallée du Bandama">District de la Vallée du Bandama</option>
+                                <option value="District du Bas-Sassandra">District du Bas-Sassandra</option>
+                                <option value="Autre District">Autre District</option>
+                            </select>
+                        </div>
+                        <div className="space-y-2">
+                            <label htmlFor="zoneCommune" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Commune *</label>
+                            <select id="zoneCommune" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900" value={newZone.commune} onChange={(e) => setNewZone({...newZone, commune: e.target.value})}>
+                                <option value="">Choisir la commune...</option>
+                                <option value="Cocody">Cocody</option>
+                                <option value="Yopougon">Yopougon</option>
+                                <option value="Plateau">Plateau</option>
+                                <option value="Treichville">Treichville</option>
+                                <option value="Marcory">Marcory</option>
+                                <option value="Koumassi">Koumassi</option>
+                                <option value="Abobo">Abobo</option>
+                                <option value="Adjamé">Adjamé</option>
+                                <option value="Port-Bouët">Port-Bouët</option>
+                                <option value="Bingerville">Bingerville</option>
+                                <option value="Songon">Songon</option>
+                                <option value="Autre Commune">Autre Commune</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <label htmlFor="zoneDesc" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Description technique</label>
+                        <textarea id="zoneDesc" className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-medium min-h-[80px] outline-none text-zinc-900 placeholder:text-zinc-300" placeholder="Description de la zone..." value={newZone.description} onChange={(e) => setNewZone({...newZone, description: e.target.value})} />
                     </div>
                     <div className="p-6 bg-emerald-50 border border-emerald-100 rounded-[2.5rem] space-y-4 shadow-sm">
                         <div className="flex items-center justify-between">
@@ -1028,9 +1079,37 @@ function MairieDashboardContent() {
                         </div>
                         {isAttributingDirectly && (
                             <div className="space-y-4 pt-4 border-t border-emerald-100 animate-in fade-in slide-in-from-top-2">
+                                <div className="flex bg-zinc-100/50 p-1 rounded-xl border border-zinc-200/50">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setPartnerType("entreprise"); setSelectedOrgId(""); }}
+                                        className={cn(
+                                            "flex-1 py-2 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all",
+                                            partnerType === "entreprise" ? "bg-white text-emerald-700 shadow-sm" : "text-zinc-500 hover:text-zinc-800"
+                                        )}
+                                    >
+                                        Entreprise Privée
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setPartnerType("organisation"); setSelectedOrgId(""); }}
+                                        className={cn(
+                                            "flex-1 py-2 text-[9px] font-black uppercase tracking-wider rounded-lg transition-all",
+                                            partnerType === "organisation" ? "bg-white text-emerald-700 shadow-sm" : "text-zinc-500 hover:text-zinc-800"
+                                        )}
+                                    >
+                                        Organisation / ONG
+                                    </button>
+                                </div>
                                 <select id="directOrg" className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900" value={selectedOrgId} onChange={(e) => setSelectedOrgId(e.target.value)} required={isAttributingDirectly}>
-                                    <option value="">Choisir une entreprise...</option>
-                                    {organizations.map(org => (<option key={org.id} value={org.id}>{org.full_name}</option>))}
+                                    <option value="">{partnerType === 'entreprise' ? "Choisir une entreprise privée..." : "Choisir une organisation / ONG..."}</option>
+                                    {organizations
+                                        .filter(org => partnerType === 'entreprise' 
+                                            ? (org.role === 'entreprise' || org.role === 'collecteur') 
+                                            : org.role === 'organisation_admin'
+                                        )
+                                        .map(org => (<option key={org.id} value={org.id}>{org.full_name} ({org.performanceScore || '5.0'}/5)</option>))
+                                    }
                                 </select>
                                 <select id="directDuration" className="w-full px-6 py-4 bg-white border border-emerald-200 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900" value={concessionDuration} onChange={(e) => setConcessionDuration(Number.parseInt(e.target.value, 10))}>
                                     <option value={6}>Contrat : 6 mois</option>
@@ -1040,7 +1119,7 @@ function MairieDashboardContent() {
                             </div>
                         )}
                     </div>
-                    <button type="submit" disabled={loading || !newZone.name} className="w-full py-7 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-[0.3em] shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all">
+                    <button type="submit" disabled={loading || !newZone.name || !newZone.district || !newZone.commune} className="w-full py-7 bg-emerald-600 hover:bg-emerald-500 text-white rounded-[2.5rem] font-black uppercase text-[11px] tracking-[0.3em] shadow-xl hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:scale-100 transition-all">
                         {loading ? "Déploiement..." : "VALIDER LA CONCESSION"}
                     </button>
                  </form>
@@ -1057,8 +1136,12 @@ function MairieDashboardContent() {
                             value={sanctionForm.orgId}
                             onChange={(e) => setSanctionForm({...sanctionForm, orgId: e.target.value})}
                         >
-                            <option value="">Sélectionner une entreprise...</option>
-                            {organizations.map(org => (<option key={org.id} value={org.id}>{org.full_name}</option>))}
+                            <option value="">Sélectionner une entreprise ou organisation...</option>
+                            {organizations.map(org => (
+                                <option key={org.id} value={org.id}>
+                                    {org.full_name} — {org.role === 'organisation_admin' ? 'ORGANISATION / ONG' : 'ENTREPRISE'}
+                                </option>
+                            ))}
                         </select>
                     </div>
 
