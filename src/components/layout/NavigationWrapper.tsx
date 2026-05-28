@@ -51,7 +51,7 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
         syncTheme();
 
         // Écouter les changements d'authentification pour adapter le thème instantanément
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
             if (session?.user) {
                 syncTheme();
             } else {
