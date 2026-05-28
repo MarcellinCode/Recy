@@ -143,7 +143,20 @@ export function Header() {
     }, []);
 
     const handleLogout = async () => {
-        await supabase.auth.signOut();
+        try {
+            await supabase.auth.signOut();
+        } catch (e) {
+            console.error("SignOut error:", e);
+        }
+        
+        // Vider localement localStorage et réinitialiser les états immédiatement
+        safeSetRole(null);
+        if (typeof globalThis.window !== 'undefined') {
+            globalThis.localStorage.clear();
+        }
+        setUser(null);
+        setRole(null);
+        
         router.push("/connexion");
         router.refresh();
     };

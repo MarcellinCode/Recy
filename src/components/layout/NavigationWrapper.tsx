@@ -17,20 +17,54 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
     const isPublicMairie = pathname?.startsWith("/mairie/");
     const shouldHideNav = isSuperAdmin || isPublicMairie;
 
-    const [forceDark, setForceDark] = useState(false);
+    // Initialiser directement avec localStorage pour éviter le flicker blanc/noir
+    const [forceDark, setForceDark] = useState(() => {
+        if (typeof globalThis.window !== 'undefined') {
+            const cachedRole = globalThis.localStorage.getItem('user-role');
+            return ['mairie', 'entreprise', 'organisation_admin'].includes(cachedRole || '');
+        }
+        return false;
+    });
 
+    // 1. Détecter le rôle et gérer le thème (exécuté UNE SEULE FOIS au montage)
     useEffect(() => {
-        const checkRole = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
+        const syncTheme = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            const user = session?.user;
             if (user) {
-                const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-                if (['mairie', 'entreprise', 'organisation_admin'].includes(profile?.role)) {
-                    setForceDark(true);
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single();
+                
+                const role = profile?.role || null;
+                if (role) {
+                    globalThis.localStorage.setItem('user-role', role);
+                    setForceDark(['mairie', 'entreprise', 'organisation_admin'].includes(role));
                 }
+            } else {
+                setForceDark(false);
             }
         };
-        checkRole();
 
+        syncTheme();
+
+        // Écouter les changements d'authentification pour adapter le thème instantanément
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+            if (session?.user) {
+                syncTheme();
+            } else {
+                globalThis.localStorage.removeItem('user-role');
+                setForceDark(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    // 2. Gestion des notifications en temps réel (réagit au changement de page pour le filtrage)
+    useEffect(() => {
         if (shouldHideNav) return;
 
         let channel: any;
