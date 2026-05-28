@@ -168,7 +168,7 @@ export function HoloGauge({ value, label = "Souveraineté" }: Readonly<{ value: 
 export function LiveTicker({ events }: Readonly<{ events: readonly EventType[] }>) {
     return (
         <div className="h-full flex flex-col gap-4 overflow-hidden relative">
-            <div className="flex items-center gap-3 mb-4 px-2">
+            <div className="flex items-center gap-3 mb-4 px-3">
                 <div className="relative">
                     <Activity className="text-emerald-500" size={16} />
                     <div className="absolute inset-0 bg-emerald-500 blur-[8px] opacity-40 animate-pulse" />
@@ -176,7 +176,7 @@ export function LiveTicker({ events }: Readonly<{ events: readonly EventType[] }
                 <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600/80">Live Intel Feed</h3>
             </div>
             
-            <div className="flex-1 space-y-3 overflow-y-auto no-scrollbar scroll-smooth pb-10">
+            <div className="flex-1 space-y-4 overflow-y-auto no-scrollbar scroll-smooth pb-10 px-3">
                 <AnimatePresence mode="popLayout">
                     {events.map((event, i) => (
                         <motion.div
@@ -184,7 +184,7 @@ export function LiveTicker({ events }: Readonly<{ events: readonly EventType[] }
                             initial={{ x: -20, opacity: 0 }}
                             animate={{ x: 0, opacity: 1 }}
                             exit={{ x: 20, opacity: 0 }}
-                            className="bg-emerald-950/80 backdrop-blur-md border-l-4 border-emerald-500 p-5 rounded-r-2xl shadow-xl border border-emerald-500/10 group hover:border-emerald-500/30 transition-all"
+                            className="bg-emerald-950/90 backdrop-blur-md border-l-4 border-l-emerald-500 p-5 rounded-3xl shadow-xl border border-emerald-500/10 group hover:border-emerald-500/30 transition-all duration-300"
                         >
                             <div className="flex items-center justify-between mb-2">
                                 <span className="text-[9px] font-black text-emerald-400 tracking-widest uppercase italic">
@@ -215,9 +215,9 @@ export function StatusIndicator({ label, status = "active" }: Readonly<{ label: 
     };
  
     return (
-        <div className="flex items-center gap-3 px-5 py-3 bg-slate-900/90 backdrop-blur-md border border-emerald-500/10 rounded-2xl shadow-lg hover:border-emerald-500/20 transition-colors">
-            <div className={cn("w-2 h-2 rounded-full animate-pulse", colors[status])} />
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-150">{label}</span>
+        <div className="flex items-center gap-3 px-5 py-3.5 bg-emerald-50/55 hover:bg-emerald-50/80 dark:bg-zinc-900/60 dark:hover:bg-zinc-900/80 backdrop-blur-md border border-emerald-500/10 hover:border-emerald-500/20 rounded-[2rem] shadow-sm hover:shadow-md transition-all duration-300 mx-1">
+            <div className={cn("w-2.5 h-2.5 rounded-full animate-pulse", colors[status])} />
+            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-950 dark:text-emerald-300 leading-none">{label}</span>
         </div>
     );
 }
