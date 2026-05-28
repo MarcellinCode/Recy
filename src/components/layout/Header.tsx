@@ -29,11 +29,13 @@ function getRoleLinks(unreadMessages: number): Record<string, { href: string; la
         ],
         entreprise: [
             { href: "/dashboard",    label: "Hub" },
+            { href: "/marketplace",  label: "Marché" },
             { href: "/appels-offres", label: "B2B" },
             { href: "/chat",         label: "Messages", badge: unreadMessages },
         ],
         organisation_admin: [
             { href: "/dashboard",    label: "Hub" },
+            { href: "/marketplace",  label: "Marché" },
             { href: "/appels-offres", label: "B2B" },
             { href: "/chat",         label: "Messages", badge: unreadMessages },
         ],
