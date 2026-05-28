@@ -143,20 +143,32 @@ export function Header() {
     }, []);
 
     const handleLogout = async () => {
-        try {
-            await supabase.auth.signOut();
-        } catch (e) {
-            console.error("SignOut error:", e);
-        }
+        // 1. Close mobile menu instantly
+        setIsMobileMenuOpen(false);
+
+        // 2. Trigger network logout in the background without blocking the client redirect
+        supabase.auth.signOut().catch((e: any) => {
+            console.error("SignOut background error:", e);
+        });
         
-        // Vider localement localStorage et réinitialiser les états immédiatement
+        // 3. Clear local storage and reset all states immediately
         safeSetRole(null);
         if (typeof globalThis.window !== 'undefined') {
             globalThis.localStorage.clear();
+            
+            // Clear Supabase session cookies to prevent middleware conflicts
+            document.cookie.split(";").forEach((c) => {
+                const eqPos = c.indexOf("=");
+                const name = eqPos > -1 ? c.substring(0, eqPos).trim() : c.trim();
+                if (name.includes("sb-") || name.includes("supabase")) {
+                    document.cookie = name + "=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/";
+                }
+            });
         }
         setUser(null);
         setRole(null);
         
+        // 4. Redirect instantly to login page
         router.push("/connexion");
         router.refresh();
     };
