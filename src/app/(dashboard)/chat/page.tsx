@@ -586,7 +586,7 @@ function ChatContainer() {
                                             value={newMessage} 
                                             onChange={handleTyping}
                                             placeholder="Écrivez votre message..." 
-                                            className="w-full px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-transparent focus:border-primary/20 rounded-2xl outline-none text-sm font-medium transition-all" 
+                                            className="w-full px-6 py-4 bg-zinc-50 dark:bg-zinc-800 text-zinc-900 dark:text-white border-2 border-transparent focus:border-primary/20 rounded-2xl outline-none text-sm font-medium transition-all" 
                                         />
                                     </div>
                                     <button 
