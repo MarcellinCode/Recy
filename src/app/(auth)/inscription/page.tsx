@@ -38,6 +38,19 @@ function SignupForm() {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [zones, setZones] = useState<any[]>([]);
+
+    useEffect(() => {
+        const fetchZones = async () => {
+            try {
+                const { data } = await supabase.from('zones').select('id, name');
+                if (data) setZones(data);
+            } catch (e) {
+                console.error("Error loading zones:", e);
+            }
+        };
+        fetchZones();
+    }, [supabase]);
 
     const [formData, setFormData] = useState({
         // Common
@@ -45,6 +58,8 @@ function SignupForm() {
         password: "",
         fullName: "",
         phone: "",
+        city: "",
+        zoneId: "",
         // Citizen
         district: "",
         // Collector
@@ -80,6 +95,8 @@ function SignupForm() {
                         full_name: fullName,
                         role: role,
                         phone: formData.phone,
+                        city: formData.city,
+                        zone_id: formData.zoneId || null,
                         // Role specific metadata
                         district: formData.district,
                         vehicle_type: formData.vehicleType,
@@ -113,16 +130,16 @@ function SignupForm() {
     const nextStep = () => {
         // Validation basique avant de passer à l'étape suivante
         if (step === 2) {
-            if (role === 'vendeur' && (!formData.fullName || !formData.phone || !formData.district)) {
-                setError("Veuillez remplir tous les champs.");
+            if (role === 'vendeur' && (!formData.fullName || !formData.phone || !formData.district || !formData.city)) {
+                setError("Veuillez remplir tous les champs (y compris la ville).");
                 return;
             }
-            if (role === 'collecteur' && (!formData.fullName || !formData.phone || !formData.vehicleType || !formData.idNumber)) {
-                setError("Veuillez remplir tous les champs.");
+            if (role === 'collecteur' && (!formData.fullName || !formData.phone || !formData.vehicleType || !formData.idNumber || !formData.city)) {
+                setError("Veuillez remplir tous les champs (y compris la ville).");
                 return;
             }
-            if (role === 'organisation_admin' && (!formData.orgName || !formData.contactPerson || !formData.rccm || !formData.phone)) {
-                setError("Veuillez remplir tous les champs.");
+            if (role === 'organisation_admin' && (!formData.orgName || !formData.contactPerson || !formData.rccm || !formData.phone || !formData.city)) {
+                setError("Veuillez remplir tous les champs (y compris la ville).");
                 return;
             }
             if (role === 'mairie' && (!formData.municipalityName || !formData.officialDepartment || !formData.phone)) {
@@ -250,7 +267,44 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label htmlFor="district" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Quartier / Adresse</label>
+                                        <label htmlFor="city" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Ville *</label>
+                                        <select
+                                            id="city"
+                                            value={formData.city}
+                                            onChange={(e) => setFormData({...formData, city: e.target.value})}
+                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            required
+                                        >
+                                            <option value="">Sélectionnez votre ville</option>
+                                            <option value="Abidjan">Abidjan (Côte d'Ivoire)</option>
+                                            <option value="Cotonou">Cotonou (Bénin)</option>
+                                            <option value="Yamoussoukro">Yamoussoukro (Côte d'Ivoire)</option>
+                                            <option value="Bouaké">Bouaké (Côte d'Ivoire)</option>
+                                            <option value="San-Pédro">San-Pédro (Côte d'Ivoire)</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="zoneId" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Zone de Collecte</label>
+                                        {zones.length > 0 ? (
+                                            <select
+                                                id="zoneId"
+                                                value={formData.zoneId}
+                                                onChange={(e) => setFormData({...formData, zoneId: e.target.value})}
+                                                className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            >
+                                                <option value="">Zone générale (Non spécifiée)</option>
+                                                {zones.map((z: any) => (
+                                                    <option key={z.id} value={z.id}>{z.name}</option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <div className="p-3 bg-zinc-50 border border-gray-150 rounded-xl text-[10px] text-zinc-500 font-bold uppercase tracking-wider dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-400 animate-pulse">
+                                                Aucune zone active enregistrée dans cette ville (Zone générale appliquée par défaut)
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="district" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Quartier / Adresse *</label>
                                         <input
                                             id="district"
                                             type="text"
@@ -299,7 +353,44 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label htmlFor="vehicleType" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Type de Véhicule</label>
+                                        <label htmlFor="city" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Ville *</label>
+                                        <select
+                                            id="city"
+                                            value={formData.city}
+                                            onChange={(e) => setFormData({...formData, city: e.target.value})}
+                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            required
+                                        >
+                                            <option value="">Sélectionnez votre ville</option>
+                                            <option value="Abidjan">Abidjan (Côte d'Ivoire)</option>
+                                            <option value="Cotonou">Cotonou (Bénin)</option>
+                                            <option value="Yamoussoukro">Yamoussoukro (Côte d'Ivoire)</option>
+                                            <option value="Bouaké">Bouaké (Côte d'Ivoire)</option>
+                                            <option value="San-Pédro">San-Pédro (Côte d'Ivoire)</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="zoneId" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Zone de Collecte</label>
+                                        {zones.length > 0 ? (
+                                            <select
+                                                id="zoneId"
+                                                value={formData.zoneId}
+                                                onChange={(e) => setFormData({...formData, zoneId: e.target.value})}
+                                                className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            >
+                                                <option value="">Zone générale (Non spécifiée)</option>
+                                                {zones.map((z: any) => (
+                                                    <option key={z.id} value={z.id}>{z.name}</option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <div className="p-3 bg-zinc-50 border border-gray-150 rounded-xl text-[10px] text-zinc-500 font-bold uppercase tracking-wider dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-400 animate-pulse">
+                                                Aucune zone active enregistrée dans cette ville (Zone générale appliquée par défaut)
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="vehicleType" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Type de Véhicule *</label>
                                         <select
                                             id="vehicleType"
                                             value={formData.vehicleType}
@@ -363,7 +454,44 @@ function SignupForm() {
                                         />
                                     </div>
                                     <div className="space-y-1">
-                                        <label htmlFor="rccm" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Numéro RCCM / IFU</label>
+                                        <label htmlFor="city" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Ville *</label>
+                                        <select
+                                            id="city"
+                                            value={formData.city}
+                                            onChange={(e) => setFormData({...formData, city: e.target.value})}
+                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            required
+                                        >
+                                            <option value="">Sélectionnez votre ville</option>
+                                            <option value="Abidjan">Abidjan (Côte d'Ivoire)</option>
+                                            <option value="Cotonou">Cotonou (Bénin)</option>
+                                            <option value="Yamoussoukro">Yamoussoukro (Côte d'Ivoire)</option>
+                                            <option value="Bouaké">Bouaké (Côte d'Ivoire)</option>
+                                            <option value="San-Pédro">San-Pédro (Côte d'Ivoire)</option>
+                                        </select>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="zoneId" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Zone de Collecte</label>
+                                        {zones.length > 0 ? (
+                                            <select
+                                                id="zoneId"
+                                                value={formData.zoneId}
+                                                onChange={(e) => setFormData({...formData, zoneId: e.target.value})}
+                                                className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                            >
+                                                <option value="">Zone générale (Non spécifiée)</option>
+                                                {zones.map((z: any) => (
+                                                    <option key={z.id} value={z.id}>{z.name}</option>
+                                                ))}
+                                            </select>
+                                        ) : (
+                                            <div className="p-3 bg-zinc-50 border border-gray-150 rounded-xl text-[10px] text-zinc-500 font-bold uppercase tracking-wider dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-400 animate-pulse">
+                                                Aucune zone active enregistrée dans cette ville (Zone générale appliquée par défaut)
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="space-y-1">
+                                        <label htmlFor="rccm" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Numéro RCCM / IFU *</label>
                                         <input
                                             id="rccm"
                                             type="text"
