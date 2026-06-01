@@ -266,9 +266,15 @@ export default function MapComponent({
     const [showUserLocation, setShowUserLocation] = useState(false);
 
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
+        let isMounted = true;
+        const fetchData = async (isFirstLoad: boolean = false) => {
+            if (isFirstLoad) {
+                setLoading(true);
+            }
             try {
+                console.log("MapComponent: Starting fetchData. isFirstLoad =", isFirstLoad, {
+                    targetCity, mairieId, isMairie, organizationId
+                });
                 const cityGeo = targetCity ? getMunicipalityGeo(targetCity) : null;
 
                 // 1. Récupérer les zones de l'organisation ou de la mairie en premier pour filtrage ultérieur
@@ -295,7 +301,10 @@ export default function MapComponent({
                     
                     fetchedZones = concessionsData?.map((c: any) => c.zones).filter(Boolean) || [];
                 }
-                setZones(fetchedZones);
+                
+                if (isMounted) {
+                    setZones(fetchedZones);
+                }
 
                 // 2. Récupérer les déchets et types avec filtrage
                 let wastesQuery = supabase
@@ -339,7 +348,10 @@ export default function MapComponent({
                     } else if (!isMairie) {
                         filteredInfractions = [];
                     }
-                    setInfractions(filteredInfractions);
+                    
+                    if (isMounted) {
+                        setInfractions(filteredInfractions);
+                    }
                 }
 
                 // 4. Récupérer les positions en temps réel
@@ -398,7 +410,9 @@ export default function MapComponent({
                         });
                     }
 
-                    setAgents(finalAgents as AgentMarker[]);
+                    if (isMounted) {
+                        setAgents(finalAgents as AgentMarker[]);
+                    }
                 }
 
                 try {
@@ -422,22 +436,36 @@ export default function MapComponent({
                             return false;
                         });
                     }
-                    setWastes(fetchedWastes.filter((w: any) => w.latitude && w.longitude));
-                } catch (e) { console.error("Map: Error processing wastes", e); }
+                    
+                    if (isMounted) {
+                        setWastes(fetchedWastes.filter((w: any) => w.latitude && w.longitude));
+                    }
+                } catch (e) { 
+                    console.error("Map: Error processing wastes", e); 
+                }
             } catch (err) {
                 console.error("MapComponent critical loading error, forcing resolver:", err);
             } finally {
-                setLoading(false);
+                if (isMounted && isFirstLoad) {
+                    setLoading(false);
+                }
             }
         };
 
-        fetchData();
+        fetchData(true);
 
         const channel = supabase.channel('tracking_changes')
-            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'agent_live_positions' }, fetchData)
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'agent_live_positions' }, () => {
+                if (isMounted) {
+                    fetchData(false);
+                }
+            })
             .subscribe();
 
-        return () => { supabase.removeChannel(channel); };
+        return () => { 
+            isMounted = false;
+            supabase.removeChannel(channel); 
+        };
     }, [targetCity, mairieId, isMairie, organizationId]);
 
     const getDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
