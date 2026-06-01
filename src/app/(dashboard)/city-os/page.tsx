@@ -681,6 +681,7 @@ function MairieDashboardContent() {
                     <AnimatePresence mode="wait">
                         {activeTab === 'overview' && (
                             <motion.div key="overview" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} className="space-y-8">
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                                     <div className="lg:col-span-2 relative h-[550px] rounded-[3.5rem] overflow-hidden border border-slate-200/40 bg-white/75 backdrop-blur-md shadow-lg shadow-slate-100 group flex flex-col">
                                         {/* Premium Floating View Mode Switcher */}
                                         <div className="absolute top-6 right-6 z-[1000] flex bg-slate-900/95 border border-emerald-500/20 backdrop-blur-md p-1.5 rounded-2xl shadow-2xl">
