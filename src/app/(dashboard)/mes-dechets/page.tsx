@@ -37,17 +37,26 @@ export default function MyWastePage() {
                 .select('*, waste_types(name, emoji), seller:profiles!seller_id(city)')
                 .order('created_at', { ascending: false });
 
-            if (activeProfile?.role === 'mairie' && activeProfile?.city) {
-                // Utilisation de l'alias 'seller' pour le filtre
-                query = query.ilike('seller.city', `%${activeProfile.city}%`);
-            } else {
+            if (activeProfile?.role !== 'mairie') {
                 query = query.or(`seller_id.eq.${resolvedUid},collector_id.eq.${resolvedUid}`);
             }
 
             const { data, error } = await query;
 
             if (error) throw error;
-            setWastes(data || []);
+            
+            let filteredWastes = data || [];
+            if (activeProfile?.role === 'mairie' && activeProfile?.city) {
+                const targetCityClean = activeProfile.city.replace(/Mairie de |Commune de |Ville de /gi, "").trim().toLowerCase();
+                filteredWastes = filteredWastes.filter((w: any) => {
+                    const sellerCity = w.seller?.city?.toLowerCase();
+                    const locationLower = w.location?.toLowerCase() || "";
+                    return (sellerCity && sellerCity.includes(targetCityClean)) || 
+                           locationLower.includes(targetCityClean) || 
+                           !sellerCity;
+                });
+            }
+            setWastes(filteredWastes);
         } catch (err: any) {
             console.error("Error in fetchWastes:", err);
         } finally {

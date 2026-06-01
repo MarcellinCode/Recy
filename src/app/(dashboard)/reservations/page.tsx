@@ -62,15 +62,25 @@ async function fetchReservationsData(supabase: any, userId: string, role: string
         `)
         .eq('status', 'reserved');
 
-    if (role === 'mairie' && city) {
-        query = query.ilike('seller.city', `%${city}%`);
-    } else {
+    if (role !== 'mairie') {
         query = query.or(`seller_id.eq.${userId},collector_id.eq.${userId}`);
     }
 
     const { data, error } = await query.order('created_at', { ascending: false });
     if (error) throw error;
-    return data as Reservation[] || [];
+
+    let filteredData = data as Reservation[] || [];
+    if (role === 'mairie' && city) {
+        const targetCityClean = city.replace(/Mairie de |Commune de |Ville de /gi, "").trim().toLowerCase();
+        filteredData = filteredData.filter((w: any) => {
+            const sellerCity = w.seller?.city?.toLowerCase();
+            const locationLower = w.location?.toLowerCase() || "";
+            return (sellerCity && sellerCity.includes(targetCityClean)) || 
+                   locationLower.includes(targetCityClean) || 
+                   !sellerCity;
+        });
+    }
+    return filteredData;
 }
 
 export default function ReservationsPage() {

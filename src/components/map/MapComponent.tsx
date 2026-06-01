@@ -220,97 +220,117 @@ export default function MapComponent({
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
-            // 1. Récupérer les déchets et types avec filtrage par ville
-            let wastesQuery = supabase
-                .from('wastes')
-                .select('*, waste_types(*), seller:profiles!seller_id!inner(city)')
-                .in('status', ['published', 'reserved'])
-                .not('latitude', 'is', null)
-                .not('longitude', 'is', null);
-
-            if (targetCity) {
-                wastesQuery = wastesQuery.eq('seller.city', targetCity);
-            }
-
-            const { data: wastesData } = await wastesQuery;
-
-            // Ajout fetch infractions avec filtrage STRICT
-            if (isMairie) {
-                let infractionsQuery = supabase
-                    .from('environmental_infractions')
-                    .select('*, profiles:reporter_id(full_name)')
+            try {
+                // 1. Récupérer les déchets et types avec filtrage par ville
+                let wastesQuery = supabase
+                    .from('wastes')
+                    .select('*, waste_types(*), seller:profiles!seller_id(city)')
+                    .in('status', ['published', 'reserved'])
                     .not('latitude', 'is', null)
                     .not('longitude', 'is', null);
-                
-                // On force le filtrage par ville si targetCity est présent
-                if (targetCity) {
-                    const cityMatch = targetCity.replace(/Mairie de |Commune de |Ville de /gi, "").trim();
-                    infractionsQuery = infractionsQuery.ilike('city', `%${cityMatch}%`);
-                }
 
-                const { data: infractionsData } = await infractionsQuery;
-                setInfractions(infractionsData || []);
-            }
+                const { data: wastesData } = await wastesQuery;
 
-            // 2. Récupérer les positions en temps réel
-            const { data: trackingData } = await supabase
-                .from('agent_live_positions')
-                .select('*')
-                .order('timestamp', { ascending: false })
-                .limit(200);
+                // Ajout fetch infractions avec filtrage STRICT
+                if (isMairie) {
+                    let infractionsQuery = supabase
+                        .from('environmental_infractions')
+                        .select('*, profiles:reporter_id(full_name), zones:zone_id(city)')
+                        .not('latitude', 'is', null)
+                        .not('longitude', 'is', null);
 
-            if (trackingData && trackingData.length > 0) {
-                // Déduplication pour n'avoir que la dernière position par agent
-                const latestPositions = trackingData.reduce((acc: any, curr: any) => {
-                    if (!acc[curr.agent_id]) {
-                        acc[curr.agent_id] = curr;
+                    const { data: infractionsData } = await infractionsQuery;
+                    let filteredInfractions = infractionsData || [];
+                    if (targetCity) {
+                        const targetCityClean = targetCity.replace(/Mairie de |Commune de |Ville de /gi, "").trim().toLowerCase();
+                        filteredInfractions = filteredInfractions.filter((i: any) => {
+                            const zoneCity = i.zones?.city?.toLowerCase();
+                            const descLower = i.description?.toLowerCase() || "";
+                            const typeLower = i.type?.toLowerCase() || "";
+                            return !zoneCity || zoneCity.includes(targetCityClean) || descLower.includes(targetCityClean) || typeLower.includes(targetCityClean);
+                        });
                     }
-                    return acc;
-                }, {});
-
-                const agentIds = Object.keys(latestPositions);
-                const vehicleIds = Object.values(latestPositions).map((p: any) => p.vehicle_id).filter(Boolean);
-
-                // 3. Récupérer les profils et véhicules en parallèle (deuxième étape)
-                const [profilesRes, vehiclesRes] = await Promise.all([
-                    supabase.from('profiles').select('id, full_name').in('id', agentIds),
-                    supabase.from('vehicles').select('id, name, type').in('id', vehicleIds)
-                ]);
-
-                // 4. Fusionner les données
-                const profilesMap = new Map(profilesRes.data?.map((p: any) => [p.id, p]));
-                const vehiclesMap = new Map(vehiclesRes.data?.map((v: any) => [v.id, v]));
-
-                const enrichedAgents = Object.values(latestPositions).map((pos: any) => ({
-                    ...pos,
-                    profiles: profilesMap.get(pos.agent_id),
-                    vehicles: vehiclesMap.get(pos.vehicle_id)
-                }));
-
-                setAgents(enrichedAgents as AgentMarker[]);
-            }
-
-            // 5. Récupérer les Zones et Concessions pour la Mairie (filtrées)
-            if (isMairie) {
-                let zonesQuery = supabase
-                    .from('zones')
-                    .select('*, concessions(*, profiles(full_name))');
-                
-                if (mairieId) {
-                    zonesQuery = zonesQuery.eq('created_by', mairieId);
-                } else if (targetCity) {
-                    zonesQuery = zonesQuery.eq('city', targetCity);
+                    setInfractions(filteredInfractions);
                 }
 
-                const { data: zonesData } = await zonesQuery;
-                setZones(zonesData || []);
-            }
+                // 2. Récupérer les positions en temps réel
+                const { data: trackingData } = await supabase
+                    .from('agent_live_positions')
+                    .select('*')
+                    .order('timestamp', { ascending: false })
+                    .limit(200);
 
-            try {
-                setWastes((wastesData || []).filter((w: any) => w.latitude && w.longitude));
-            } catch (e) { console.error("Map: Error processing wastes", e); }
-            
-            setLoading(false);
+                if (trackingData && trackingData.length > 0) {
+                    // Déduplication pour n'avoir que la dernière position par agent
+                    const latestPositions = trackingData.reduce((acc: any, curr: any) => {
+                        if (!acc[curr.agent_id]) {
+                            acc[curr.agent_id] = curr;
+                        }
+                        return acc;
+                    }, {});
+
+                    const agentIds = Object.keys(latestPositions);
+                    const vehicleIds = Object.values(latestPositions).map((p: any) => p.vehicle_id).filter(Boolean);
+
+                    // 3. Récupérer les profils et véhicules en parallèle (deuxième étape)
+                    const [profilesRes, vehiclesRes] = await Promise.all([
+                        agentIds.length > 0
+                            ? supabase.from('profiles').select('id, full_name').in('id', agentIds)
+                            : Promise.resolve({ data: [] }),
+                        vehicleIds.length > 0
+                            ? supabase.from('vehicles').select('id, name, type').in('id', vehicleIds)
+                            : Promise.resolve({ data: [] })
+                    ]);
+
+                    // 4. Fusionner les données safely
+                    const profilesMap = new Map((profilesRes?.data || []).map((p: any) => [p.id, p]));
+                    const vehiclesMap = new Map((vehiclesRes?.data || []).map((v: any) => [v.id, v]));
+
+                    const enrichedAgents = Object.values(latestPositions).map((pos: any) => ({
+                        ...pos,
+                        profiles: profilesMap.get(pos.agent_id),
+                        vehicles: vehiclesMap.get(pos.vehicle_id)
+                    }));
+
+                    setAgents(enrichedAgents as AgentMarker[]);
+                }
+
+                // 5. Récupérer les Zones et Concessions pour la Mairie (filtrées)
+                if (isMairie) {
+                    let zonesQuery = supabase
+                        .from('zones')
+                        .select('*, concessions(*, profiles(full_name))');
+                    
+                    if (mairieId) {
+                        zonesQuery = zonesQuery.eq('created_by', mairieId);
+                    } else if (targetCity) {
+                        zonesQuery = zonesQuery.eq('city', targetCity);
+                    }
+
+                    const { data: zonesData } = await zonesQuery;
+                    setZones(zonesData || []);
+                }
+
+                try {
+                    let fetchedWastes = wastesData || [];
+                    if (targetCity) {
+                        const targetCityClean = targetCity.replace(/Mairie de |Commune de |Ville de /gi, "").trim().toLowerCase();
+                        fetchedWastes = fetchedWastes.filter((w: any) => {
+                            const sellerCity = w.seller?.city?.toLowerCase();
+                            const locationLower = w.location?.toLowerCase() || "";
+                            // Match if seller's city matches targetCity OR targetCity is mentioned in location string OR seller's city is null
+                            return (sellerCity && sellerCity.includes(targetCityClean)) || 
+                                   locationLower.includes(targetCityClean) || 
+                                   !sellerCity;
+                        });
+                    }
+                    setWastes(fetchedWastes.filter((w: any) => w.latitude && w.longitude));
+                } catch (e) { console.error("Map: Error processing wastes", e); }
+            } catch (err) {
+                console.error("MapComponent critical loading error, forcing resolver:", err);
+            } finally {
+                setLoading(false);
+            }
         };
 
         fetchData();
