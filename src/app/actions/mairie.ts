@@ -27,13 +27,12 @@ export async function dispatchEmergencyAgent(wasteId: string, agentId: string) {
     );
 
     try {
-        // Mettre à jour le statut du déchet pour forcer la réservation et marquer comme urgent
+        // Mettre à jour le statut du déchet pour forcer la réservation
         const { error: wasteError } = await supabase
             .from('wastes')
             .update({ 
                 status: 'reserved',
-                collector_id: agentId,
-                is_urgent: true
+                collector_id: agentId
             })
             .eq('id', wasteId);
 
