@@ -110,12 +110,12 @@ export default function OrganizationDashboard() {
 
                 // Filter wastes
                 const filteredWastes = (wastesData || []).filter((w: any) => 
-                    activeZones.some(z => isPointInZone(w.latitude, w.longitude, z))
+                    activeZones.some((z: any) => isPointInZone(w.latitude, w.longitude, z))
                 );
 
                 // Filter infractions
                 const filteredInfractions = (infractionsData || []).filter((i: any) => 
-                    activeZones.some(z => isPointInZone(i.latitude, i.longitude, z))
+                    activeZones.some((z: any) => isPointInZone(i.latitude, i.longitude, z))
                 );
 
                 setConcessionWastes(filteredWastes);
@@ -171,7 +171,7 @@ export default function OrganizationDashboard() {
                         return nLat >= Math.min(...lats) && nLat <= Math.max(...lats) && nLng >= Math.min(...lons) && nLng <= Math.max(...lons);
                     };
 
-                    setConcessionWastes((wastesData || []).filter((w: any) => activeZones.some(z => isPointInZone(w.latitude, w.longitude, z))));
+                    setConcessionWastes((wastesData || []).filter((w: any) => activeZones.some((z: any) => isPointInZone(w.latitude, w.longitude, z))));
                 }
             }
         } catch (e: any) {
