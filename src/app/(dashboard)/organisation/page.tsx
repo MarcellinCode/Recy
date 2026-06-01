@@ -267,6 +267,15 @@ export default function OrganizationDashboard() {
         }
     };
 
+    if (loading) {
+        return (
+            <div className="w-full h-screen flex flex-col items-center justify-center bg-gray-50 dark:bg-zinc-950">
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="text-zinc-400 font-black uppercase tracking-widest text-[10px]">Initialisation du Mission Control...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-12 mb-20 min-h-screen">
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-8 border-b border-gray-100 dark:border-zinc-800">

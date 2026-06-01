@@ -13,17 +13,26 @@ const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
 export default function CartePage() {
     const supabase = createClient();
     const [profile, setProfile] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchProfile = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-                setProfile(data);
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+                    setProfile(data);
+                }
+            } catch (e) {
+                console.error("CartePage: error fetching profile", e);
+            } finally {
+                setLoading(false);
             }
         };
         fetchProfile();
     }, []);
+
+    const isMairieOrAdmin = profile?.role === 'mairie' || profile?.role === 'organisation_admin';
 
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -46,11 +55,18 @@ export default function CartePage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 <div className="lg:col-span-3">
-                    <MapComponent 
-                        isMairie={profile?.role === 'mairie' || profile?.role === 'organisation_admin'} 
-                        targetCity={profile?.city} 
-                        mairieId={profile?.id}
-                    />
+                    {loading ? (
+                        <div className="w-full h-[70vh] bg-gray-50 dark:bg-zinc-900 rounded-[3rem] animate-pulse border border-gray-100 dark:border-zinc-800 flex items-center justify-center">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-gray-300">Chargement tactique de la carte...</p>
+                        </div>
+                    ) : (
+                        <MapComponent 
+                            isMairie={isMairieOrAdmin} 
+                            targetCity={profile?.city} 
+                            mairieId={isMairieOrAdmin ? profile?.id : undefined}
+                            organizationId={!isMairieOrAdmin ? profile?.id : undefined}
+                        />
+                    )}
                 </div>
 
                 <div className="space-y-6">
