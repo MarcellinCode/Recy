@@ -52,6 +52,132 @@ export default function OrganizationDashboard() {
     const [vehicles, setVehicles] = useState<any[]>([]);
     const [tenders, setTenders] = useState<any[]>([]);
     const [profile, setProfile] = useState<any>(null);
+
+    const [mapViewMode, setMapViewMode] = useState<"radar" | "list">("radar");
+    const [focusCoords, setFocusCoords] = useState<[number, number] | null>(null);
+    const [concessionWastes, setConcessionWastes] = useState<any[]>([]);
+    const [concessionInfractions, setConcessionInfractions] = useState<any[]>([]);
+
+    useEffect(() => {
+        if (!profile?.id) return;
+        
+        const fetchConcessionAlerts = async () => {
+            try {
+                // 1. Fetch active zones
+                const { data: concessionsData } = await supabase
+                    .from('concessions')
+                    .select('*, zones(*)')
+                    .eq('organization_id', profile.id)
+                    .eq('status', 'active');
+                
+                const activeZones = concessionsData?.map((c: any) => c.zones).filter(Boolean) || [];
+                if (activeZones.length === 0) return;
+
+                // Helper to check bounding box
+                const isPointInZone = (lat: any, lng: any, zone: any) => {
+                    if (!zone.boundaries?.geometry?.coordinates) return true;
+                    const nLat = Number(lat);
+                    const nLng = Number(lng);
+                    if (isNaN(nLat) || isNaN(nLng)) return false;
+
+                    const coords = zone.boundaries.geometry.type === "MultiPolygon"
+                        ? zone.boundaries.geometry.coordinates.flatMap((poly: any) => poly[0])
+                        : zone.boundaries.geometry.coordinates[0];
+
+                    const lons = coords.map((c: any) => c[0]);
+                    const lats = coords.map((c: any) => c[1]);
+                    const minLon = Math.min(...lons);
+                    const maxLon = Math.max(...lons);
+                    const minLat = Math.min(...lats);
+                    const maxLat = Math.max(...lats);
+                    return nLat >= minLat && nLat <= maxLat && nLng >= minLon && nLng <= maxLon;
+                };
+
+                // 2. Fetch wastes
+                const { data: wastesData } = await supabase
+                    .from('wastes')
+                    .select('*, waste_types(*)')
+                    .in('status', ['published', 'reserved'])
+                    .not('latitude', 'is', null)
+                    .not('longitude', 'is', null);
+
+                // 3. Fetch infractions
+                const { data: infractionsData } = await supabase
+                    .from('environmental_infractions')
+                    .select('*')
+                    .not('latitude', 'is', null)
+                    .not('longitude', 'is', null);
+
+                // Filter wastes
+                const filteredWastes = (wastesData || []).filter((w: any) => 
+                    activeZones.some(z => isPointInZone(w.latitude, w.longitude, z))
+                );
+
+                // Filter infractions
+                const filteredInfractions = (infractionsData || []).filter((i: any) => 
+                    activeZones.some(z => isPointInZone(i.latitude, i.longitude, z))
+                );
+
+                setConcessionWastes(filteredWastes);
+                setConcessionInfractions(filteredInfractions);
+            } catch (err) {
+                console.error("Error fetching concession alerts:", err);
+            }
+        };
+
+        fetchConcessionAlerts();
+    }, [profile?.id]);
+
+    const handleTakeCharge = async (wasteId: string) => {
+        if (!profile?.id) return;
+        try {
+            const { error } = await supabase
+                .from('wastes')
+                .update({ status: 'reserved', collector_id: profile.id })
+                .eq('id', wasteId);
+            
+            if (error) {
+                showToast("Erreur lors de la prise en charge : " + error.message, "error");
+            } else {
+                showToast("Dépôt pris en charge avec succès !", "success");
+                fetchData();
+                
+                // Refresh local concession alerts
+                const { data: concessionsData } = await supabase
+                    .from('concessions')
+                    .select('*, zones(*)')
+                    .eq('organization_id', profile.id)
+                    .eq('status', 'active');
+                
+                const activeZones = concessionsData?.map((c: any) => c.zones).filter(Boolean) || [];
+                if (activeZones.length > 0) {
+                    const { data: wastesData } = await supabase
+                        .from('wastes')
+                        .select('*, waste_types(*)')
+                        .in('status', ['published', 'reserved'])
+                        .not('latitude', 'is', null)
+                        .not('longitude', 'is', null);
+                    
+                    const isPointInZone = (lat: any, lng: any, zone: any) => {
+                        if (!zone.boundaries?.geometry?.coordinates) return true;
+                        const nLat = Number(lat);
+                        const nLng = Number(lng);
+                        if (isNaN(nLat) || isNaN(nLng)) return false;
+                        const coords = zone.boundaries.geometry.type === "MultiPolygon"
+                            ? zone.boundaries.geometry.coordinates.flatMap((poly: any) => poly[0])
+                            : zone.boundaries.geometry.coordinates[0];
+                        const lons = coords.map((c: any) => c[0]);
+                        const lats = coords.map((c: any) => c[1]);
+                        return nLat >= Math.min(...lats) && nLat <= Math.max(...lats) && nLng >= Math.min(...lons) && nLng <= Math.max(...lons);
+                    };
+
+                    setConcessionWastes((wastesData || []).filter((w: any) => activeZones.some(z => isPointInZone(w.latitude, w.longitude, z))));
+                }
+            }
+        } catch (e: any) {
+            showToast("Erreur: " + e.message, "error");
+        }
+    };
     
     const [isBidModalOpen, setIsBidModalOpen] = useState(false);
     const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
@@ -235,8 +361,160 @@ export default function OrganizationDashboard() {
                             <MiniStatsCard label="Abonnés" value={subscriptions.length.toString()} icon={Users} color="text-emerald-500" />
                         </div>
 
-                        <div className="w-full shadow-2xl shadow-emerald-900/5 rounded-[3rem] overflow-hidden border border-gray-100 dark:border-zinc-800">
-                            <MapComponent />
+                        <div className="w-full h-[600px] shadow-2xl shadow-emerald-900/5 rounded-[3rem] overflow-hidden border border-gray-100 dark:border-zinc-800 relative flex flex-col">
+                            {/* Premium Floating View Mode Switcher */}
+                            <div className="absolute top-6 right-6 z-[1000] flex bg-zinc-900/95 border border-emerald-500/20 backdrop-blur-md p-1.5 rounded-2xl shadow-2xl">
+                                <button 
+                                    onClick={() => setMapViewMode("radar")}
+                                    className={cn(
+                                        "px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                        mapViewMode === "radar" 
+                                            ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/25" 
+                                            : "text-zinc-400 hover:text-white"
+                                    )}
+                                >
+                                    🗺️ Radar
+                                </button>
+                                <button 
+                                    onClick={() => setMapViewMode("list")}
+                                    className={cn(
+                                        "px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                        mapViewMode === "list" 
+                                            ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/25" 
+                                            : "text-zinc-400 hover:text-white"
+                                    )}
+                                >
+                                    📋 Liste
+                                </button>
+                            </div>
+
+                            {mapViewMode === "radar" ? (
+                                <MapComponent 
+                                    isMairie={false} 
+                                    targetCity={profile?.city} 
+                                    organizationId={profile?.id} 
+                                    focusCoords={focusCoords}
+                                />
+                            ) : (
+                                <div className="absolute inset-0 z-10 bg-slate-900 border border-slate-800 rounded-[3rem] p-8 overflow-y-auto no-scrollbar flex flex-col pt-24">
+                                    <div className="flex items-center justify-between mb-6 border-b border-slate-800 pb-4">
+                                        <div>
+                                            <h3 className="text-sm font-black uppercase italic tracking-tighter text-white">Table Tactique des Concessions</h3>
+                                            <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Signalements actifs dans vos zones géographiques sous contrat</p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {[
+                                            ...concessionWastes.map(w => ({ ...w, itemType: 'waste' })),
+                                            ...concessionInfractions.map(i => ({ ...i, itemType: 'infraction' }))
+                                        ].sort((a, b) => {
+                                            const aAge = Date.now() - new Date(a.created_at).getTime();
+                                            const bAge = Date.now() - new Date(b.created_at).getTime();
+                                            return bAge - aAge;
+                                        }).map((item) => {
+                                            const isWaste = item.itemType === 'waste';
+                                            const createdAtTime = new Date(item.created_at).getTime();
+                                            const elapsedHours = (Date.now() - createdAtTime) / (3600 * 1000);
+                                            const slaRemaining = 24 - elapsedHours;
+                                            
+                                            let slaLabel = "";
+                                            let slaColorClass = "";
+                                            if (slaRemaining <= 0) {
+                                                slaLabel = "🔴 SLA DEPASSE (Point Noir)";
+                                                slaColorClass = "text-red-500 bg-red-950/30 border border-red-900/30";
+                                            } else if (slaRemaining < 12) {
+                                                slaLabel = `🟡 CRITIQUE (Reste ${Math.round(slaRemaining)}h)`;
+                                                slaColorClass = "text-amber-500 bg-amber-950/30 border border-amber-900/30";
+                                            } else {
+                                                slaLabel = `🟢 NOMINAL (Reste ${Math.round(slaRemaining)}h)`;
+                                                slaColorClass = "text-emerald-500 bg-emerald-950/30 border border-emerald-900/30";
+                                            }
+
+                                            const isAlreadyReserved = item.status === 'reserved' || item.status === 'collected';
+
+                                            return (
+                                                <div key={item.id} className="p-5 bg-slate-950 border border-slate-800 rounded-3xl flex items-center justify-between hover:border-emerald-500/30 transition-all gap-4">
+                                                    <div className="flex items-center gap-4 min-w-0">
+                                                        <div className={cn(
+                                                            "w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-inner",
+                                                            isWaste ? "bg-emerald-950/35 text-emerald-400" : "bg-red-950/35 text-red-400"
+                                                        )}>
+                                                            {isWaste ? (item.waste_types?.emoji || '🗑️') : '⚠️'}
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                                <span className={cn("px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest", slaColorClass)}>
+                                                                    {slaLabel}
+                                                                </span>
+                                                                {!isWaste && (
+                                                                    <span className="px-2 py-0.5 bg-red-955/50 text-red-400 border border-red-900/30 rounded-full text-[8px] font-black uppercase tracking-widest">
+                                                                        Infraction
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            <h4 className="text-xs font-black uppercase italic text-white leading-tight truncate">
+                                                                {isWaste ? item.waste_types?.name : item.type}
+                                                            </h4>
+                                                            <p className="text-[10px] text-zinc-400 mt-1 truncate max-w-[280px]">
+                                                                {isWaste ? item.location : (item.description || "Pas de description")}
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="flex items-center gap-2 shrink-0">
+                                                        <button 
+                                                            onClick={() => {
+                                                                if (item.latitude && item.longitude) {
+                                                                    setFocusCoords([Number(item.latitude), Number(item.longitude)]);
+                                                                    setMapViewMode("radar");
+                                                                } else {
+                                                                    showToast("Pas de coordonnées disponibles", "error");
+                                                                }
+                                                            }}
+                                                            className="p-3 bg-zinc-900 text-zinc-400 rounded-xl hover:bg-emerald-955/30 hover:text-emerald-500 transition-colors"
+                                                            title="Situer sur la carte"
+                                                        >
+                                                            🗺️
+                                                        </button>
+                                                        
+                                                        {item.latitude && item.longitude && (
+                                                            <a 
+                                                                href={`https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="p-3 bg-zinc-900 text-zinc-400 rounded-xl hover:bg-blue-955/30 hover:text-blue-500 transition-colors"
+                                                                title="GPS Navigation"
+                                                            >
+                                                                📍
+                                                            </a>
+                                                        )}
+
+                                                        {isWaste && (
+                                                            <button 
+                                                                onClick={() => handleTakeCharge(item.id)}
+                                                                disabled={isAlreadyReserved}
+                                                                className={cn(
+                                                                    "px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                                                    isAlreadyReserved 
+                                                                        ? "bg-slate-900 text-zinc-650 cursor-not-allowed border border-slate-800" 
+                                                                        : "bg-emerald-600 text-white hover:bg-emerald-500 shadow-md shadow-emerald-500/20"
+                                                                )}
+                                                            >
+                                                                {isAlreadyReserved ? "Pris en charge" : "Collecter"}
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {concessionWastes.length === 0 && concessionInfractions.length === 0 && (
+                                            <div className="py-20 text-center text-zinc-550">
+                                                <p className="text-[10px] font-black uppercase tracking-widest">Aucune alerte active dans vos concessions.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">

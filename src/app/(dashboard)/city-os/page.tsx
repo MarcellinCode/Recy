@@ -5,7 +5,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { createTender, awardTender } from "@/app/actions/tenders";
-import { issueSanction } from "@/app/actions/mairie";
+import { issueSanction, dispatchEmergencyAgent } from "@/app/actions/mairie";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/Modal";
@@ -278,6 +278,8 @@ function MairieDashboardContent() {
     
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('overview');
+    const [mapViewMode, setMapViewMode] = useState<"radar" | "list">("radar");
+    const [focusCoords, setFocusCoords] = useState<[number, number] | null>(null);
     const [mairieCity, setMairieCity] = useState("");
     const [zones, setZones] = useState<any[]>([]);
     const [wastes, setWastes] = useState<any[]>([]);
@@ -404,6 +406,42 @@ function MairieDashboardContent() {
             setLoading(false);
         }
     }
+
+    const getDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+        const R = 6371;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    };
+
+    const handleEmergencyDispatch = async (wasteId: string, lat: number, lon: number) => {
+        if (fleetPositions.length === 0) {
+            showToast("Aucun agent actif détecté.", "error");
+            return;
+        }
+
+        let closestPos = fleetPositions[0];
+        let minDistance = getDistanceKm(lat, lon, Number(closestPos.latitude), Number(closestPos.longitude));
+        
+        for (const pos of fleetPositions) {
+            const d = getDistanceKm(lat, lon, Number(pos.latitude), Number(pos.longitude));
+            if (d < minDistance) {
+                minDistance = d;
+                closestPos = pos;
+            }
+        }
+
+        const res = await dispatchEmergencyAgent(wasteId, closestPos.agent_id);
+        if (res.success) {
+            showToast(`Mission assignée de force à l'agent (${minDistance.toFixed(1)}km)`, "success");
+            fetchMairieData();
+        } else {
+            showToast("Échec: " + res.error, "error");
+        }
+    };
 
     const handleCreateTender = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -643,10 +681,177 @@ function MairieDashboardContent() {
                     <AnimatePresence mode="wait">
                         {activeTab === 'overview' && (
                             <motion.div key="overview" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} className="space-y-8">
-                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                    <div className="lg:col-span-2 relative h-[550px] rounded-[3.5rem] overflow-hidden border border-slate-200/40 bg-white/75 backdrop-blur-md shadow-lg shadow-slate-100 group">
-                                        <div className="absolute inset-0 z-0"><MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} /></div>
-                                        <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.1)_100%)]" />
+                                    <div className="lg:col-span-2 relative h-[550px] rounded-[3.5rem] overflow-hidden border border-slate-200/40 bg-white/75 backdrop-blur-md shadow-lg shadow-slate-100 group flex flex-col">
+                                        {/* Premium Floating View Mode Switcher */}
+                                        <div className="absolute top-6 right-6 z-[1000] flex bg-slate-900/95 border border-emerald-500/20 backdrop-blur-md p-1.5 rounded-2xl shadow-2xl">
+                                            <button 
+                                                onClick={() => setMapViewMode("radar")}
+                                                className={cn(
+                                                    "px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                                    mapViewMode === "radar" 
+                                                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/25" 
+                                                        : "text-zinc-400 hover:text-white"
+                                                )}
+                                            >
+                                                🗺️ Radar
+                                            </button>
+                                            <button 
+                                                onClick={() => setMapViewMode("list")}
+                                                className={cn(
+                                                    "px-5 py-2.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                                    mapViewMode === "list" 
+                                                        ? "bg-emerald-600 text-white shadow-lg shadow-emerald-500/25" 
+                                                        : "text-zinc-400 hover:text-white"
+                                                )}
+                                            >
+                                                📋 Liste
+                                            </button>
+                                        </div>
+
+                                        {mapViewMode === "radar" ? (
+                                            <>
+                                                <div className="absolute inset-0 z-0"><MapComponent isMairie={true} targetCity={mairieCity} mairieId={targetMairieId || undefined} focusCoords={focusCoords} /></div>
+                                                <div className="absolute inset-0 pointer-events-none z-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.1)_100%)]" />
+                                            </>
+                                        ) : (
+                                            <div className="absolute inset-0 z-10 bg-slate-900 border border-slate-800 rounded-[3.5rem] p-8 overflow-y-auto no-scrollbar flex flex-col pt-24">
+                                                <div className="flex items-center justify-between mb-6 border-b border-slate-800 pb-4">
+                                                    <div>
+                                                        <h3 className="text-sm font-black uppercase italic tracking-tighter text-white">Table Tactique des Anomalies</h3>
+                                                        <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">Temps réel - SLA opérationnel de la commune</p>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    {[
+                                                        ...wastes.map(w => ({ ...w, itemType: 'waste' })),
+                                                        ...infractions.map(i => ({ ...i, itemType: 'infraction' }))
+                                                    ].sort((a, b) => {
+                                                        const aCrit = a.itemType === 'infraction' && a.severity === 'critical';
+                                                        const bCrit = b.itemType === 'infraction' && b.severity === 'critical';
+                                                        if (aCrit && !bCrit) return -1;
+                                                        if (!aCrit && bCrit) return 1;
+                                                        const aAge = Date.now() - new Date(a.created_at).getTime();
+                                                        const bAge = Date.now() - new Date(b.created_at).getTime();
+                                                        return bAge - aAge;
+                                                    }).map((item) => {
+                                                        const isWaste = item.itemType === 'waste';
+                                                        const createdAtTime = new Date(item.created_at).getTime();
+                                                        const elapsedHours = (Date.now() - createdAtTime) / (3600 * 1000);
+                                                        const slaRemaining = 24 - elapsedHours;
+                                                        
+                                                        let slaLabel = "";
+                                                        let slaColorClass = "";
+                                                        if (slaRemaining <= 0) {
+                                                            slaLabel = "🔴 SLA DEPASSE (Point Noir)";
+                                                            slaColorClass = "text-red-500 bg-red-950/30 border border-red-900/30";
+                                                        } else if (slaRemaining < 12) {
+                                                            slaLabel = `🟡 CRITIQUE (Reste ${Math.round(slaRemaining)}h)`;
+                                                            slaColorClass = "text-amber-500 bg-amber-950/30 border border-amber-900/30";
+                                                        } else {
+                                                            slaLabel = `🟢 NOMINAL (Reste ${Math.round(slaRemaining)}h)`;
+                                                            slaColorClass = "text-emerald-500 bg-emerald-950/30 border border-emerald-900/30";
+                                                        }
+
+                                                        return (
+                                                            <div key={item.id} className="p-5 bg-slate-950 border border-slate-800 rounded-3xl flex items-center justify-between hover:border-emerald-500/30 transition-all gap-4">
+                                                                <div className="flex items-center gap-4 min-w-0">
+                                                                    <div className={cn(
+                                                                        "w-12 h-12 rounded-2xl flex items-center justify-center text-xl shadow-inner",
+                                                                        isWaste ? "bg-emerald-950/35 text-emerald-400" : "bg-red-950/35 text-red-400"
+                                                                    )}>
+                                                                        {isWaste ? (item.waste_types?.emoji || '🗑️') : '⚠️'}
+                                                                    </div>
+                                                                    <div className="min-w-0">
+                                                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                                                            <span className={cn("px-2 py-0.5 rounded-full text-[8px] font-black uppercase tracking-widest", slaColorClass)}>
+                                                                                {slaLabel}
+                                                                            </span>
+                                                                            {!isWaste && (
+                                                                                <span className="px-2 py-0.5 bg-red-955/50 text-red-400 border border-red-900/30 rounded-full text-[8px] font-black uppercase tracking-widest">
+                                                                                    Infraction
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                        <h4 className="text-xs font-black uppercase italic text-white leading-tight truncate">
+                                                                            {isWaste ? item.waste_types?.name : item.type}
+                                                                        </h4>
+                                                                        <p className="text-[10px] text-zinc-400 mt-1 truncate max-w-[280px]">
+                                                                            {isWaste ? item.location : (item.description || "Pas de description")}
+                                                                        </p>
+                                                                    </div>
+                                                                </div>
+                                                                
+                                                                <div className="flex items-center gap-2 shrink-0">
+                                                                    <button 
+                                                                        onClick={() => {
+                                                                            if (item.latitude && item.longitude) {
+                                                                                setFocusCoords([Number(item.latitude), Number(item.longitude)]);
+                                                                                setMapViewMode("radar");
+                                                                            } else {
+                                                                                showToast("Pas de coordonnées disponibles", "error");
+                                                                            }
+                                                                        }}
+                                                                        className="p-3 bg-zinc-900 text-zinc-400 rounded-xl hover:bg-emerald-955/30 hover:text-emerald-500 transition-colors"
+                                                                        title="Situer sur le radar"
+                                                                    >
+                                                                        🗺️
+                                                                    </button>
+                                                                    
+                                                                    {item.latitude && item.longitude && (
+                                                                        <a 
+                                                                            href={`https://www.google.com/maps/dir/?api=1&destination=${item.latitude},${item.longitude}`}
+                                                                            target="_blank"
+                                                                            rel="noopener noreferrer"
+                                                                            className="p-3 bg-zinc-900 text-zinc-400 rounded-xl hover:bg-blue-955/30 hover:text-blue-500 transition-colors"
+                                                                            title="GPS Navigation"
+                                                                        >
+                                                                            📍
+                                                                        </a>
+                                                                    )}
+
+                                                                    {isWaste ? (
+                                                                        <button 
+                                                                            onClick={() => handleEmergencyDispatch(item.id, Number(item.latitude), Number(item.longitude))}
+                                                                            disabled={item.status === 'reserved'}
+                                                                            className={cn(
+                                                                                "px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                                                                item.status === 'reserved' 
+                                                                                    ? "bg-slate-900 text-zinc-650 cursor-not-allowed border border-slate-800" 
+                                                                                    : "bg-emerald-600 text-white hover:bg-emerald-500 shadow-md shadow-emerald-500/20"
+                                                                            )}
+                                                                        >
+                                                                            {item.status === 'reserved' ? "En cours" : "Dispatcher"}
+                                                                        </button>
+                                                                    ) : (
+                                                                        <button 
+                                                                            onClick={() => {
+                                                                                setSelectedInfraction(item);
+                                                                                setPenaltyAmount(50000);
+                                                                                setIsSanctionModalOpen(true);
+                                                                            }}
+                                                                            disabled={item.status === 'resolved' || item.status === 'sanctioned'}
+                                                                            className={cn(
+                                                                                "px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                                                                item.status === 'resolved' || item.status === 'sanctioned'
+                                                                                    ? "bg-slate-900 text-zinc-650 cursor-not-allowed border border-slate-800"
+                                                                                    : "bg-red-650 text-white bg-red-600 hover:bg-red-500 shadow-md shadow-red-500/20"
+                                                                            )}
+                                                                        >
+                                                                            {item.status === 'sanctioned' ? "Sanctionné" : item.status === 'resolved' ? "Résolu" : "Sanctionner"}
+                                                                        </button>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                    {wastes.length === 0 && infractions.length === 0 && (
+                                                        <div className="py-20 text-center text-zinc-500">
+                                                            <p className="text-[10px] font-black uppercase tracking-widest">Aucune anomalie détectée sur le territoire communal.</p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="space-y-8 overflow-y-auto pr-2 no-scrollbar">
                                         <div className="flex justify-center bg-zinc-900 border border-emerald-500/20 rounded-[3rem] py-10 shadow-2xl backdrop-blur-xl bg-gradient-to-br from-emerald-950/90 via-slate-900/95 to-emerald-950/90">

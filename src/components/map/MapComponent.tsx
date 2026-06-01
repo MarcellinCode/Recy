@@ -162,6 +162,16 @@ function MapAdjuster({ bounds }: Readonly<{ bounds: L.LatLngBounds | null }>) {
     return null;
 }
 
+function MapFocuser({ coords }: Readonly<{ coords: [number, number] | null }>) {
+    const map = useMap();
+    useEffect(() => {
+        if (coords) {
+            map.flyTo(coords, 16, { animate: true, duration: 1.5 });
+        }
+    }, [coords, map]);
+    return null;
+}
+
 function RadarScanner() {
     return (
         <div className="absolute inset-0 pointer-events-none z-[400] overflow-hidden rounded-[3rem]">
@@ -213,16 +223,39 @@ function isPointInMunicipality(lat: any, lng: any, geo: MunicipalityGeo): boolea
     return nLat >= minLat && nLat <= maxLat && nLng >= minLon && nLng <= maxLon;
 }
 
+function isPointInZone(lat: any, lng: any, zone: any): boolean {
+    if (!zone.boundaries?.geometry?.coordinates) return true;
+    const nLat = Number(lat);
+    const nLng = Number(lng);
+    if (isNaN(nLat) || isNaN(nLng)) return false;
+
+    const coords = zone.boundaries.geometry.type === "MultiPolygon"
+        ? zone.boundaries.geometry.coordinates.flatMap((poly: any) => poly[0])
+        : zone.boundaries.geometry.coordinates[0];
+
+    const lons = coords.map((c: any) => c[0]);
+    const lats = coords.map((c: any) => c[1]);
+    const minLon = Math.min(...lons);
+    const maxLon = Math.max(...lons);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    return nLat >= minLat && nLat <= maxLat && nLng >= minLon && nLng <= maxLon;
+}
+
 // Les coordonnées sont maintenant gérées dynamiquement par getMunicipalityGeo dans lib/geoIntelligence.ts
 
 export default function MapComponent({ 
     isMairie = false, 
     targetCity, 
-    mairieId 
+    mairieId,
+    organizationId,
+    focusCoords
 }: Readonly<{ 
     isMairie?: boolean;
     targetCity?: string;
     mairieId?: string;
+    organizationId?: string;
+    focusCoords?: [number, number] | null;
 }>) {
     const supabase = createClient();
     const [wastes, setWastes] = useState<WasteMarker[]>([]);
@@ -238,7 +271,33 @@ export default function MapComponent({
             try {
                 const cityGeo = targetCity ? getMunicipalityGeo(targetCity) : null;
 
-                // 1. Récupérer les déchets et types avec filtrage par ville
+                // 1. Récupérer les zones de l'organisation ou de la mairie en premier pour filtrage ultérieur
+                let fetchedZones: ZoneMarker[] = [];
+                if (isMairie) {
+                    let zonesQuery = supabase
+                        .from('zones')
+                        .select('*, concessions(*, profiles(full_name))');
+                    
+                    if (mairieId) {
+                        zonesQuery = zonesQuery.eq('organization_id', mairieId);
+                    } else if (targetCity) {
+                        zonesQuery = zonesQuery.eq('city', targetCity);
+                    }
+
+                    const { data: zonesData } = await zonesQuery;
+                    fetchedZones = zonesData || [];
+                } else if (organizationId) {
+                    const { data: concessionsData } = await supabase
+                        .from('concessions')
+                        .select('*, zones(*)')
+                        .eq('organization_id', organizationId)
+                        .eq('status', 'active');
+                    
+                    fetchedZones = concessionsData?.map((c: any) => c.zones).filter(Boolean) || [];
+                }
+                setZones(fetchedZones);
+
+                // 2. Récupérer les déchets et types avec filtrage
                 let wastesQuery = supabase
                     .from('wastes')
                     .select('*, waste_types(*), seller:profiles!seller_id(city)')
@@ -248,8 +307,8 @@ export default function MapComponent({
 
                 const { data: wastesData } = await wastesQuery;
 
-                // Ajout fetch infractions avec filtrage STRICT
-                if (isMairie) {
+                // 3. Charger les infractions si Mairie ou Organisation associée
+                if (isMairie || organizationId) {
                     let infractionsQuery = supabase
                         .from('environmental_infractions')
                         .select('*, profiles:reporter_id(full_name), zones:zone_id(city)')
@@ -258,7 +317,8 @@ export default function MapComponent({
 
                     const { data: infractionsData } = await infractionsQuery;
                     let filteredInfractions = infractionsData || [];
-                    if (targetCity && cityGeo) {
+
+                    if (isMairie && targetCity && cityGeo) {
                         filteredInfractions = filteredInfractions.filter((i: any) => {
                             if (i.latitude && i.longitude) {
                                 return isPointInMunicipality(i.latitude, i.longitude, cityGeo);
@@ -269,11 +329,20 @@ export default function MapComponent({
                             const targetCityClean = targetCity.replace(/Mairie de |Commune de |Ville de /gi, "").trim().toLowerCase();
                             return !zoneCity || zoneCity.includes(targetCityClean) || descLower.includes(targetCityClean) || typeLower.includes(targetCityClean);
                         });
+                    } else if (organizationId && fetchedZones.length > 0) {
+                        filteredInfractions = filteredInfractions.filter((i: any) => {
+                            if (i.latitude && i.longitude) {
+                                return fetchedZones.some(z => isPointInZone(i.latitude, i.longitude, z));
+                            }
+                            return false;
+                        });
+                    } else if (!isMairie) {
+                        filteredInfractions = [];
                     }
                     setInfractions(filteredInfractions);
                 }
 
-                // 2. Récupérer les positions en temps réel
+                // 4. Récupérer les positions en temps réel
                 const { data: trackingData } = await supabase
                     .from('agent_live_positions')
                     .select('*')
@@ -313,37 +382,28 @@ export default function MapComponent({
                     }));
 
                     let finalAgents = enrichedAgents;
-                    if (targetCity && cityGeo) {
+                    if (isMairie && targetCity && cityGeo) {
                         finalAgents = enrichedAgents.filter((a: any) => {
                             if (a.latitude && a.longitude) {
                                 return isPointInMunicipality(a.latitude, a.longitude, cityGeo);
                             }
                             return true;
                         });
+                    } else if (organizationId && fetchedZones.length > 0) {
+                        finalAgents = enrichedAgents.filter((a: any) => {
+                            if (a.latitude && a.longitude) {
+                                return fetchedZones.some(z => isPointInZone(a.latitude, a.longitude, z));
+                            }
+                            return false;
+                        });
                     }
 
                     setAgents(finalAgents as AgentMarker[]);
                 }
 
-                // 5. Récupérer les Zones et Concessions pour la Mairie (filtrées)
-                if (isMairie) {
-                    let zonesQuery = supabase
-                        .from('zones')
-                        .select('*, concessions(*, profiles(full_name))');
-                    
-                    if (mairieId) {
-                        zonesQuery = zonesQuery.eq('organization_id', mairieId);
-                    } else if (targetCity) {
-                        zonesQuery = zonesQuery.eq('city', targetCity);
-                    }
-
-                    const { data: zonesData } = await zonesQuery;
-                    setZones(zonesData || []);
-                }
-
                 try {
                     let fetchedWastes = wastesData || [];
-                    if (targetCity && cityGeo) {
+                    if (isMairie && targetCity && cityGeo) {
                         const targetCityClean = targetCity.replace(/Mairie de |Commune de |Ville de /gi, "").trim().toLowerCase();
                         fetchedWastes = fetchedWastes.filter((w: any) => {
                             if (w.latitude && w.longitude) {
@@ -353,6 +413,13 @@ export default function MapComponent({
                             const locationLower = w.location?.toLowerCase() || "";
                             return (sellerCity && sellerCity.includes(targetCityClean)) || 
                                    locationLower.includes(targetCityClean);
+                        });
+                    } else if (organizationId && fetchedZones.length > 0) {
+                        fetchedWastes = fetchedWastes.filter((w: any) => {
+                            if (w.latitude && w.longitude) {
+                                return fetchedZones.some(z => isPointInZone(w.latitude, w.longitude, z));
+                            }
+                            return false;
                         });
                     }
                     setWastes(fetchedWastes.filter((w: any) => w.latitude && w.longitude));
@@ -371,7 +438,7 @@ export default function MapComponent({
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
-    }, [targetCity, mairieId, isMairie]);
+    }, [targetCity, mairieId, isMairie, organizationId]);
 
     const getDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
         const R = 6371;
@@ -480,6 +547,7 @@ export default function MapComponent({
                 zoomControl={false}
             >
                 <MapAdjuster bounds={mapBounds} />
+                {focusCoords && <MapFocuser coords={focusCoords} />}
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
