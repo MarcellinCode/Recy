@@ -371,7 +371,7 @@ export default function MapComponent({
             .subscribe();
 
         return () => { supabase.removeChannel(channel); };
-    }, []);
+    }, [targetCity, mairieId, isMairie]);
 
     const getDistanceKm = (lat1: number, lon1: number, lat2: number, lon2: number) => {
         const R = 6371;
