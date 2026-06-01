@@ -81,6 +81,20 @@ interface MairieRawDataPayload {
     mairieCity: string;
 }
 
+async function safeQuery(query: any, errorLabel: string, fallback: any = { data: null }) {
+    try {
+        const res = await query;
+        if (res?.error) {
+            console.error(`Error in ${errorLabel}:`, res.error);
+            return fallback;
+        }
+        return res || fallback;
+    } catch (e) {
+        console.error(`Exception in ${errorLabel}:`, e);
+        return fallback;
+    }
+}
+
 async function fetchRawMairieData(
     supabase: any,
     currentUserProfile: any,
@@ -117,18 +131,18 @@ async function fetchRawMairieData(
         vehiclesRes,
         posRes
     ] = await Promise.all([
-        zonesQuery.catch((e: any) => { console.error("Error fetching zones:", e); return { data: null }; }),
-        supabase.from('wastes').select('id, status, created_at, estimated_weight, collector_id').catch((e: any) => { console.error("Error fetching wastes:", e); return { data: null }; }),
-        supabase.from('tenders').select('*').eq('mairie_id', mairieId).catch((e: any) => { console.error("Error fetching tenders:", e); return { data: null }; }),
-        supabase.from('tender_bids').select('*').catch((e: any) => { console.error("Error fetching tender bids:", e); return { data: null }; }),
-        supabase.from('transactions').select('*').eq('user_id', mairieId).order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching transactions:", e); return { data: null }; }),
-        supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching sanctions:", e); return { data: null }; }),
-        supabase.from('profiles').select('*').eq('role', 'agent_police_verte').order('created_at', { ascending: false }).catch((e: any) => { console.error("Error fetching agents:", e); return { data: [] }; }),
-        supabase.from('environmental_infractions').select('status, severity, type').catch((e: any) => { console.error("Error fetching infraction stats:", e); return { data: [] }; }),
+        safeQuery(zonesQuery, "zones"),
+        safeQuery(supabase.from('wastes').select('id, status, created_at, estimated_weight, collector_id'), "wastes"),
+        safeQuery(supabase.from('tenders').select('*').eq('mairie_id', mairieId), "tenders"),
+        safeQuery(supabase.from('tender_bids').select('*'), "tender_bids"),
+        safeQuery(supabase.from('transactions').select('*').eq('user_id', mairieId).order('created_at', { ascending: false }), "transactions"),
+        safeQuery(supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false }), "sanctions"),
+        safeQuery(supabase.from('profiles').select('*').eq('role', 'agent_police_verte').order('created_at', { ascending: false }), "agents", { data: [] }),
+        safeQuery(supabase.from('environmental_infractions').select('status, severity, type'), "infractionStats", { data: [] }),
         Promise.resolve({ data: null }),
-        supabase.from('profiles').select('id, full_name, agent_count, role').in('role', ['entreprise', 'organisation_admin', 'collecteur']).catch((e: any) => { console.error("Error fetching profiles for concessions:", e); return { data: null }; }),
-        supabase.from('vehicles').select('*').catch((e: any) => { console.error("Error fetching vehicles:", e); return { data: null }; }),
-        supabase.from('agent_live_positions').select('*').catch((e: any) => { console.error("Error fetching agent live positions:", e); return { data: null }; })
+        safeQuery(supabase.from('profiles').select('id, full_name, agent_count, role').in('role', ['entreprise', 'organisation_admin', 'collecteur']), "profiles for concessions"),
+        safeQuery(supabase.from('vehicles').select('*'), "vehicles"),
+        safeQuery(supabase.from('agent_live_positions').select('*'), "agent live positions")
     ]);
 
     const zonesData = zonesRes?.data || [];
@@ -159,8 +173,8 @@ async function fetchRawMairieData(
     infractionsQuery = infractionsQuery.order('created_at', { ascending: false });
 
     const [concessionsRes, infractionsRes] = await Promise.all([
-        concessionsQuery.catch((e: any) => { console.error("Error fetching concessions:", e); return { data: null }; }),
-        infractionsQuery.catch((e: any) => { console.error("Error fetching infractions:", e); return { data: null }; })
+        safeQuery(concessionsQuery, "concessions"),
+        safeQuery(infractionsQuery, "infractions")
     ]);
 
     const concessionsData = concessionsRes?.data || [];
@@ -178,7 +192,7 @@ async function fetchRawMairieData(
 
     let profilesData: any[] = [];
     if (profileIds.length > 0) {
-        const profilesRes = await supabase.from('profiles').select('id, full_name, role').in('id', profileIds).catch((e: any) => { console.error("Error fetching profiles:", e); return { data: null }; });
+        const profilesRes = await safeQuery(supabase.from('profiles').select('id, full_name, role').in('id', profileIds), "profiles for stage 3");
         profilesData = profilesRes?.data || [];
     }
 
