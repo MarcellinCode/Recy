@@ -272,63 +272,124 @@ export default function MapComponent({
                 setLoading(true);
             }
             try {
-                console.log("MapComponent: Starting fetchData. isFirstLoad =", isFirstLoad, {
+                console.log("MapComponent: Starting fetchData (Flat + In-memory Joins). isFirstLoad =", isFirstLoad, {
                     targetCity, mairieId, isMairie, organizationId
                 });
                 const cityGeo = targetCity ? getMunicipalityGeo(targetCity) : null;
 
-                // 1. Récupérer les zones de l'organisation ou de la mairie en premier pour filtrage ultérieur
+                // 1. Charger toutes les données nécessaires de manière plate et parallèle pour éviter les blocages de jointures
+                const [
+                    zonesRes,
+                    concessionsRes,
+                    profilesRes,
+                    wastesRes,
+                    wasteTypesRes,
+                    infractionsRes,
+                    trackingRes
+                ] = await Promise.all([
+                    supabase.from('zones').select('*'),
+                    supabase.from('concessions').select('*'),
+                    supabase.from('profiles').select('id, full_name, city'),
+                    supabase.from('wastes').select('*').in('status', ['published', 'reserved']).not('latitude', 'is', null).not('longitude', 'is', null),
+                    supabase.from('waste_types').select('*'),
+                    (isMairie || organizationId)
+                        ? supabase.from('environmental_infractions').select('*').not('latitude', 'is', null).not('longitude', 'is', null)
+                        : Promise.resolve({ data: [] }),
+                    supabase.from('agent_live_positions').select('*').order('timestamp', { ascending: false }).limit(200)
+                ]);
+
+                const zonesData = zonesRes?.data || [];
+                const concessionsData = concessionsRes?.data || [];
+                const allProfiles = profilesRes?.data || [];
+                const wastesRaw = wastesRes?.data || [];
+                const wasteTypesData = wasteTypesRes?.data || [];
+                const infractionsRaw = infractionsRes?.data || [];
+                const trackingData = trackingRes?.data || [];
+
+                console.log("MapComponent: Flat data loaded safely in memory", {
+                    zonesCount: zonesData.length,
+                    concessionsCount: concessionsData.length,
+                    profilesCount: allProfiles.length,
+                    wastesCount: wastesRaw.length,
+                    infractionsCount: infractionsRaw.length
+                });
+
+                // 2. Traiter et enrichir les zones en mémoire
                 let fetchedZones: ZoneMarker[] = [];
                 if (isMairie) {
-                    let zonesQuery = supabase
-                        .from('zones')
-                        .select('*, concessions(*, profiles(full_name))');
-                    
+                    let filteredZonesData = zonesData;
                     if (mairieId) {
-                        zonesQuery = zonesQuery.eq('organization_id', mairieId);
+                        filteredZonesData = zonesData.filter((z: any) => z.organization_id === mairieId);
                     } else if (targetCity) {
-                        zonesQuery = zonesQuery.eq('city', targetCity);
+                        const targetCityClean = targetCity.replace(/Mairie de |Commune de |Ville de /gi, "").trim().toLowerCase();
+                        filteredZonesData = zonesData.filter((z: any) => z.city?.toLowerCase().includes(targetCityClean));
                     }
-
-                    const { data: zonesData } = await zonesQuery;
-                    fetchedZones = zonesData || [];
-                } else if (organizationId) {
-                    const { data: concessionsData } = await supabase
-                        .from('concessions')
-                        .select('*, zones(*)')
-                        .eq('organization_id', organizationId)
-                        .eq('status', 'active');
                     
-                    fetchedZones = concessionsData?.map((c: any) => c.zones).filter(Boolean) || [];
+                    fetchedZones = filteredZonesData.map((zone: any) => {
+                        const zoneConcessions = concessionsData.filter((c: any) => c.zone_id === zone.id);
+                        return {
+                            ...zone,
+                            concessions: zoneConcessions.map((c: any) => ({
+                                ...c,
+                                profiles: allProfiles.find((p: any) => p.id === c.organization_id)
+                            }))
+                        };
+                    });
+                } else if (organizationId) {
+                    const activeConcessions = concessionsData.filter((c: any) => c.organization_id === organizationId && c.status === 'active');
+                    fetchedZones = activeConcessions.map((c: any) => {
+                        const zone = zonesData.find((z: any) => z.id === c.zone_id);
+                        return zone ? { ...zone, concessions: [c] } : null;
+                    }).filter(Boolean) as ZoneMarker[];
                 }
-                
+
                 if (isMounted) {
                     setZones(fetchedZones);
                 }
 
-                // 2. Récupérer les déchets et types avec filtrage
-                let wastesQuery = supabase
-                    .from('wastes')
-                    .select('*, waste_types(*), seller:profiles!seller_id(city)')
-                    .in('status', ['published', 'reserved'])
-                    .not('latitude', 'is', null)
-                    .not('longitude', 'is', null);
+                // 3. Traiter et enrichir les déchets en mémoire
+                const enrichedWastes = wastesRaw.map((w: any) => ({
+                    ...w,
+                    waste_types: wasteTypesData.find((t: any) => t.id === w.waste_type_id) || { name: "Déchet", emoji: "🗑️", price_per_kg: 0 },
+                    seller: allProfiles.find((p: any) => p.id === w.seller_id)
+                }));
 
-                const { data: wastesData } = await wastesQuery;
+                let finalWastes = enrichedWastes;
+                if (isMairie && targetCity && cityGeo) {
+                    const targetCityClean = targetCity.replace(/Mairie de |Commune de |Ville de /gi, "").trim().toLowerCase();
+                    finalWastes = enrichedWastes.filter((w: any) => {
+                        if (w.latitude && w.longitude) {
+                            return isPointInMunicipality(w.latitude, w.longitude, cityGeo);
+                        }
+                        const sellerCity = w.seller?.city?.toLowerCase();
+                        const locationLower = w.location?.toLowerCase() || "";
+                        return (sellerCity && sellerCity.includes(targetCityClean)) || 
+                               locationLower.includes(targetCityClean);
+                    });
+                } else if (organizationId && fetchedZones.length > 0) {
+                    finalWastes = enrichedWastes.filter((w: any) => {
+                        if (w.latitude && w.longitude) {
+                            return fetchedZones.some(z => isPointInZone(w.latitude, w.longitude, z));
+                        }
+                        return false;
+                    });
+                }
 
-                // 3. Charger les infractions si Mairie ou Organisation associée
+                if (isMounted) {
+                    setWastes(finalWastes.filter((w: any) => w.latitude && w.longitude));
+                }
+
+                // 4. Traiter et enrichir les infractions en mémoire
                 if (isMairie || organizationId) {
-                    let infractionsQuery = supabase
-                        .from('environmental_infractions')
-                        .select('*, profiles:reporter_id(full_name), zones:zone_id(city)')
-                        .not('latitude', 'is', null)
-                        .not('longitude', 'is', null);
+                    const enrichedInfractions = infractionsRaw.map((i: any) => ({
+                        ...i,
+                        profiles: allProfiles.find((p: any) => p.id === i.reporter_id),
+                        zones: zonesData.find((z: any) => z.id === i.zone_id)
+                    }));
 
-                    const { data: infractionsData } = await infractionsQuery;
-                    let filteredInfractions = infractionsData || [];
-
+                    let finalInfractions = enrichedInfractions;
                     if (isMairie && targetCity && cityGeo) {
-                        filteredInfractions = filteredInfractions.filter((i: any) => {
+                        finalInfractions = enrichedInfractions.filter((i: any) => {
                             if (i.latitude && i.longitude) {
                                 return isPointInMunicipality(i.latitude, i.longitude, cityGeo);
                             }
@@ -339,30 +400,23 @@ export default function MapComponent({
                             return !zoneCity || zoneCity.includes(targetCityClean) || descLower.includes(targetCityClean) || typeLower.includes(targetCityClean);
                         });
                     } else if (organizationId && fetchedZones.length > 0) {
-                        filteredInfractions = filteredInfractions.filter((i: any) => {
+                        finalInfractions = enrichedInfractions.filter((i: any) => {
                             if (i.latitude && i.longitude) {
                                 return fetchedZones.some(z => isPointInZone(i.latitude, i.longitude, z));
                             }
                             return false;
                         });
                     } else if (!isMairie) {
-                        filteredInfractions = [];
+                        finalInfractions = [];
                     }
-                    
+
                     if (isMounted) {
-                        setInfractions(filteredInfractions);
+                        setInfractions(finalInfractions);
                     }
                 }
 
-                // 4. Récupérer les positions en temps réel
-                const { data: trackingData } = await supabase
-                    .from('agent_live_positions')
-                    .select('*')
-                    .order('timestamp', { ascending: false })
-                    .limit(200);
-
+                // 5. Traiter les agents actifs en mémoire
                 if (trackingData && trackingData.length > 0) {
-                    // Déduplication pour n'avoir que la dernière position par agent
                     const latestPositions = trackingData.reduce((acc: any, curr: any) => {
                         if (!acc[curr.agent_id]) {
                             acc[curr.agent_id] = curr;
@@ -373,8 +427,7 @@ export default function MapComponent({
                     const agentIds = Object.keys(latestPositions);
                     const vehicleIds = Object.values(latestPositions).map((p: any) => p.vehicle_id).filter(Boolean);
 
-                    // 3. Récupérer les profils et véhicules en parallèle (deuxième étape)
-                    const [profilesRes, vehiclesRes] = await Promise.all([
+                    const [agentsProfilesRes, vehiclesRes] = await Promise.all([
                         agentIds.length > 0
                             ? supabase.from('profiles').select('id, full_name').in('id', agentIds)
                             : Promise.resolve({ data: [] }),
@@ -383,14 +436,13 @@ export default function MapComponent({
                             : Promise.resolve({ data: [] })
                     ]);
 
-                    // 4. Fusionner les données safely
-                    const profilesMap = new Map((profilesRes?.data || []).map((p: any) => [p.id, p]));
-                    const vehiclesMap = new Map((vehiclesRes?.data || []).map((v: any) => [v.id, v]));
+                    const agentsProfiles = agentsProfilesRes?.data || [];
+                    const vehiclesData = vehiclesRes?.data || [];
 
                     const enrichedAgents = Object.values(latestPositions).map((pos: any) => ({
                         ...pos,
-                        profiles: profilesMap.get(pos.agent_id),
-                        vehicles: vehiclesMap.get(pos.vehicle_id)
+                        profiles: agentsProfiles.find((p: any) => p.id === pos.agent_id),
+                        vehicles: vehiclesData.find((v: any) => v.id === pos.vehicle_id)
                     }));
 
                     let finalAgents = enrichedAgents;
@@ -413,35 +465,6 @@ export default function MapComponent({
                     if (isMounted) {
                         setAgents(finalAgents as AgentMarker[]);
                     }
-                }
-
-                try {
-                    let fetchedWastes = wastesData || [];
-                    if (isMairie && targetCity && cityGeo) {
-                        const targetCityClean = targetCity.replace(/Mairie de |Commune de |Ville de /gi, "").trim().toLowerCase();
-                        fetchedWastes = fetchedWastes.filter((w: any) => {
-                            if (w.latitude && w.longitude) {
-                                return isPointInMunicipality(w.latitude, w.longitude, cityGeo);
-                            }
-                            const sellerCity = w.seller?.city?.toLowerCase();
-                            const locationLower = w.location?.toLowerCase() || "";
-                            return (sellerCity && sellerCity.includes(targetCityClean)) || 
-                                   locationLower.includes(targetCityClean);
-                        });
-                    } else if (organizationId && fetchedZones.length > 0) {
-                        fetchedWastes = fetchedWastes.filter((w: any) => {
-                            if (w.latitude && w.longitude) {
-                                return fetchedZones.some(z => isPointInZone(w.latitude, w.longitude, z));
-                            }
-                            return false;
-                        });
-                    }
-                    
-                    if (isMounted) {
-                        setWastes(fetchedWastes.filter((w: any) => w.latitude && w.longitude));
-                    }
-                } catch (e) { 
-                    console.error("Map: Error processing wastes", e); 
                 }
             } catch (err) {
                 console.error("MapComponent critical loading error, forcing resolver:", err);
@@ -627,7 +650,7 @@ export default function MapComponent({
                         <Marker
                             key={waste.id}
                             position={[waste.latitude, waste.longitude]}
-                            icon={createCustomIcon(waste.waste_types.emoji, waste.status === 'published' ? '#22c55e' : '#f59e0b', isHotspot)}
+                            icon={createCustomIcon(waste.waste_types?.emoji || '🗑️', waste.status === 'published' ? '#22c55e' : '#f59e0b', isHotspot)}
                         >
                             <Popup className="premium-popup">
                                 <div className="p-2 min-w-[220px] bg-white dark:bg-zinc-900 rounded-2xl overflow-hidden">
