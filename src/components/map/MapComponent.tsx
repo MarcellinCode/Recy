@@ -12,7 +12,7 @@ import MarkerClusterGroup from "react-leaflet-cluster";
 import { cn } from "@/lib/utils";
 import { dispatchEmergencyAgent } from "@/app/actions/mairie";
 import { showToast } from "@/components/ui/toast";
-import { getMunicipalityGeo } from "@/lib/geoIntelligence";
+import { getMunicipalityGeo, type MunicipalityGeo } from "@/lib/geoIntelligence";
 
 // Custom interface for Waste markers
 interface WasteMarker {
@@ -198,6 +198,17 @@ function RadarScanner() {
     );
 }
 
+function isPointInMunicipality(lat: number, lng: number, geo: MunicipalityGeo): boolean {
+    if (!geo.boundaries || geo.boundaries.length === 0) return true;
+    const lons = geo.boundaries.map(b => b[0]);
+    const lats = geo.boundaries.map(b => b[1]);
+    const minLon = Math.min(...lons);
+    const maxLon = Math.max(...lons);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    return lat >= minLat && lat <= maxLat && lng >= minLon && lng <= maxLon;
+}
+
 // Les coordonnées sont maintenant gérées dynamiquement par getMunicipalityGeo dans lib/geoIntelligence.ts
 
 export default function MapComponent({ 
@@ -221,6 +232,8 @@ export default function MapComponent({
         const fetchData = async () => {
             setLoading(true);
             try {
+                const cityGeo = targetCity ? getMunicipalityGeo(targetCity) : null;
+
                 // 1. Récupérer les déchets et types avec filtrage par ville
                 let wastesQuery = supabase
                     .from('wastes')
@@ -241,12 +254,15 @@ export default function MapComponent({
 
                     const { data: infractionsData } = await infractionsQuery;
                     let filteredInfractions = infractionsData || [];
-                    if (targetCity) {
-                        const targetCityClean = targetCity.replace(/Mairie de |Commune de |Ville de /gi, "").trim().toLowerCase();
+                    if (targetCity && cityGeo) {
                         filteredInfractions = filteredInfractions.filter((i: any) => {
+                            if (i.latitude && i.longitude) {
+                                return isPointInMunicipality(i.latitude, i.longitude, cityGeo);
+                            }
                             const zoneCity = i.zones?.city?.toLowerCase();
                             const descLower = i.description?.toLowerCase() || "";
                             const typeLower = i.type?.toLowerCase() || "";
+                            const targetCityClean = targetCity.replace(/Mairie de |Commune de |Ville de /gi, "").trim().toLowerCase();
                             return !zoneCity || zoneCity.includes(targetCityClean) || descLower.includes(targetCityClean) || typeLower.includes(targetCityClean);
                         });
                     }
@@ -292,7 +308,17 @@ export default function MapComponent({
                         vehicles: vehiclesMap.get(pos.vehicle_id)
                     }));
 
-                    setAgents(enrichedAgents as AgentMarker[]);
+                    let finalAgents = enrichedAgents;
+                    if (targetCity && cityGeo) {
+                        finalAgents = enrichedAgents.filter((a: any) => {
+                            if (a.latitude && a.longitude) {
+                                return isPointInMunicipality(a.latitude, a.longitude, cityGeo);
+                            }
+                            return true;
+                        });
+                    }
+
+                    setAgents(finalAgents as AgentMarker[]);
                 }
 
                 // 5. Récupérer les Zones et Concessions pour la Mairie (filtrées)
@@ -302,7 +328,7 @@ export default function MapComponent({
                         .select('*, concessions(*, profiles(full_name))');
                     
                     if (mairieId) {
-                        zonesQuery = zonesQuery.eq('created_by', mairieId);
+                        zonesQuery = zonesQuery.eq('organization_id', mairieId);
                     } else if (targetCity) {
                         zonesQuery = zonesQuery.eq('city', targetCity);
                     }
@@ -313,15 +339,16 @@ export default function MapComponent({
 
                 try {
                     let fetchedWastes = wastesData || [];
-                    if (targetCity) {
+                    if (targetCity && cityGeo) {
                         const targetCityClean = targetCity.replace(/Mairie de |Commune de |Ville de /gi, "").trim().toLowerCase();
                         fetchedWastes = fetchedWastes.filter((w: any) => {
+                            if (w.latitude && w.longitude) {
+                                return isPointInMunicipality(w.latitude, w.longitude, cityGeo);
+                            }
                             const sellerCity = w.seller?.city?.toLowerCase();
                             const locationLower = w.location?.toLowerCase() || "";
-                            // Match if seller's city matches targetCity OR targetCity is mentioned in location string OR seller's city is null
                             return (sellerCity && sellerCity.includes(targetCityClean)) || 
-                                   locationLower.includes(targetCityClean) || 
-                                   !sellerCity;
+                                   locationLower.includes(targetCityClean);
                         });
                     }
                     setWastes(fetchedWastes.filter((w: any) => w.latitude && w.longitude));
