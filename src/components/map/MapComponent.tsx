@@ -198,15 +198,19 @@ function RadarScanner() {
     );
 }
 
-function isPointInMunicipality(lat: number, lng: number, geo: MunicipalityGeo): boolean {
+function isPointInMunicipality(lat: any, lng: any, geo: MunicipalityGeo): boolean {
     if (!geo.boundaries || geo.boundaries.length === 0) return true;
+    const nLat = Number(lat);
+    const nLng = Number(lng);
+    if (isNaN(nLat) || isNaN(nLng)) return false;
+
     const lons = geo.boundaries.map(b => b[0]);
     const lats = geo.boundaries.map(b => b[1]);
     const minLon = Math.min(...lons);
     const maxLon = Math.max(...lons);
     const minLat = Math.min(...lats);
     const maxLat = Math.max(...lats);
-    return lat >= minLat && lat <= maxLat && lng >= minLon && lng <= maxLon;
+    return nLat >= minLat && nLat <= maxLat && nLng >= minLon && nLng <= maxLon;
 }
 
 // Les coordonnées sont maintenant gérées dynamiquement par getMunicipalityGeo dans lib/geoIntelligence.ts
