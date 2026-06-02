@@ -37,7 +37,7 @@ export async function reportInfraction(data: {
         const { data: infraction, error } = await supabase
             .from('environmental_infractions')
             .insert({
-                reporter_id: user.id,
+                reported_by: user.id,
                 zone_id: data.zone_id,
                 responsible_org_id,
                 type: data.type,
