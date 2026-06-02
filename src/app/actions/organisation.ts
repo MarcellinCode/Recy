@@ -94,11 +94,28 @@ export async function getOrganizationContext() {
         .eq('organization_id', user.id);
 
     // 3. Fetch Active Concessions (Zones won)
-    const { data: concessions } = await supabase
+    const { data: concessionsRaw } = await supabase
         .from('concessions')
-        .select('*, zones(*)')
+        .select('*')
         .eq('organization_id', user.id)
         .eq('status', 'active');
+
+    let concessions = concessionsRaw || [];
+
+    if (concessions.length > 0) {
+        const zoneIds = concessions.map((c: any) => c.zone_id).filter(Boolean);
+        if (zoneIds.length > 0) {
+            const { data: zonesData } = await supabase
+                .from('zones')
+                .select('*')
+                .in('id', zoneIds);
+            
+            concessions = concessions.map((c: any) => ({
+                ...c,
+                zones: zonesData?.find((z: any) => z.id === c.zone_id) || null
+            }));
+        }
+    }
 
     return {
         success: true,

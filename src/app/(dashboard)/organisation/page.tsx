@@ -64,13 +64,23 @@ export default function OrganizationDashboard() {
         const fetchConcessionAlerts = async () => {
             try {
                 // 1. Fetch active zones
-                const { data: concessionsData } = await supabase
+                const { data: concessionsRaw } = await supabase
                     .from('concessions')
-                    .select('*, zones(*)')
+                    .select('*')
                     .eq('organization_id', profile.id)
                     .eq('status', 'active');
                 
-                const activeZones = concessionsData?.map((c: any) => c.zones).filter(Boolean) || [];
+                let activeZones: any[] = [];
+                if (concessionsRaw && concessionsRaw.length > 0) {
+                    const zoneIds = concessionsRaw.map((c: any) => c.zone_id).filter(Boolean);
+                    if (zoneIds.length > 0) {
+                        const { data: zonesData } = await supabase
+                            .from('zones')
+                            .select('*')
+                            .in('id', zoneIds);
+                        activeZones = zonesData || [];
+                    }
+                }
                 if (activeZones.length === 0) return;
 
                 // Helper to check bounding box
@@ -141,16 +151,25 @@ export default function OrganizationDashboard() {
             } else {
                 showToast("Dépôt pris en charge avec succès !", "success");
                 fetchData();
-                
-                // Refresh local concession alerts
-                const { data: concessionsData } = await supabase
-                    .from('concessions')
-                    .select('*, zones(*)')
-                    .eq('organization_id', profile.id)
-                    .eq('status', 'active');
-                
-                const activeZones = concessionsData?.map((c: any) => c.zones).filter(Boolean) || [];
-                if (activeZones.length > 0) {
+                              // Refresh local concession alerts
+                 const { data: concessionsRaw } = await supabase
+                     .from('concessions')
+                     .select('*')
+                     .eq('organization_id', profile.id)
+                     .eq('status', 'active');
+                 
+                 let activeZones: any[] = [];
+                 if (concessionsRaw && concessionsRaw.length > 0) {
+                     const zoneIds = concessionsRaw.map((c: any) => c.zone_id).filter(Boolean);
+                     if (zoneIds.length > 0) {
+                         const { data: zonesData } = await supabase
+                             .from('zones')
+                             .select('*')
+                             .in('id', zoneIds);
+                         activeZones = zonesData || [];
+                     }
+                 }
+                 if (activeZones.length > 0) {
                     const { data: wastesData } = await supabase
                         .from('wastes')
                         .select('*, waste_types(*)')

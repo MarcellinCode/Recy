@@ -46,10 +46,50 @@ export default function SubscriptionsPage() {
     async function fetchSubData() {
         setLoading(true);
         try {
-            const { data: plansData } = await supabase.from('subscription_plans').select('*, concessions(zones(name))');
+            // Fetch plans
+            const { data: plansRaw } = await supabase.from('subscription_plans').select('*');
+            
+            // Fetch concessions (all, to support both plans and active listing)
+            const { data: concessionsRaw } = await supabase.from('concessions').select('*');
+            
+            // Fetch household subscriptions
             const { data: subsData } = await supabase.from('household_subscriptions').select('*, profiles(full_name, email), subscription_plans(name, price_cfa)');
+            
+            // Fetch platform subscriptions
             const { data: platformData } = await supabase.from('platform_subscriptions').select('*, profiles(full_name, email)');
-            const { data: concData } = await supabase.from('concessions').select('*, zones(name), profiles(full_name)').eq('status', 'active');
+            
+            // Resolve zones and profiles for concessions
+            let concData: any[] = [];
+            let plansData: any[] = [];
+            
+            if (concessionsRaw && concessionsRaw.length > 0) {
+                const zoneIds = concessionsRaw.map((c: any) => c.zone_id).filter(Boolean);
+                const orgIds = concessionsRaw.map((c: any) => c.organization_id).filter(Boolean);
+                
+                const [zonesRes, profilesRes] = await Promise.all([
+                    zoneIds.length > 0 ? supabase.from('zones').select('id, name').in('id', zoneIds) : Promise.resolve({ data: [] }),
+                    orgIds.length > 0 ? supabase.from('profiles').select('id, full_name').in('id', orgIds) : Promise.resolve({ data: [] })
+                ]);
+                
+                const concessionsEnriched = concessionsRaw.map((c: any) => ({
+                    ...c,
+                    zones: zonesRes.data?.find((z: any) => z.id === c.zone_id) || null,
+                    profiles: profilesRes.data?.find((p: any) => p.id === c.organization_id) || null
+                }));
+                
+                concData = concessionsEnriched.filter((c: any) => c.status === 'active');
+                
+                if (plansRaw) {
+                    plansData = plansRaw.map((p: any) => ({
+                        ...p,
+                        concessions: concessionsEnriched.find((c: any) => c.id === p.concession_id) || null
+                    }));
+                }
+            } else {
+                if (plansRaw) {
+                    plansData = plansRaw.map((p: any) => ({ ...p, concessions: null }));
+                }
+            }
             
             setPlans(plansData || []);
             setSubscriptions(subsData || []);
