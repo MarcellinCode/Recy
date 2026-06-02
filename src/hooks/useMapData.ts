@@ -145,19 +145,19 @@ export function useMapData({
             infractionsRaw,
             trackingData,
         ] = await Promise.all([
-            safeQuery(() => supabase.from("zones").select("*"), "zones", [], queryErrors),
-            safeQuery(() => supabase.from("concessions").select("*"), "concessions", [], queryErrors),
-            safeQuery(() => supabase.from("profiles").select("id, full_name, city"), "profiles", [], queryErrors),
-            safeQuery(
+            safeQuery<any[]>(() => supabase.from("zones").select("*"), "zones", [], queryErrors),
+            safeQuery<any[]>(() => supabase.from("concessions").select("*"), "concessions", [], queryErrors),
+            safeQuery<any[]>(() => supabase.from("profiles").select("id, full_name, city"), "profiles", [], queryErrors),
+            safeQuery<any[]>(
                 () => supabase.from("wastes").select("*")
                     .in("status", ["published", "reserved"])
                     .not("latitude", "is", null)
                     .not("longitude", "is", null),
                 "wastes", [], queryErrors
             ),
-            safeQuery(() => supabase.from("waste_types").select("*"), "waste_types", [], queryErrors),
+            safeQuery<any[]>(() => supabase.from("waste_types").select("*"), "waste_types", [], queryErrors),
             (isMairie || organizationId)
-                ? safeQuery(
+                ? safeQuery<any[]>(
                     () => supabase.from("environmental_infractions").select("*")
                         .not("latitude", "is", null)
                         .not("longitude", "is", null),
@@ -166,7 +166,7 @@ export function useMapData({
                 : Promise.resolve([]),
             // agent_live_positions est la requête la plus susceptible d'échouer (RLS)
             // Elle est isolée : son échec n'empêche plus l'affichage des déchets.
-            safeQuery(
+            safeQuery<any[]>(
                 () => supabase.from("agent_live_positions").select("*")
                     .order("timestamp", { ascending: false })
                     .limit(200),
