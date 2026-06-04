@@ -22,7 +22,7 @@ if (typeof globalThis.window !== 'undefined') {
 // -------------------------------------------------------------
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.cleanzone.com"),
+  metadataBase: new URL("https://www.cleanzone.tech"),
   title: {
     default: "CleanZone - Recyclage Intelligent & Valorisation des Déchets en Afrique",
     template: "%s | CleanZone"
@@ -61,7 +61,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "CleanZone - L'Intelligence Urbaine au service du tri en Afrique",
     description: "Vendez vos déchets recyclables à Abidjan, trouvez des points de collecte et suivez votre impact écologique avec CleanZone (CityCline).",
-    url: "https://www.cleanzone.com",
+    url: "https://www.cleanzone.tech",
     siteName: "CleanZone",
     images: [
       {
@@ -108,10 +108,10 @@ export default function RootLayout({
                 "@context": "https://schema.org",
                 "@type": "WebSite",
                 "name": "CleanZone",
-                "url": "https://www.cleanzone.com",
+                "url": "https://www.cleanzone.tech",
                 "potentialAction": {
                   "@type": "SearchAction",
-                  "target": "https://www.cleanzone.com/marketplace?search={search_term_string}",
+                  "target": "https://www.cleanzone.tech/marketplace?search={search_term_string}",
                   "query-input": "required name=search_term_string"
                 }
               },
@@ -119,8 +119,8 @@ export default function RootLayout({
                 "@context": "https://schema.org",
                 "@type": "Organization",
                 "name": "CleanZone",
-                "url": "https://www.cleanzone.com",
-                "logo": "https://www.cleanzone.com/logo.png",
+                "url": "https://www.cleanzone.tech",
+                "logo": "https://www.cleanzone.tech/logo.png",
                 "description": "Plateforme d'intelligence urbaine pour la gestion et la valorisation des déchets recyclables.",
                 "sameAs": [
                   "https://twitter.com/cleanzone",
