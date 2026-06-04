@@ -201,7 +201,7 @@ export function Header() {
                 {/* Logo */}
                 <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
                     <div className={cn(
-                        "flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl group-hover:scale-105 transition-all shadow-md overflow-hidden",
+                        "flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl group-hover:scale-105 transition-all shadow-md overflow-hidden",
                         isDarkRole ? "bg-zinc-900 border border-white/10" : "bg-white"
                     )}>
                         <img src="/logo.png" alt="CleanZone Logo" className="w-full h-full object-cover" />

@@ -17,7 +17,7 @@ export function Footer() {
                     {/* Brand Section */}
                     <div className="space-y-6">
                         <Link href="/" className="flex items-center gap-4 group shrink-0">
-                            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-900 group-hover:scale-105 transition-all shadow-2xl overflow-hidden border border-white/10">
+                            <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-zinc-900 group-hover:scale-105 transition-all shadow-2xl overflow-hidden border border-white/10">
                                 <img src="/logo.png" alt="CleanZone Logo" className="w-full h-full object-cover" />
                             </div>
                             <span className="text-3xl font-black tracking-tighter uppercase italic leading-none text-white">
