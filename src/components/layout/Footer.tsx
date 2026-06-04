@@ -21,7 +21,7 @@ export function Footer() {
                                 <img src="/logo.png" alt="CleanZone Logo" className="w-full h-full object-cover" />
                             </div>
                             <span className="text-3xl font-black tracking-tighter uppercase italic leading-none text-white">
-                                CITI<span className="text-primary tracking-tighter">CLINE</span>
+                                Clean<span className="text-primary tracking-tighter">Zone</span>
                             </span>
                         </Link>
                         <p className="text-zinc-400 text-sm leading-relaxed font-medium">

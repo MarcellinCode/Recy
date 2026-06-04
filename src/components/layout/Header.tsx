@@ -210,7 +210,7 @@ export function Header() {
                         "text-xl sm:text-3xl font-black tracking-tighter uppercase italic leading-none",
                         isDarkRole ? "text-white" : "text-gray-900 dark:text-white"
                     )}>
-                        CITI<span className="text-primary tracking-tighter">CLINE</span>
+                        Clean<span className="text-primary tracking-tighter">Zone</span>
                     </span>
                 </Link>
 
