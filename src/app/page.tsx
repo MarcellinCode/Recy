@@ -17,7 +17,7 @@ export default async function Home() {
         <div className="absolute inset-0 z-0">
           <img
             src="https://www.kaweru.com/wp-content/uploads/2025/12/Cotonou.jpg"
-            alt="CITICLINE - Plateforme d'Intelligence Urbaine et Gestion des Déchets"
+            alt="CleanZone - Plateforme d'Intelligence Urbaine et Gestion des Déchets"
             className="w-full h-full object-cover scale-105 brightness-110"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/60 to-transparent"></div>
@@ -31,16 +31,16 @@ export default async function Home() {
             </div>
 
             <h1 
-              aria-label="CITICLINE - L'Intelligence Urbaine"
+              aria-label="CleanZone - L'Intelligence Urbaine"
               className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter text-white leading-none sm:leading-[0.85] uppercase italic drop-shadow-2xl"
             >
               L'Intelligence <br />
               <span className="text-primary italic">Urbaine</span> <br />
-              CITICLINE
+              CleanZone
             </h1>
 
             <p className="max-w-2xl text-lg md:text-2xl text-gray-300 font-medium leading-relaxed">
-              CITICLINE transforme la gestion des déchets en un écosystème rentable pour les citoyens, efficace pour les agents et transparent pour les municipalités.
+              CleanZone transforme la gestion des déchets en un écosystème rentable pour les citoyens, efficace pour les agents et transparent pour les municipalités.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 pt-6">
@@ -75,7 +75,7 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* --- L'ÉCOSYSTÈME CITICLINE (LES 3 PILIERS) --- */}
+      {/* --- L'ÉCOSYSTÈME CleanZone (LES 3 PILIERS) --- */}
       <section id="ecosystem" className="py-32 bg-white dark:bg-zinc-950">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-20 animate-in fade-in slide-in-from-bottom duration-1000">
@@ -186,7 +186,7 @@ export default async function Home() {
               <div className="px-6">
                 <h4 className="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-3">Encaissez vos gains</h4>
                 <p className="text-[11px] text-gray-500 font-bold uppercase tracking-[0.15em] leading-loose">
-                  Une fois la collecte validée par pesée réelle, le paiement est transféré immédiatement sur votre portefeuille numérique CITICLINE.
+                  Une fois la collecte validée par pesée réelle, le paiement est transféré immédiatement sur votre portefeuille numérique CleanZone.
                 </p>
               </div>
             </div>
@@ -208,7 +208,7 @@ export default async function Home() {
                         <span className="text-primary italic">Sans Précédent</span>
                     </h3>
                     <p className="text-gray-500 dark:text-zinc-400 font-medium leading-relaxed">
-                        CITICLINE fournit aux entreprises de collecte des outils de gestion de pointe. Optimisez chaque litre de carburant et chaque minute de vos agents sur le terrain.
+                        CleanZone fournit aux entreprises de collecte des outils de gestion de pointe. Optimisez chaque litre de carburant et chaque minute de vos agents sur le terrain.
                     </p>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

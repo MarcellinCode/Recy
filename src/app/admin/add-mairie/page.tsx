@@ -54,7 +54,7 @@ export default function AddMairiePage() {
     };
 
     if (success) {
-        const landingUrl = newMairieId ? `/mairie/${newMairieId}` : "https://citicline.com/mairie/connexion";
+        const landingUrl = newMairieId ? `/mairie/${newMairieId}` : "https://cleanzone.com/mairie/connexion";
         
         return (
             <div className="min-h-[70vh] flex flex-col items-center justify-center space-y-8 max-w-2xl mx-auto">

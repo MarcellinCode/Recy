@@ -78,7 +78,7 @@ export default function MairieConnexionPage({ params }: Readonly<{ params: Promi
                 <div className="w-full max-w-md space-y-12">
                     <div className="text-center md:text-left space-y-4">
                         <Link href={`/mairie/${id}`} className="inline-flex items-center justify-center w-16 h-16 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-2xl shadow-sm mb-6 hover:scale-105 transition-transform">
-                            <img src="/logo.png" alt="CITICLINE Logo" className="w-10 h-10 object-contain" />
+                            <img src="/logo.png" alt="CleanZone Logo" className="w-10 h-10 object-contain" />
                         </Link>
                         <h1 className="text-3xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter">
                             Connexion <br className="hidden md:block"/>Institutionnelle

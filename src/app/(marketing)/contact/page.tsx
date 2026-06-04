@@ -32,7 +32,7 @@ export default function ContactPage() {
                                 <ContactInfoItem 
                                     icon={Mail} 
                                     title="Email Direct" 
-                                    value="contact@citicline.com" 
+                                    value="contact@cleanzone.com" 
                                 />
                                 <ContactInfoItem 
                                     icon={Phone} 

@@ -141,7 +141,7 @@ export default function OrganizationsPage() {
                 </div>
                 <div className="flex flex-wrap gap-4 items-center">
                     <a 
-                        href="https://citicline.com/login"
+                        href="https://cleanzone.com/login"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-900 dark:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-primary hover:text-primary transition-all shadow-sm"

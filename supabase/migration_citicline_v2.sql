@@ -1,5 +1,5 @@
 -- =============================================
--- MIGRATION CITICLINE — Ajout des rôles manquants
+-- MIGRATION CleanZone — Ajout des rôles manquants
 -- et tables pour subscriptions et concessions
 -- =============================================
 

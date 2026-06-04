@@ -12,7 +12,7 @@ export default function AboutPage() {
                         L'Intelligence <span className="text-primary">Urbaine</span> <br /> au service de l'Afrique
                     </h2>
                     <p className="max-w-3xl mx-auto text-lg text-gray-500 dark:text-zinc-400 font-medium leading-relaxed">
-                        CITICLINE est née d'une vision simple : transformer le défi des déchets en une opportunité économique et technologique pour les cités africaines de demain.
+                        CleanZone est née d'une vision simple : transformer le défi des déchets en une opportunité économique et technologique pour les cités africaines de demain.
                     </p>
                 </div>
             </section>

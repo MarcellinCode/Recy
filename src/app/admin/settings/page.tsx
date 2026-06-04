@@ -94,7 +94,7 @@ export default function SettingsPage() {
                     <h1 className="text-3xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-1">
                         Configuration <span className="text-primary tracking-tighter">Système</span>
                     </h1>
-                    <p className="text-gray-500 text-xs font-bold uppercase tracking-widest leading-relaxed">Paramètres globaux de l'économie circulaire CITICLINE</p>
+                    <p className="text-gray-500 text-xs font-bold uppercase tracking-widest leading-relaxed">Paramètres globaux de l'économie circulaire CleanZone</p>
                 </div>
                 <button 
                     onClick={fetchWasteTypes}

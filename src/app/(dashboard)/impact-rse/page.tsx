@@ -83,7 +83,7 @@ export default function ImpactRSEPage() {
                     Votre Bilan <span className="text-emerald-500 italic">Écologique</span>
                 </h1>
                 <p className="max-w-2xl text-zinc-500 text-sm font-medium leading-relaxed">
-                    Visualisez en temps réel l'impact positif de votre organisation sur l'environnement et la communauté grâce à la traçabilité CITICLINE.
+                    Visualisez en temps réel l'impact positif de votre organisation sur l'environnement et la communauté grâce à la traçabilité CleanZone.
                 </p>
             </header>
 
@@ -152,7 +152,7 @@ export default function ImpactRSEPage() {
                         <Leaf className="w-12 h-12 text-emerald-500 mb-6" />
                         <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-4 leading-tight">Générer votre <br/> Certificat d'Impact</h3>
                         <p className="text-xs text-zinc-400 font-medium leading-relaxed uppercase tracking-wider mb-8">
-                            Téléchargez un rapport officiel certifié par la blockchain CITICLINE pour votre communication RSE.
+                            Téléchargez un rapport officiel certifié par la blockchain CleanZone pour votre communication RSE.
                         </p>
                     </div>
 

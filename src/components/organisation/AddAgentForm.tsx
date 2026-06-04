@@ -274,7 +274,7 @@ export function AddAgentForm({ isOpen, onClose, onSuccess, vehicles, concessions
                                     </div>
                                     <h3 className="font-black italic uppercase tracking-tighter text-lg mb-2">Code d'accès mobile</h3>
                                     <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest max-w-[250px] mx-auto">
-                                        Ce code temporaire permettra à l'agent de se connecter sur l'application terrain Citicline Operations.
+                                        Ce code temporaire permettra à l'agent de se connecter sur l'application terrain CleanZone Operations.
                                     </p>
                                 </div>
 

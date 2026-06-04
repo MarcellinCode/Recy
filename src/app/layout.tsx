@@ -22,12 +22,12 @@ if (typeof globalThis.window !== 'undefined') {
 // -------------------------------------------------------------
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.citicline.com"),
+  metadataBase: new URL("https://www.cleanzone.com"),
   title: {
-    default: "CITICLINE - Recyclage Intelligent & Valorisation des Déchets en Afrique",
-    template: "%s | CITICLINE"
+    default: "CleanZone - Recyclage Intelligent & Valorisation des Déchets en Afrique",
+    template: "%s | CleanZone"
   },
-  description: "CITICLINE (CityCline, CityClean) est la plateforme leader en Côte d'Ivoire pour transformer vos déchets en ressources. Marketplace de collecte, suivi d'impact écologique à Abidjan et partout en Afrique. Gagnez de l'argent en recyclant.",
+  description: "CleanZone (CityCline, CityClean) est la plateforme leader en Côte d'Ivoire pour transformer vos déchets en ressources. Marketplace de collecte, suivi d'impact écologique à Abidjan et partout en Afrique. Gagnez de l'argent en recyclant.",
   manifest: "/manifest.json",
   alternates: {
     canonical: '/',
@@ -44,8 +44,8 @@ export const metadata: Metadata = {
     },
   },
   keywords: [
-    "CITICLINE", 
-    "Citicline", 
+    "CleanZone", 
+    "CleanZone", 
     "CityCline", 
     "City Cline", 
     "CityClean", 
@@ -57,18 +57,18 @@ export const metadata: Metadata = {
     "valorisation déchets",
     "gagner argent recyclage"
   ],
-  authors: [{ name: "CITICLINE Team" }],
+  authors: [{ name: "CleanZone Team" }],
   openGraph: {
-    title: "CITICLINE - L'Intelligence Urbaine au service du tri en Afrique",
-    description: "Vendez vos déchets recyclables à Abidjan, trouvez des points de collecte et suivez votre impact écologique avec CITICLINE (CityCline).",
-    url: "https://www.citicline.com",
-    siteName: "CITICLINE",
+    title: "CleanZone - L'Intelligence Urbaine au service du tri en Afrique",
+    description: "Vendez vos déchets recyclables à Abidjan, trouvez des points de collecte et suivez votre impact écologique avec CleanZone (CityCline).",
+    url: "https://www.cleanzone.com",
+    siteName: "CleanZone",
     images: [
       {
         url: "/logo.png",
         width: 1200,
         height: 630,
-        alt: "CITICLINE - Intelligence Urbaine",
+        alt: "CleanZone - Intelligence Urbaine",
       },
     ],
     locale: "fr_FR",
@@ -76,7 +76,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "CITICLINE (CityCline) - Valorisez vos déchets en Côte d'Ivoire",
+    title: "CleanZone (CityCline) - Valorisez vos déchets en Côte d'Ivoire",
     description: "La plateforme citoyenne pour un monde plus propre et plus rentable en Afrique de l'Ouest.",
     images: ["/logo.png"],
   },
@@ -107,24 +107,24 @@ export default function RootLayout({
               {
                 "@context": "https://schema.org",
                 "@type": "WebSite",
-                "name": "CITICLINE",
-                "url": "https://www.citicline.com",
+                "name": "CleanZone",
+                "url": "https://www.cleanzone.com",
                 "potentialAction": {
                   "@type": "SearchAction",
-                  "target": "https://www.citicline.com/marketplace?search={search_term_string}",
+                  "target": "https://www.cleanzone.com/marketplace?search={search_term_string}",
                   "query-input": "required name=search_term_string"
                 }
               },
               {
                 "@context": "https://schema.org",
                 "@type": "Organization",
-                "name": "CITICLINE",
-                "url": "https://www.citicline.com",
-                "logo": "https://www.citicline.com/logo.png",
+                "name": "CleanZone",
+                "url": "https://www.cleanzone.com",
+                "logo": "https://www.cleanzone.com/logo.png",
                 "description": "Plateforme d'intelligence urbaine pour la gestion et la valorisation des déchets recyclables.",
                 "sameAs": [
-                  "https://twitter.com/citicline",
-                  "https://linkedin.com/company/citicline"
+                  "https://twitter.com/cleanzone",
+                  "https://linkedin.com/company/cleanzone"
                 ]
               }
             ])

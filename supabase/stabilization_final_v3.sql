@@ -1,5 +1,5 @@
 -- =============================================
--- STABILIZATION FINAL V3 — CITICLINE SYNC
+-- STABILIZATION FINAL V3 — CleanZone SYNC
 -- =============================================
 
 -- 1. Table SIGNALEMENTS URGENTS (Police Verte)

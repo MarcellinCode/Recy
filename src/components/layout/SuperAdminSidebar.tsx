@@ -69,7 +69,7 @@ export function SuperAdminSidebar() {
                                 <h1 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tight italic">
                                     SUPER <span className="text-primary italic">ADMIN</span>
                                 </h1>
-                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">CITICLINE Global HQ</p>
+                                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">CleanZone Global HQ</p>
                             </div>
                         </Link>
                     </div>

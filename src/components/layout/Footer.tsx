@@ -18,7 +18,7 @@ export function Footer() {
                     <div className="space-y-6">
                         <Link href="/" className="flex items-center gap-4 group shrink-0">
                             <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-900 group-hover:scale-105 transition-all shadow-2xl overflow-hidden border border-white/10">
-                                <img src="/logo.png" alt="CITICLINE Logo" className="w-full h-full object-cover" />
+                                <img src="/logo.png" alt="CleanZone Logo" className="w-full h-full object-cover" />
                             </div>
                             <span className="text-3xl font-black tracking-tighter uppercase italic leading-none text-white">
                                 CITI<span className="text-primary tracking-tighter">CLINE</span>
@@ -69,7 +69,7 @@ export function Footer() {
                 {/* Bottom Bar */}
                 <div className="pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
                     <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">
-                        © {currentYear} CITICLINE. Tous droits réservés.
+                        © {currentYear} CleanZone. Tous droits réservés.
                     </p>
                     <div className="flex items-center gap-8">
                         <div className="flex items-center gap-2 text-zinc-500">
@@ -78,7 +78,7 @@ export function Footer() {
                         </div>
                         <div className="flex items-center gap-2 text-zinc-500">
                              <Mail className="w-3 h-3" />
-                             <span className="text-[10px] uppercase font-bold tracking-widest">contact@citicline.com</span>
+                             <span className="text-[10px] uppercase font-bold tracking-widest">contact@cleanzone.com</span>
                         </div>
                     </div>
                 </div>

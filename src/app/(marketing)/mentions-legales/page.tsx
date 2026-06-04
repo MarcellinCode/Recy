@@ -21,7 +21,7 @@ export default function MentionsLegalesPage() {
                         
                         <Section 
                             title="1. Éditeur de la Plateforme"
-                            content="La plateforme AfriCleaner (anciennement CITICLINE) est éditée par la société AfriCleaner SAS, société par actions simplifiée au capital de 5 000 000 FCFA, immatriculée au Registre du Commerce et du Crédit Mobilier (RCCM) de Côte d'Ivoire. Siège social : Cocody, Abidjan, Côte d'Ivoire."
+                            content="La plateforme AfriCleaner (anciennement CleanZone) est éditée par la société AfriCleaner SAS, société par actions simplifiée au capital de 5 000 000 FCFA, immatriculée au Registre du Commerce et du Crédit Mobilier (RCCM) de Côte d'Ivoire. Siège social : Cocody, Abidjan, Côte d'Ivoire."
                         />
 
                         <Section 

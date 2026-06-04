@@ -128,7 +128,7 @@ export default function FleetPage() {
                                     GESTION <span className="text-emerald-500 drop-shadow-[0_0_15px_rgba(16,185,129,0.15)]">FLOTTE</span>
                                 </h1>
                                 <p className="text-[10px] font-black text-zinc-500 uppercase tracking-[0.3em] mt-2">
-                                    Surveillance technique & Télémesure Citicline
+                                    Surveillance technique & Télémesure CleanZone
                                 </p>
                             </div>
                         </div>

@@ -1,5 +1,5 @@
 /**
- * Service de Géo-intelligence dynamique CITICLINE.
+ * Service de Géo-intelligence dynamique CleanZone.
  * Utilise l'API Nominatim d'OpenStreetMap pour obtenir les frontières réelles.
  */
 
@@ -21,7 +21,7 @@ export async function fetchCommuneData(cityName: string) {
 
         const response = await fetch(url, {
             headers: {
-                'User-Agent': 'Citicline-App/1.0',
+                'User-Agent': 'CleanZone-App/1.0',
                 'Accept-Language': 'fr'
             },
             next: { revalidate: 86400 } // Cache d'un jour

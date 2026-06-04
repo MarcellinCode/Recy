@@ -67,7 +67,7 @@ export default function PrivacyPage() {
                                 <div className="space-y-2">
                                     <h4 className="text-xl font-black uppercase italic tracking-tighter">Sécurité Maximale</h4>
                                     <p className="text-zinc-400 text-sm font-medium">
-                                        Nous utilisons des protocoles de chiffrement de pointe (SSL/TLS) pour protéger toutes vos communications et transactions financières sur CITICLINE.
+                                        Nous utilisons des protocoles de chiffrement de pointe (SSL/TLS) pour protéger toutes vos communications et transactions financières sur CleanZone.
                                     </p>
                                 </div>
                             </div>

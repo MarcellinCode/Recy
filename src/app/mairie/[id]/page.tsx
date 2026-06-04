@@ -69,7 +69,7 @@ export default async function MairieLandingPage({ params }: Readonly<PageProps>)
                     </div>
 
                     <p className="max-w-3xl text-lg md:text-xl text-gray-400 font-bold uppercase tracking-widest leading-loose mb-12">
-                        La ville s'engage pour un environnement plus sain, plus vert et plus durable avec CITICLINE. Rejoignez le mouvement citoyen.
+                        La ville s'engage pour un environnement plus sain, plus vert et plus durable avec CleanZone. Rejoignez le mouvement citoyen.
                     </p>
 
                     <div className="flex flex-col sm:flex-row gap-6">
@@ -128,7 +128,7 @@ export default async function MairieLandingPage({ params }: Readonly<PageProps>)
                             <ShieldCheck className="w-12 h-12 text-primary mb-8" />
                             <h4 className="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-4">Collecte Domiciliaire</h4>
                             <p className="text-xs text-gray-500 font-bold uppercase tracking-widest leading-loose">
-                                Programme officiel d'enlèvement des ordures ménagères. Abonnez-vous via Citicline pour une gestion sans faille et certifiée par votre mairie.
+                                Programme officiel d'enlèvement des ordures ménagères. Abonnez-vous via CleanZone pour une gestion sans faille et certifiée par votre mairie.
                             </p>
                         </div>
                         <div className="p-12 bg-white dark:bg-zinc-950 rounded-[3rem] border border-gray-100 dark:border-zinc-800 shadow-xl shadow-gray-100/50 dark:shadow-none transition-all hover:border-emerald-500/50">

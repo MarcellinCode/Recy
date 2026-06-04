@@ -159,13 +159,13 @@ function SignupForm() {
             <div className="w-full max-w-md p-8 bg-white rounded-3xl shadow-xl shadow-gray-100 dark:bg-zinc-900 dark:shadow-none border border-gray-100 dark:border-zinc-800">
                 <div className="flex flex-col items-center mb-8">
                     <div className="flex items-center justify-center w-14 h-14 mb-4 rounded-2xl bg-white border border-gray-100 dark:bg-zinc-900 dark:border-zinc-800 shadow-md overflow-hidden shrink-0">
-                        <img src="/logo.png" alt="CITICLINE Logo" className="w-full h-full object-cover" />
+                        <img src="/logo.png" alt="CleanZone Logo" className="w-full h-full object-cover" />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                         {step === 1 ? "Créer un compte" : step === 2 ? "Informations Profil" : "Compte de Connexion"}
                     </h2>
                     <p className="mt-2 text-sm text-center text-gray-500 dark:text-gray-400">
-                        {step === 1 ? "Rejoignez l'aventure CITICLINE" : "Presque terminé !"}
+                        {step === 1 ? "Rejoignez l'aventure CleanZone" : "Presque terminé !"}
                     </p>
                 </div>
 

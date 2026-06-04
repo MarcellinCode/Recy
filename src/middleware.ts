@@ -7,10 +7,10 @@ export async function middleware(request: NextRequest) {
     const protocol = request.headers.get("x-forwarded-proto") || "http"
     const isLocal = host.includes("localhost") || host.includes("127.0.0.1")
 
-    // 🔥 Force Canonical URL: https://www.citicline.com
-    if (!isLocal && (host === "citicline.com" || protocol === "http")) {
+    // 🔥 Force Canonical URL: https://www.cleanzone.com
+    if (!isLocal && (host === "cleanzone.com" || protocol === "http")) {
         return NextResponse.redirect(
-            `https://www.citicline.com${pathname}${request.nextUrl.search}`,
+            `https://www.cleanzone.com${pathname}${request.nextUrl.search}`,
             301
         )
     }

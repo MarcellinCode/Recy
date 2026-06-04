@@ -1,7 +1,7 @@
 {
-  "name": "CITICLINE - Valorisez vos déchets recyclables",
-  "short_name": "CITICLINE",
-  "description": "CITICLINE : L'intelligence urbaine pour transformer vos déchets en ressources et revenus réels.",
+  "name": "CleanZone - Valorisez vos déchets recyclables",
+  "short_name": "CleanZone",
+  "description": "CleanZone : L'intelligence urbaine pour transformer vos déchets en ressources et revenus réels.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

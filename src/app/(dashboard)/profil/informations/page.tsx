@@ -109,7 +109,7 @@ export default function ProfileInfosPage() {
                     Mes <span className="text-primary">Informations</span>
                 </h1>
                 <p className="text-gray-500 font-bold text-[10px] uppercase tracking-widest pl-14">
-                    Gérez votre identité numérique CITICLINE
+                    Gérez votre identité numérique CleanZone
                 </p>
             </div>
 

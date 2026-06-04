@@ -93,7 +93,7 @@ export default function FinancePage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                     { label: "Volume Total (Brut)", value: stats.totalRevenue.toLocaleString(), icon: Banknote, color: "text-blue-500", trend: "+12%", up: true },
-                    { label: "Commissions CITICLINE", value: stats.commissions.toLocaleString(), icon: TrendingUp, color: "text-primary", trend: "+8%", up: true },
+                    { label: "Commissions CleanZone", value: stats.commissions.toLocaleString(), icon: TrendingUp, color: "text-primary", trend: "+8%", up: true },
                     { label: "Paiements en Attente", value: stats.pendingPayouts.toString(), icon: History, color: "text-amber-500", trend: `${stats.pendingPayouts} Dossiers`, up: null },
                 ].map((stat, i) => (
                     <motion.div 

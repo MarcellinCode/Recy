@@ -254,7 +254,7 @@ export default function DashboardPage() {
 
     let welcomeSubText = "Prêt pour votre prochaine action écologique ?";
     if (activeSub?.plan?.name?.toLowerCase().includes('usine')) {
-        welcomeSubText = "Tableau de bord industriel Citicline";
+        welcomeSubText = "Tableau de bord industriel CleanZone";
     } else if (activeSub?.plan?.name?.toLowerCase().includes('entreprise')) {
         welcomeSubText = "Espace de gestion entreprise";
     }
@@ -270,7 +270,7 @@ export default function DashboardPage() {
             >
                 <div className="flex items-center gap-2 mb-2">
                     <span className="w-8 h-[2px] bg-primary"></span>
-                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary italic">CITICLINE Central Hub</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary italic">CleanZone Central Hub</p>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
                     <div>

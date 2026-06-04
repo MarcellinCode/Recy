@@ -1,4 +1,4 @@
--- Citicline B2B Infrastructure Upgrade
+-- CleanZone B2B Infrastructure Upgrade
 -- Target: Extend profiles to support organization hierarchy and agent siloing
 
 -- 1. Update roles constraint to include organization_admin and agent_collecteur

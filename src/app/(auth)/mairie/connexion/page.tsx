@@ -146,7 +146,7 @@ function MairieLoginForm() {
                 </div>
 
                 <div className="mt-12 text-center text-xs text-zinc-600 font-medium">
-                    <p>&copy; {new Date().getFullYear()} Citicline City O.S. &mdash; Module Gouvernemental</p>
+                    <p>&copy; {new Date().getFullYear()} CleanZone City O.S. &mdash; Module Gouvernemental</p>
                 </div>
             </div>
         </div>

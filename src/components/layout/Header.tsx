@@ -204,7 +204,7 @@ export function Header() {
                         "flex items-center justify-center w-10 h-10 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl group-hover:scale-105 transition-all shadow-md overflow-hidden",
                         isDarkRole ? "bg-zinc-900 border border-white/10" : "bg-white"
                     )}>
-                        <img src="/logo.png" alt="CITICLINE Logo" className="w-full h-full object-cover" />
+                        <img src="/logo.png" alt="CleanZone Logo" className="w-full h-full object-cover" />
                     </div>
                     <span className={cn(
                         "text-xl sm:text-3xl font-black tracking-tighter uppercase italic leading-none",

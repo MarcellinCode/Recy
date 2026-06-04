@@ -22,7 +22,7 @@
 import { createClient } from "@/lib/supabase-server";
 
 export interface FiscalConfig {
-    commissionRate: number;   // ex: 0.10 = 10% CITICLINE
+    commissionRate: number;   // ex: 0.10 = 10% CleanZone
     ecoTaxRate:     number;   // ex: 0.02 = 2% Mairie
 }
 

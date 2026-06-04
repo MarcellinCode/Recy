@@ -19,6 +19,6 @@ export default function robots(): MetadataRoute.Robots {
         '/profil'
       ],
     },
-    sitemap: 'https://www.citicline.com/sitemap.xml',
+    sitemap: 'https://www.cleanzone.com/sitemap.xml',
   }
 }

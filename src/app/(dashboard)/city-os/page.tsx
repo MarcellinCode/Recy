@@ -1643,7 +1643,7 @@ function MairieDashboardContent() {
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label htmlFor="agentEmail" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Email Professionnel</label>
-                            <input id="agentEmail" type="email" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900 placeholder:text-zinc-300 focus:border-emerald-500/50 transition-all" value={newAgent.email} onChange={(e) => setNewAgent({...newAgent, email: e.target.value})} placeholder="nom@citicline.com" />
+                            <input id="agentEmail" type="email" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black outline-none text-zinc-900 placeholder:text-zinc-300 focus:border-emerald-500/50 transition-all" value={newAgent.email} onChange={(e) => setNewAgent({...newAgent, email: e.target.value})} placeholder="nom@cleanzone.com" />
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="agentPass" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Mot de Passe Initial</label>
@@ -1685,7 +1685,7 @@ function MairieDashboardContent() {
 
                         <div className="space-y-6">
                             <div className="space-y-2">
-                                <label htmlFor="commission-rate" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Commission CITICLINE (%)</label>
+                                <label htmlFor="commission-rate" className="text-[10px] font-black text-zinc-500 uppercase tracking-widest ml-4">Commission CleanZone (%)</label>
                                 <input 
                                     id="commission-rate"
                                     type="number" 

@@ -21,27 +21,27 @@ export default function ConditionsPage() {
                         
                         <Section 
                             title="1. Objet de la plateforme"
-                            content="CITICLINE est une plateforme technologique facilitant la gestion des déchets recyclables. Elle connecte les citoyens, les mairies et les entreprises de collecte. L'utilisation du site implique l'acceptation intégrale des présentes conditions."
+                            content="CleanZone est une plateforme technologique facilitant la gestion des déchets recyclables. Elle connecte les citoyens, les mairies et les entreprises de collecte. L'utilisation du site implique l'acceptation intégrale des présentes conditions."
                         />
 
                         <Section 
                             title="2. Comptes et Inscription"
-                            content="L'accès à certaines fonctionnalités (Marketplace, Wallet) nécessite la création d'un compte. Vous êtes responsable de la confidentialité de vos identifiants. CITICLINE se réserve le droit de suspendre tout compte ne respectant pas les règles de salubrité urbaine."
+                            content="L'accès à certaines fonctionnalités (Marketplace, Wallet) nécessite la création d'un compte. Vous êtes responsable de la confidentialité de vos identifiants. CleanZone se réserve le droit de suspendre tout compte ne respectant pas les règles de salubrité urbaine."
                         />
 
                         <Section 
                             title="3. Marketplace et Transactions"
-                            content="Les prix des déchets sont fixés par le marché ou par accord mutuel entre l'acheteur et le vendeur. CITICLINE agit en tant qu'intermédiaire technique et n'est pas responsable de la qualité réelle des déchets échangés."
+                            content="Les prix des déchets sont fixés par le marché ou par accord mutuel entre l'acheteur et le vendeur. CleanZone agit en tant qu'intermédiaire technique et n'est pas responsable de la qualité réelle des déchets échangés."
                         />
 
                         <Section 
                             title="4. Système de Wallet"
-                            content="Le Wallet CITICLINE permet de stocker des crédits virtuels issus de la valorisation de vos déchets. Ces crédits sont convertibles selon les modalités en vigueur. Toute tentative de fraude sur le poids ou la nature des déchets entraînera le blocage définitif du Wallet."
+                            content="Le Wallet CleanZone permet de stocker des crédits virtuels issus de la valorisation de vos déchets. Ces crédits sont convertibles selon les modalités en vigueur. Toute tentative de fraude sur le poids ou la nature des déchets entraînera le blocage définitif du Wallet."
                         />
 
                         <Section 
                             title="5. Responsabilité"
-                            content="CITICLINE ne peut être tenue responsable des dommages indirects liés à l'utilisation de la plateforme. La manipulation des déchets reste sous la responsabilité exclusive de l'utilisateur."
+                            content="CleanZone ne peut être tenue responsable des dommages indirects liés à l'utilisation de la plateforme. La manipulation des déchets reste sous la responsabilité exclusive de l'utilisateur."
                         />
 
                         <div className="p-8 bg-primary/5 border border-primary/20 rounded-3xl space-y-4">
@@ -50,7 +50,7 @@ export default function ConditionsPage() {
                                 Important
                             </div>
                             <p className="text-sm text-gray-600 dark:text-zinc-400 font-medium leading-loose">
-                                Pour toute question juridique ou litige relatif à une transaction, veuillez contacter notre département juridique à l'adresse suivante : <span className="text-primary font-bold">legal@citicline.com</span>.
+                                Pour toute question juridique ou litige relatif à une transaction, veuillez contacter notre département juridique à l'adresse suivante : <span className="text-primary font-bold">legal@cleanzone.com</span>.
                             </p>
                         </div>
 

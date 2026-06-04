@@ -1,5 +1,5 @@
 /**
- * Référentiel géographique pour l'intelligence automatique du territoire CITICLINE.
+ * Référentiel géographique pour l'intelligence automatique du territoire CleanZone.
  * Contient les centres et polygones simplifiés pour toute la Côte d'Ivoire.
  */
 

@@ -1,4 +1,4 @@
--- Tenders & Sovereignty Simulation Schema for Citicline
+-- Tenders & Sovereignty Simulation Schema for CleanZone
 
 -- 1. Appels d'Offres (Tenders)
 CREATE TABLE IF NOT EXISTS public.tenders (
