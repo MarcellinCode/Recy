@@ -241,7 +241,7 @@ export default function OrganizationDashboard() {
             if (concessions.length > 0) {
                 const { data: subsData } = await supabase
                     .from('household_subscriptions')
-                    .select('*, profiles(*), subscription_plans(*, concessions(*))')
+                    .select('*, profiles(*), subscription_plans!inner(*, concessions(*))')
                     .in('subscription_plans.concession_id', concessions.map((c: any) => c.id));
                 setSubscriptions(subsData || []);
             }
@@ -604,9 +604,24 @@ export default function OrganizationDashboard() {
                                 <h2 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white">Portefeuille Clients</h2>
                                 <div className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] p-8 space-y-8 shadow-sm">
                                     <div className="space-y-4">
-                                        <PlanSummary name="Foyer (Société)" count={0} price="2,000" color="bg-emerald-500" />
-                                        <PlanSummary name="Entreprise" count={0} price="6,000" color="bg-blue-500" />
-                                        <PlanSummary name="Industrie" count={0} price="15,000" color="bg-amber-500" />
+                                        <PlanSummary 
+                                            name="Foyer" 
+                                            count={subscriptions.filter((s: any) => s.subscription_plans?.name?.toLowerCase().includes('foyer')).length} 
+                                            price="1,000" 
+                                            color="bg-emerald-500" 
+                                        />
+                                        <PlanSummary 
+                                            name="Entreprise" 
+                                            count={subscriptions.filter((s: any) => s.subscription_plans?.name?.toLowerCase().includes('entreprise')).length} 
+                                            price="6,000" 
+                                            color="bg-blue-500" 
+                                        />
+                                        <PlanSummary 
+                                            name="Industrie / Usine" 
+                                            count={subscriptions.filter((s: any) => s.subscription_plans?.name?.toLowerCase().includes('usine') || s.subscription_plans?.name?.toLowerCase().includes('industrie')).length} 
+                                            price="20,000" 
+                                            color="bg-amber-500" 
+                                        />
                                     </div>
                                     <button onClick={() => showToast("Configuration des tarifs de zone en cours de développement", "success")} className="w-full py-4 border-2 border-zinc-900 dark:border-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-zinc-900 hover:text-white transition-all">Gérer les Tarifs Zone</button>
                                 </div>
@@ -616,41 +631,96 @@ export default function OrganizationDashboard() {
                 )}
 
                 {activeTab === 'concessions' && (
-                    <motion.div 
-                        key="concessions"
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                    >
-                        {concessions.map((con) => (
-                            <div key={con.id} className="bg-white dark:bg-zinc-900 p-8 rounded-[3rem] border border-gray-100 dark:border-zinc-800 shadow-xl">
-                                <div className="flex justify-between items-start mb-6">
-                                    <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[8px] font-black uppercase rounded-full">Zone active</span>
-                                    <MapPin size={16} className="text-zinc-300" />
-                                </div>
-                                <h3 className="text-xl font-black uppercase italic tracking-tighter mb-2">{con.zones?.name}</h3>
-                                <p className="text-[10px] text-zinc-400 font-bold uppercase mb-6">{con.zones?.city}</p>
-                                <div className="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-2xl space-y-3">
-                                    <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest">
-                                        <span className="text-zinc-400">Total Abonnés</span>
-                                        <span className="text-zinc-900 dark:text-white">42 Ménages</span>
+                    <div className="space-y-12">
+                        <motion.div 
+                            key="concessions"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                        >
+                            {concessions.map((con) => {
+                                const concessionSubs = subscriptions.filter((s: any) => s.subscription_plans?.concession_id === con.id);
+                                const totalRevenue = concessionSubs.reduce((acc: number, s: any) => acc + (s.subscription_plans?.price_cfa || s.subscription_plans?.price || 0), 0);
+                                return (
+                                    <div key={con.id} className="bg-white dark:bg-zinc-900 p-8 rounded-[3rem] border border-gray-100 dark:border-zinc-800 shadow-xl">
+                                        <div className="flex justify-between items-start mb-6">
+                                            <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-[8px] font-black uppercase rounded-full">Zone active</span>
+                                            <MapPin size={16} className="text-zinc-300" />
+                                        </div>
+                                        <h3 className="text-xl font-black uppercase italic tracking-tighter mb-2">{con.zones?.name}</h3>
+                                        <p className="text-[10px] text-zinc-400 font-bold uppercase mb-6">{con.zones?.city}</p>
+                                        <div className="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-2xl space-y-3">
+                                            <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest">
+                                                <span className="text-zinc-400">Total Abonnés</span>
+                                                <span className="text-zinc-900 dark:text-white">{concessionSubs.length} Ménages</span>
+                                            </div>
+                                            <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest">
+                                                <span className="text-zinc-400">Revenus Mensuels</span>
+                                                <span className="text-emerald-500">{totalRevenue.toLocaleString()} CFA</span>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div className="flex justify-between items-center text-[9px] font-black uppercase tracking-widest">
-                                        <span className="text-zinc-400">Revenus Mensuels</span>
-                                        <span className="text-emerald-500">315,000 CFA</span>
+                                );
+                            })}
+                            {concessions.length === 0 && (
+                                <div className="col-span-full py-20 text-center bg-gray-50 dark:bg-zinc-900 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-zinc-800">
+                                    <MapPin size={32} className="mx-auto mb-4 text-zinc-300" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Aucune concession territoriale active</p>
+                                    <button onClick={() => setActiveTab('opportunities')} className="mt-4 text-[10px] font-black text-primary underline">Explorer les opportunités</button>
+                                </div>
+                            )}
+                        </motion.div>
+
+                        {concessions.length > 0 && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-white dark:bg-zinc-900 p-8 sm:p-12 rounded-[3.5rem] border border-gray-100 dark:border-zinc-800 shadow-xl"
+                            >
+                                <div className="flex items-center justify-between mb-8">
+                                    <div>
+                                        <h3 className="text-2xl font-black uppercase italic tracking-tighter dark:text-white">Registre des Abonnés</h3>
+                                        <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mt-1">Liste des citoyens abonnés à vos services de collecte</p>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
-                        {concessions.length === 0 && (
-                            <div className="col-span-full py-20 text-center bg-gray-50 dark:bg-zinc-900 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-zinc-800">
-                                <MapPin size={32} className="mx-auto mb-4 text-zinc-300" />
-                                <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Aucune concession territoriale active</p>
-                                <button onClick={() => setActiveTab('opportunities')} className="mt-4 text-[10px] font-black text-primary underline">Explorer les opportunités</button>
-                            </div>
+                                {subscriptions.length === 0 ? (
+                                    <div className="py-12 text-center text-zinc-455">
+                                        <p className="text-[10px] font-black uppercase tracking-widest">Aucun abonné enregistré dans vos concessions</p>
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto no-scrollbar">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead>
+                                                <tr className="border-b border-gray-100 dark:border-zinc-800 text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                                                    <th className="pb-4 pr-4">Abonné</th>
+                                                    <th className="pb-4 pr-4">Plan souscrit</th>
+                                                    <th className="pb-4 pr-4">Revenu mensuel</th>
+                                                    <th className="pb-4 pr-4">Contact</th>
+                                                    <th className="pb-4 text-right">Statut</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {subscriptions.map((sub: any) => (
+                                                    <tr key={sub.id} className="border-b border-gray-50 dark:border-zinc-800/50 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                                        <td className="py-4 pr-4 font-black uppercase italic dark:text-white">{sub.profiles?.full_name || 'Citoyen'}</td>
+                                                        <td className="py-4 pr-4">{sub.subscription_plans?.name || 'Abonnement'}</td>
+                                                        <td className="py-4 pr-4 text-emerald-500 font-bold">{(sub.subscription_plans?.price_cfa || sub.subscription_plans?.price || 0).toLocaleString()} CFA</td>
+                                                        <td className="py-4 pr-4">{sub.profiles?.phone || 'Non renseigné'}</td>
+                                                        <td className="py-4 text-right">
+                                                            <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-700 font-black uppercase text-[8px] rounded-lg tracking-widest">
+                                                                {sub.status || 'actif'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </motion.div>
                         )}
-                    </motion.div>
+                    </div>
                 )}
 
                 {activeTab === 'opportunities' && (
