@@ -52,27 +52,27 @@ export default function DashboardPage() {
     useEffect(() => {
         let isMounted = true;
 
-        // Coupe-circuit absolu : désactive le loader de force après 6 secondes quoi qu'il arrive
+        // Coupe-circuit absolu : désactive le loader de force après 18 secondes quoi qu'il arrive
         const safetyTimeout = setTimeout(() => {
             if (isMounted) {
                 console.warn("Safety timeout triggered: forcing loader off.");
                 setLoading(false);
             }
-        }, 6000);
+        }, 18000);
 
         const fetchStats = async () => {
             try {
                 let session = null;
                 try {
                     const sessionPromise = supabase.auth.getSession();
-                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 4000));
+                    const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 15000));
                     const res = await Promise.race([sessionPromise, timeoutPromise]) as any;
                     session = res?.data?.session;
                 } catch (e) {
                     console.warn("Dashboard Auth session fetch timed out, attempting direct user check:", e);
                     try {
                         const userPromise = supabase.auth.getUser();
-                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000));
+                        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 12000));
                         const res = await Promise.race([userPromise, timeoutPromise]) as any;
                         if (res?.data?.user) {
                             session = { user: res.data.user } as any;

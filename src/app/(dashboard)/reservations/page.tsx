@@ -93,7 +93,7 @@ export default function ReservationsPage() {
     useEffect(() => {
         const fetchReservations = async () => {
             try {
-                const timeoutPromise = rejectAfter(5000, "Timeout Auth");
+                const timeoutPromise = rejectAfter(15000, "Timeout Auth");
                 
                 const { data: { user } } = await Promise.race([
                     supabase.auth.getUser(),

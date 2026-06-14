@@ -39,9 +39,9 @@ export default function FleetPage() {
     const fetchFleet = async () => {
         setLoading(true);
         try {
-            // Timeout de 5s pour l'auth
+            // Timeout de 15s pour l'auth
             const sessionPromise = supabase.auth.getSession();
-            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 5000));
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 15000));
             
             const { data: { session } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
             const user = session?.user;
