@@ -192,6 +192,11 @@ function WasteDetailsContent({ id }: { id: string }) {
             return;
         }
 
+        if (userTier === 'free' && reservationCount >= 3) {
+            showToast("Quota atteint (3/3). Passez à l'abonnement Marketplace Pro (5000F).", "error");
+            return;
+        }
+
         setIsReserving(true);
         const success = await reserve(currentUser.id);
         

@@ -111,10 +111,13 @@ export default function OrganizationDashboard() {
                     .not('latitude', 'is', null)
                     .not('longitude', 'is', null);
 
+                const zoneIds = activeZones.map((z: any) => z.id);
+
                 // 3. Fetch infractions
                 const { data: infractionsData } = await supabase
                     .from('environmental_infractions')
                     .select('*')
+                    .in('zone_id', zoneIds)
                     .not('latitude', 'is', null)
                     .not('longitude', 'is', null);
 

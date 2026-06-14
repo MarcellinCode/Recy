@@ -116,6 +116,17 @@ async function fetchRawMairieData(
         zonesQuery = zonesQuery.eq('organization_id', mairieId);
     }
 
+    let wastesQuery = supabase.from('wastes').select('id, status, created_at, estimated_weight, final_weight, collector_id, profiles!seller_id!inner(city)');
+    if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
+        const cleanCity = mairieCity.replace(/Mairie de |Commune de |Ville de /gi, "").trim();
+        wastesQuery = wastesQuery.ilike('profiles.city', `%${cleanCity}%`);
+    }
+
+    let bidsQuery = supabase.from('tender_bids').select('*, tenders!inner(mairie_id)');
+    if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
+        bidsQuery = bidsQuery.eq('tenders.mairie_id', mairieId);
+    }
+
     // Parallel Stage 1 queries
     const [
         zonesRes,
@@ -124,25 +135,17 @@ async function fetchRawMairieData(
         bidsRes,
         txRes,
         sanctionsRes,
-        agentsRes,
-        infractionStatsRes,
-        fetchedRates,
         orgsResult,
-        vehiclesRes,
-        posRes
+        vehiclesRes
     ] = await Promise.all([
         safeQuery(zonesQuery, "zones"),
-        safeQuery(supabase.from('wastes').select('id, status, created_at, estimated_weight, collector_id'), "wastes"),
+        safeQuery(wastesQuery, "wastes"),
         safeQuery(supabase.from('tenders').select('*').eq('mairie_id', mairieId), "tenders"),
-        safeQuery(supabase.from('tender_bids').select('*'), "tender_bids"),
+        safeQuery(bidsQuery, "tender_bids"),
         safeQuery(supabase.from('transactions').select('*').eq('user_id', mairieId).order('created_at', { ascending: false }), "transactions"),
         safeQuery(supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false }), "sanctions"),
-        safeQuery(supabase.from('profiles').select('*').eq('role', 'agent_police_verte').order('created_at', { ascending: false }), "agents", { data: [] }),
-        safeQuery(supabase.from('environmental_infractions').select('status, severity, type'), "infractionStats", { data: [] }),
-        Promise.resolve({ data: null }),
         safeQuery(supabase.from('profiles').select('id, full_name, agent_count, role').in('role', ['entreprise', 'organisation_admin', 'collecteur']), "profiles for concessions"),
         safeQuery(supabase.from('vehicles').select('*'), "vehicles"),
-        safeQuery(supabase.from('agent_live_positions').select('*'), "agent live positions")
     ]);
 
     const zonesData = zonesRes?.data || [];
@@ -152,9 +155,8 @@ async function fetchRawMairieData(
     const txData = txRes?.data || [];
     const sanctionsData = sanctionsRes?.data || [];
     const vehiclesData = vehiclesRes?.data || [];
-    const posData = posRes?.data || [];
 
-    // Stage 2: Concessions & infractions (which depend on zoneIds from zonesData)
+    // Stage 2: Concessions, infractions, and agents (which depend on zoneIds from zonesData)
     const zoneIds = zonesData.map((z: any) => z.id) || [];
 
     let concessionsQuery = supabase.from('concessions').select('*');
@@ -172,29 +174,56 @@ async function fetchRawMairieData(
     }
     infractionsQuery = infractionsQuery.order('created_at', { ascending: false });
 
-    const [concessionsRes, infractionsRes] = await Promise.all([
+    let agentsQuery = supabase.from('profiles').select('*').eq('role', 'agent_police_verte');
+    if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
+        if (zoneIds.length > 0) {
+            agentsQuery = agentsQuery.in('zone_id', zoneIds);
+        } else {
+            agentsQuery = agentsQuery.eq('id', 'NO_DATA_PREVENT_FETCH');
+        }
+    }
+    agentsQuery = agentsQuery.order('created_at', { ascending: false });
+
+    const [concessionsRes, infractionsRes, agentsRes] = await Promise.all([
         safeQuery(concessionsQuery, "concessions"),
-        safeQuery(infractionsQuery, "infractions")
+        safeQuery(infractionsQuery, "infractions"),
+        safeQuery(agentsQuery, "agents")
     ]);
 
     const concessionsData = concessionsRes?.data || [];
-    const rawInfractionsData = infractionsRes?.data || [];
-    const infractionsData = rawInfractionsData.map((inf: any) => ({
-        ...inf,
-        zones: zonesData.find((z: any) => z.id === inf.zone_id)
-    }));
+    const infractionsData = infractionsRes?.data || [];
+    const rawAgentsData = agentsRes?.data || [];
 
-    // Stage 3: Fetch profiles based on concession organization IDs and profiles IDs
+    // Stage 3: Fetch profiles based on concessions, and agent live positions based on agent IDs
     const profileIds = [...new Set([
         ...(concessionsData.map((c: any) => c.organization_id) || []),
         ...(concessionsData.map((c: any) => c.profiles?.id) || [])
     ].filter(Boolean))];
 
     let profilesData: any[] = [];
+    let posData: any[] = [];
+    const stage3Queries: Promise<any>[] = [];
+
     if (profileIds.length > 0) {
-        const profilesRes = await safeQuery(supabase.from('profiles').select('id, full_name, role').in('id', profileIds), "profiles for stage 3");
-        profilesData = profilesRes?.data || [];
+        stage3Queries.push(safeQuery(supabase.from('profiles').select('id, full_name, role').in('id', profileIds), "profiles for stage 3"));
+    } else {
+        stage3Queries.push(Promise.resolve({ data: [] }));
     }
+
+    const agentIds = rawAgentsData.map((a: any) => a.id) || [];
+    let posQuery = supabase.from('agent_live_positions').select('*');
+    if (currentUserProfile?.role !== 'super_admin' || targetMairieId) {
+        if (agentIds.length > 0) {
+            posQuery = posQuery.in('agent_id', agentIds);
+        } else {
+            posQuery = posQuery.eq('id', 'NO_DATA_PREVENT_FETCH');
+        }
+    }
+    stage3Queries.push(safeQuery(posQuery, "agent live positions"));
+
+    const [profilesRes, posRes] = await Promise.all(stage3Queries);
+    profilesData = profilesRes?.data || [];
+    posData = posRes?.data || [];
 
     // Enrich zones and tenders using resolved values
     const enrichedZones = enrichZonesData(zonesData, concessionsData, profilesData);
@@ -220,18 +249,16 @@ async function fetchRawMairieData(
         };
     }).sort((a: any, b: any) => Number(b.performanceScore) - Number(a.performanceScore));
 
-    const rawAgentsData = agentsRes?.data || [];
     const agentsData = rawAgentsData.map((agent: any) => ({
         ...agent,
         zones: zonesData.find((z: any) => z.id === agent.zone_id)
     }));
     
-    const infractionStatsData = infractionStatsRes?.data || [];
     const computedStats = {
-        total: infractionStatsData.length,
-        open: infractionStatsData.filter((i: any) => i.status === 'open').length,
-        critical: infractionStatsData.filter((i: any) => i.severity === 'critical').length,
-        types: infractionStatsData.reduce((acc: any, i: any) => {
+        total: infractionsData.length,
+        open: infractionsData.filter((i: any) => i.status === 'open').length,
+        critical: infractionsData.filter((i: any) => i.severity === 'critical').length,
+        types: infractionsData.reduce((acc: any, i: any) => {
             acc[i.type] = (acc[i.type] || 0) + 1;
             return acc;
         }, {})
@@ -860,6 +887,7 @@ function MairieDashboardContent() {
                                         </div>
                                         <NeonCard title="SIGNALEMENTS ACTIFS" value={totalWastes} icon={AlertTriangle} color="blue" trend="+12 AUJOURD'HUI" />
                                         <NeonCard title="ZONES CONCÉDÉES" value={zones.filter(z => z.status === 'occupied').length} icon={Globe} color="amber" />
+                                        <NeonCard title="REDEVANCE MENSUELLE" value={`${(zones.filter(z => z.status === 'occupied').length * 20000).toLocaleString('fr-FR')} CFA`} icon={DollarSign} color="emerald" trend="20 000 F / Org" />
                                         <NeonCard title="DÉPASSEMENTS SLA" value={slaBreaches} icon={ShieldAlert} color="red" trend={slaBreaches > 0 ? "CRITIQUE" : "NOMINAL"} />
                                     </div>
                                 </div>
