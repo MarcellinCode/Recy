@@ -24,7 +24,7 @@ CREATE INDEX IF NOT EXISTS idx_messages_receiver_id ON public.messages(receiver_
 CREATE INDEX IF NOT EXISTS idx_messages_created_at ON public.messages(created_at ASC);
 
 -- 4. Index pour la table 'transactions' (Historique du portefeuille)
-CREATE INDEX IF NOT EXISTS idx_transactions_profile_id ON public.transactions(profile_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON public.transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_created_at ON public.transactions(created_at DESC);
 
 -- 5. Index pour la table 'environmental_infractions' (Signalements d'infractions / Police Verte)
@@ -40,7 +40,7 @@ BEGIN
 END $$;
 
 -- 6. Index pour la table 'household_subscriptions' et 'subscriptions' (Abonnements)
-CREATE INDEX IF NOT EXISTS idx_household_subs_user_id ON public.household_subscriptions(user_id);
+CREATE INDEX IF NOT EXISTS idx_household_subs_profile_id ON public.household_subscriptions(profile_id);
 CREATE INDEX IF NOT EXISTS idx_household_subs_plan_id ON public.household_subscriptions(plan_id);
 
 DO $$
