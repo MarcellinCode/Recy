@@ -426,6 +426,7 @@ export default function OrganizationDashboard() {
                                     targetCity={profile?.city} 
                                     organizationId={profile?.id} 
                                     focusCoords={focusCoords}
+                                    orgAgents={agents}
                                 />
                             ) : (
                                 <div className="absolute inset-0 z-10 bg-slate-900 border border-slate-800 rounded-[3rem] p-8 overflow-y-auto no-scrollbar flex flex-col pt-24">

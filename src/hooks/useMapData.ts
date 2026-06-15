@@ -17,6 +17,9 @@ export interface WasteMarker {
     images?: string[];
     created_at?: string;
     seller?: { city?: string };
+    assigned_agent_id?: string;
+    mission_type?: string;
+    assigned_agent?: { id: string; full_name: string };
 }
 
 export interface AgentMarker {
@@ -214,6 +217,7 @@ export function useMapData({
                 waste_types: wasteTypesData.find((t: any) => t.id === w.waste_type_id) ||
                     { name: "Déchet", emoji: "🗑️", price_per_kg: 0 },
                 seller: allProfiles.find((p: any) => p.id === w.seller_id),
+                assigned_agent: allProfiles.find((p: any) => p.id === w.assigned_agent_id),
             }));
 
             let finalWastes = enrichedWastes;

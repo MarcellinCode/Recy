@@ -157,3 +157,69 @@ export async function assignAgentToZone(agentId: string, zoneId: string) {
     revalidatePath('/organisation');
     return { success: true };
 }
+
+export async function dispatchAgentToInfraction(infractionId: string, agentId: string) {
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: "Non connecté" };
+
+    try {
+        // 1. Récupérer les détails de l'infraction
+        const { data: infraction, error: fetchError } = await supabase
+            .from('environmental_infractions')
+            .select('*')
+            .eq('id', infractionId)
+            .single();
+
+        if (fetchError || !infraction) throw new Error("Infraction introuvable");
+
+        // 2. Créer une mission de collecte dans 'wastes'
+        const { data: waste, error: wasteError } = await supabase
+            .from('wastes')
+            .insert({
+                seller_id: infraction.reported_by || user.id, // Citoyen auteur ou organisation
+                collector_id: user.id, // L'organisation
+                type_id: 1, // Plastique par défaut
+                estimated_weight: 10.0, // Estimation par défaut pour dépôts sauvages
+                status: 'reserved',
+                location: infraction.address || infraction.manual_address || 'Dépôt sauvage signalé',
+                latitude: infraction.latitude,
+                longitude: infraction.longitude,
+                images: infraction.images || [],
+                assigned_agent_id: agentId,
+                mission_type: 'infraction_cleanup'
+            })
+            .select()
+            .single();
+
+        if (wasteError) throw new Error("Erreur lors de la création de la mission: " + wasteError.message);
+
+        // 3. Mettre à jour le statut de l'infraction à 'investigating'
+        const { error: infractionError } = await supabase
+            .from('environmental_infractions')
+            .update({ status: 'investigating' })
+            .eq('id', infractionId);
+
+        if (infractionError) throw new Error("Erreur mise à jour infraction: " + infractionError.message);
+
+        // 4. Notifier l'agent
+        const { error: notifError } = await supabase
+            .from('notifications')
+            .insert({
+                profile_id: agentId,
+                title: '🚨 NETTOYAGE DE DÉPÔT SAUVAGE',
+                content: `Votre organisation vous a affecté au nettoyage d'un dépôt sauvage (${infraction.type}) situé à ${infraction.address || infraction.manual_address || 'votre zone'}.`,
+                type: 'system',
+                is_read: false
+            });
+
+        if (notifError) throw new Error("Erreur notification: " + notifError.message);
+
+        revalidatePath('/organisation');
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error dispatching agent to infraction:', error);
+        return { success: false, error: error.message };
+    }
+}
+

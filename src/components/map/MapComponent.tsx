@@ -11,6 +11,7 @@ import { motion } from "framer-motion";
 import MarkerClusterGroup from "react-leaflet-cluster";
 import { cn } from "@/lib/utils";
 import { dispatchEmergencyAgent } from "@/app/actions/mairie";
+import { dispatchAgentToInfraction } from "@/app/actions/organisation";
 import { showToast } from "@/components/ui/toast";
 import { getMunicipalityGeo } from "@/lib/geoIntelligence";
 import { useMapData } from "@/hooks/useMapData";
@@ -166,24 +167,52 @@ export default function MapComponent({
     mairieId,
     organizationId,
     focusCoords,
+    orgAgents = [],
 }: Readonly<{
     isMairie?: boolean;
     targetCity?: string;
     mairieId?: string;
     organizationId?: string;
     focusCoords?: [number, number] | null;
+    orgAgents?: any[];
 }>) {
     const supabase = createClient();
     const [showUserLocation, setShowUserLocation] = useState(false);
 
     // ── Tout le chargement est délégué au hook ──
-    const { wastes, agents, zones, infractions, loading, errors } = useMapData({
+    const { wastes, agents, zones, infractions, loading, errors, refetch } = useMapData({
         supabase,
         isMairie,
         targetCity,
         mairieId,
         organizationId,
     });
+
+    const [selectedAgentForInfraction, setSelectedAgentForInfraction] = useState<Record<string, string>>({});
+    const [dispatchingInfractionId, setDispatchingInfractionId] = useState<string | null>(null);
+
+    const handleOrgDispatch = async (infractionId: string) => {
+        const agentId = selectedAgentForInfraction[infractionId];
+        if (!agentId) {
+            showToast("Veuillez sélectionner un agent de collecte.", "error");
+            return;
+        }
+
+        setDispatchingInfractionId(infractionId);
+        try {
+            const res = await dispatchAgentToInfraction(infractionId, agentId);
+            if (res.success) {
+                showToast("Mission de nettoyage affectée avec succès !", "success");
+                refetch();
+            } else {
+                showToast("Échec de l'affectation : " + res.error, "error");
+            }
+        } catch (err: any) {
+            showToast("Erreur lors de l'affectation : " + err.message, "error");
+        } finally {
+            setDispatchingInfractionId(null);
+        }
+    };
 
     // ── Calcul des bounds ──
     const [mapBounds, setMapBounds] = useState<L.LatLngBounds | null>(null);
@@ -400,60 +429,132 @@ export default function MapComponent({
                     ))}
 
                     {/* Infractions (Mairie uniquement) */}
-                    {isMairie && infractions.map((infraction) => (
-                        <Marker
-                            key={`infraction-${infraction.id}`}
-                            position={[infraction.latitude, infraction.longitude]}
-                            icon={L.divIcon({
-                                className: "custom-div-icon",
-                                html: `<div class="w-10 h-10 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-red-600/30 border-2 border-white animate-pulse">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-                                        <path d="M12 9v4"/><path d="M12 17h.01"/>
-                                    </svg>
-                                </div>`,
-                                iconSize: [40, 40],
-                                iconAnchor: [20, 20],
-                            })}
-                        >
-                            <Popup className="premium-popup">
-                                <div className="p-4 min-w-[220px] bg-white dark:bg-zinc-900 rounded-[2rem]">
-                                    {infraction.images?.[0] && (
-                                        <div className="w-full h-32 rounded-2xl overflow-hidden mb-4 border border-zinc-100">
-                                            <img src={infraction.images[0]} alt="Preuve" className="w-full h-full object-cover" />
-                                        </div>
-                                    )}
-                                    <div className="mb-4">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${infraction.severity === "critical" ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"}`}>
-                                                {infraction.severity}
-                                            </span>
-                                            <span className="text-[8px] font-black px-2 py-0.5 bg-zinc-100 text-zinc-500 rounded-full uppercase tracking-widest">
-                                                {infraction.status}
-                                            </span>
-                                        </div>
-                                        <h4 className="text-[11px] font-black uppercase italic tracking-tighter text-zinc-900 dark:text-white">
-                                            {infraction.type}
-                                        </h4>
-                                        <p className="text-[9px] font-medium text-zinc-500 mt-1 line-clamp-2">
-                                            {infraction.description || "Aucune description."}
-                                        </p>
-                                    </div>
-                                    <div className="pt-4 border-t border-zinc-100 flex items-center justify-between">
-                                        <div>
-                                            <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Signalé par</span>
-                                            <p className="text-[9px] font-black uppercase text-zinc-900 dark:text-white truncate max-w-[100px]">
-                                                {infraction.profiles?.full_name || "Agent Anonyme"}
+                    {/* Infractions (Mairie ou Organisation) */}
+                    {(isMairie || organizationId) && infractions.map((infraction) => {
+                        const cleaningMission = wastes.find(
+                            (w) =>
+                                w.mission_type === "infraction_cleanup" &&
+                                Math.abs(w.latitude - infraction.latitude) < 0.00001 &&
+                                Math.abs(w.longitude - infraction.longitude) < 0.00001
+                        );
+                        const assignedAgentName = cleaningMission?.assigned_agent?.full_name || "Agent Terrain";
+
+                        return (
+                            <Marker
+                                key={`infraction-${infraction.id}`}
+                                position={[infraction.latitude, infraction.longitude]}
+                                icon={L.divIcon({
+                                    className: "custom-div-icon",
+                                    html: `<div class="w-10 h-10 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-red-600/30 border-2 border-white animate-pulse">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+                                            <path d="M12 9v4"/><path d="M12 17h.01"/>
+                                        </svg>
+                                    </div>`,
+                                    iconSize: [40, 40],
+                                    iconAnchor: [20, 20],
+                                })}
+                            >
+                                <Popup className="premium-popup">
+                                    <div className="p-4 min-w-[220px] bg-white dark:bg-zinc-900 rounded-[2rem]">
+                                        {infraction.images?.[0] && (
+                                            <div className="w-full h-32 rounded-2xl overflow-hidden mb-4 border border-zinc-100">
+                                                <img src={infraction.images[0]} alt="Preuve" className="w-full h-full object-cover" />
+                                            </div>
+                                        )}
+                                        <div className="mb-4">
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className={`text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest ${infraction.severity === "critical" ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"}`}>
+                                                    {infraction.severity}
+                                                </span>
+                                                <span className="text-[8px] font-black px-2 py-0.5 bg-zinc-100 text-zinc-500 rounded-full uppercase tracking-widest">
+                                                    {infraction.status === "open" ? "Non traité" : infraction.status === "investigating" ? "En cours" : "Résolu"}
+                                                </span>
+                                            </div>
+                                            <h4 className="text-[11px] font-black uppercase italic tracking-tighter text-zinc-900 dark:text-white">
+                                                {infraction.type}
+                                            </h4>
+                                            <p className="text-[9px] font-medium text-zinc-500 mt-1 line-clamp-2">
+                                                {infraction.description || "Aucune description."}
                                             </p>
                                         </div>
-                                        <button className="p-2 bg-zinc-900 text-white rounded-lg hover:bg-red-600 transition-colors">
-                                            <Gavel size={14} />
-                                        </button>
+
+                                        {/* Action Section for Organizations */}
+                                        {!isMairie && (
+                                            <div className="mt-3 pt-3 border-t border-zinc-100">
+                                                {infraction.status === "open" ? (
+                                                    <div className="space-y-3">
+                                                        <div className="space-y-1">
+                                                            <label className="text-[8px] font-black text-zinc-400 uppercase tracking-widest block">
+                                                                Assigner un agent
+                                                            </label>
+                                                            <select
+                                                                value={selectedAgentForInfraction[infraction.id] || ""}
+                                                                onChange={(e) => setSelectedAgentForInfraction(prev => ({ ...prev, [infraction.id]: e.target.value }))}
+                                                                className="w-full p-2 bg-gray-50 dark:bg-zinc-800 border border-gray-100 dark:border-zinc-700 rounded-xl text-[10px] font-bold outline-none text-zinc-800 dark:text-zinc-200"
+                                                            >
+                                                                <option value="">Sélectionner un agent...</option>
+                                                                {orgAgents.length === 0 ? (
+                                                                    <option value="" disabled>Aucun agent disponible</option>
+                                                                ) : (
+                                                                    orgAgents.map((agent: any) => (
+                                                                        <option key={agent.id} value={agent.id}>
+                                                                            {agent.full_name}
+                                                                        </option>
+                                                                    ))
+                                                                )}
+                                                            </select>
+                                                        </div>
+                                                        <button
+                                                            onClick={() => handleOrgDispatch(infraction.id)}
+                                                            disabled={dispatchingInfractionId === infraction.id}
+                                                            className="w-full py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg flex items-center justify-center gap-2"
+                                                        >
+                                                            {dispatchingInfractionId === infraction.id ? (
+                                                                <Loader2 size={12} className="animate-spin" />
+                                                            ) : (
+                                                                <Navigation size={12} />
+                                                            )}
+                                                            Dépêcher un Agent
+                                                        </button>
+                                                    </div>
+                                                ) : infraction.status === "investigating" ? (
+                                                    <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-900/30">
+                                                        <p className="text-[8px] font-black uppercase text-amber-600 dark:text-amber-400 mb-1">
+                                                            Nettoyage en cours
+                                                        </p>
+                                                        <p className="text-[10px] font-bold text-zinc-700 dark:text-zinc-300">
+                                                            Assigné à : <span className="font-black italic">{assignedAgentName}</span>
+                                                        </p>
+                                                    </div>
+                                                ) : (
+                                                    <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                                                        <p className="text-[8px] font-black uppercase text-emerald-600 dark:text-emerald-400">
+                                                            ✓ Dépôt résorbé
+                                                        </p>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        <div className="pt-4 mt-3 border-t border-zinc-100 flex items-center justify-between">
+                                            <div>
+                                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">Signalé par</span>
+                                                <p className="text-[9px] font-black uppercase text-zinc-900 dark:text-white truncate max-w-[100px]">
+                                                    {infraction.profiles?.full_name || "Agent Anonyme"}
+                                                </p>
+                                            </div>
+                                            {isMairie && (
+                                                <button className="p-2 bg-zinc-900 text-white rounded-lg hover:bg-red-600 transition-colors">
+                                                    <Gavel size={14} />
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </Popup>
-                        </Marker>
-                    ))}
+                                </Popup>
+                            </Marker>
+                        );
+                    })}
 
                     {/* Zones markers (Mairie uniquement) */}
                     {isMairie && zones.map((zone) => {
