@@ -6,6 +6,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { User, Truck, ArrowRight, Loader2, Building2, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { validateInvitation, consumeInvitation } from "@/app/actions/invitations";
+import { GEOGRAPHY_HIERARCHY } from "@/constants/geography";
+
 
 function SignupForm() {
     const router = useRouter();
@@ -76,17 +78,42 @@ function SignupForm() {
         officialDepartment: "",
     });
 
-    const handleSignup = async (e: React.FormEvent) => {
+    const [selectedCommune, setSelectedCommune] = useState("");
+    const [selectedQuartier, setSelectedQuartier] = useState("");
+    const [selectedSousQuartier, setSelectedSousQuartier] = useState("");
+    const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!role) return;
 
         setLoading(true);
         setError(null);
 
-        try {            let fullName = formData.fullName;
+        try {            let fullName = formData.fullName;
             if (role === 'mairie') fullName = formData.municipalityName;
             else if (role === 'organisation_admin' || role === 'entreprise') fullName = formData.orgName;
  
+            let resolvedZoneId = formData.zoneId || null;
+            let resolvedDistrict = formData.district;
+            let resolvedCommune = formData.commune;
+
+            if (role === "vendeur" && formData.city === "Abidjan" && selectedSousQuartier) {
+                resolvedDistrict = `${selectedQuartier} (${selectedSousQuartier})`;
+                resolvedCommune = selectedCommune;
+                
+                try {
+                    const { data: matchedZones, error: searchError } = await supabase
+                        .from('zones')
+                        .select('id')
+                        .contains('boundaries', { sous_quartiers: [selectedSousQuartier] });
+
+                    if (!searchError && matchedZones && matchedZones.length > 0) {
+                        resolvedZoneId = matchedZones[0].id;
+                    }
+                } catch (zoneSearchErr) {
+                    console.error("Failed to auto-resolve zone by sous-quartier:", zoneSearchErr);
+                }
+            }
+
             const { data, error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
@@ -96,10 +123,10 @@ function SignupForm() {
                         role: role,
                         phone: formData.phone,
                         city: formData.city,
-                        zone_id: formData.zoneId || null,
+                        zone_id: resolvedZoneId,
                         // Role specific metadata
-                        district: formData.district,
-                        municipality_name: formData.commune,
+                        district: resolvedDistrict,
+                        municipality_name: resolvedCommune,
                         vehicle_type: formData.vehicleType,
                         id_number: formData.idNumber,
                         rccm: formData.rccm,
@@ -108,7 +135,7 @@ function SignupForm() {
                         official_department: formData.officialDepartment
                     },
                 },
-            });;
+            });
 
             if (authError) throw authError;
             
@@ -119,8 +146,7 @@ function SignupForm() {
                     await consumeInvitation(token, data.user.id);
                 }
             }
-
-            router.push("/connexion?message=Vérifiez votre email pour confirmer l'inscription");
+             router.push("/connexion?message=Vérifiez votre email pour confirmer l'inscription");
         } catch (err: any) {
             setError(err.message || "Une erreur est survenue lors de l'inscription.");
         } finally {
@@ -131,9 +157,13 @@ function SignupForm() {
     const nextStep = () => {
         // Validation basique avant de passer à l'étape suivante
         if (step === 2) {
-            if (role === 'vendeur' && (!formData.fullName || !formData.phone || !formData.district || !formData.city)) {
-                setError("Veuillez remplir tous les champs (y compris la ville).");
-                return;
+            if (role === 'vendeur') {
+                const isAbidjan = formData.city === "Abidjan";
+                const isGeoComplete = isAbidjan ? (selectedCommune && selectedQuartier && selectedSousQuartier) : formData.district;
+                if (!formData.fullName || !formData.phone || !formData.city || !isGeoComplete) {
+                    setError(isAbidjan ? "Veuillez remplir tous les champs (y compris la commune, le quartier et le sous-quartier)." : "Veuillez remplir tous les champs (y compris la ville et l'adresse).");
+                    return;
+                }
             }
             if (role === 'collecteur' && (!formData.fullName || !formData.phone || !formData.vehicleType || !formData.idNumber || !formData.city)) {
                 setError("Veuillez remplir tous les champs (y compris la ville).");
@@ -298,37 +328,105 @@ function SignupForm() {
                                             <option value="San-Pédro">San-Pédro (Côte d'Ivoire)</option>
                                         </select>
                                     </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="zoneId" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Zone de Collecte</label>
-                                        {zones.length > 0 ? (
-                                            <select
-                                                id="zoneId"
-                                                value={formData.zoneId}
-                                                onChange={(e) => setFormData({...formData, zoneId: e.target.value})}
-                                                className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
-                                            >
-                                                <option value="">Zone générale (Non spécifiée)</option>
-                                                {zones.map((z: any) => (
-                                                    <option key={z.id} value={z.id}>{z.name}</option>
-                                                ))}
-                                            </select>
-                                        ) : (
-                                            <div className="p-3 bg-zinc-50 border border-gray-150 rounded-xl text-[10px] text-zinc-500 font-bold uppercase tracking-wider dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-400 animate-pulse">
-                                                Aucune zone active enregistrée dans cette ville (Zone générale appliquée par défaut)
+                                    {formData.city === "Abidjan" ? (
+                                        <>
+                                            {/* Commune */}
+                                            <div className="space-y-1 animate-in fade-in">
+                                                <label htmlFor="selectedCommune" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Commune *</label>
+                                                <select
+                                                    id="selectedCommune"
+                                                    value={selectedCommune}
+                                                    onChange={(e) => {
+                                                        setSelectedCommune(e.target.value);
+                                                        setSelectedQuartier("");
+                                                        setSelectedSousQuartier("");
+                                                    }}
+                                                    className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                                    required
+                                                >
+                                                    <option value="">Sélectionnez votre commune</option>
+                                                    {Object.keys(GEOGRAPHY_HIERARCHY).map(c => (
+                                                        <option key={c} value={c}>{c}</option>
+                                                    ))}
+                                                </select>
                                             </div>
-                                        )}
-                                    </div>
-                                    <div className="space-y-1">
-                                        <label htmlFor="district" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Quartier / Adresse *</label>
-                                        <input
-                                            id="district"
-                                            type="text"
-                                            value={formData.district}
-                                            onChange={(e) => setFormData({...formData, district: e.target.value})}
-                                            className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
-                                            placeholder="Ex: Cocody Angré"
-                                        />
-                                    </div>
+
+                                            {/* Quartier */}
+                                            {selectedCommune && (
+                                                <div className="space-y-1 animate-in fade-in">
+                                                    <label htmlFor="selectedQuartier" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Quartier *</label>
+                                                    <select
+                                                        id="selectedQuartier"
+                                                        value={selectedQuartier}
+                                                        onChange={(e) => {
+                                                            setSelectedQuartier(e.target.value);
+                                                            setSelectedSousQuartier("");
+                                                        }}
+                                                        className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                                        required
+                                                    >
+                                                        <option value="">Sélectionnez votre quartier</option>
+                                                        {Object.keys(GEOGRAPHY_HIERARCHY[selectedCommune] || {}).map(q => (
+                                                            <option key={q} value={q}>{q}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            )}
+
+                                            {/* Sous-quartier */}
+                                            {selectedQuartier && (
+                                                <div className="space-y-1 animate-in fade-in">
+                                                    <label htmlFor="selectedSousQuartier" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Sous-quartier / Secteur *</label>
+                                                    <select
+                                                        id="selectedSousQuartier"
+                                                        value={selectedSousQuartier}
+                                                        onChange={(e) => setSelectedSousQuartier(e.target.value)}
+                                                        className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                                        required
+                                                    >
+                                                        <option value="">Sélectionnez votre sous-quartier</option>
+                                                        {(GEOGRAPHY_HIERARCHY[selectedCommune]?.[selectedQuartier] || []).map(sq => (
+                                                            <option key={sq} value={sq}>{sq}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="space-y-1">
+                                                <label htmlFor="zoneId" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Zone de Collecte</label>
+                                                {zones.length > 0 ? (
+                                                    <select
+                                                        id="zoneId"
+                                                        value={formData.zoneId}
+                                                        onChange={(e) => setFormData({...formData, zoneId: e.target.value})}
+                                                        className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                                    >
+                                                        <option value="">Zone générale (Non spécifiée)</option>
+                                                        {zones.map((z: any) => (
+                                                            <option key={z.id} value={z.id}>{z.name}</option>
+                                                        ))}
+                                                    </select>
+                                                ) : (
+                                                    <div className="p-3 bg-zinc-50 border border-gray-150 rounded-xl text-[10px] text-zinc-500 font-bold uppercase tracking-wider dark:bg-zinc-800 dark:border-zinc-700 dark:text-zinc-400 animate-pulse">
+                                                        Aucune zone active enregistrée dans cette ville (Zone générale appliquée par défaut)
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label htmlFor="district" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Quartier / Adresse *</label>
+                                                <input
+                                                    id="district"
+                                                    type="text"
+                                                    value={formData.district}
+                                                    onChange={(e) => setFormData({...formData, district: e.target.value})}
+                                                    className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
+                                                    placeholder="Ex: Cocody Angré"
+                                                />
+                                            </div>
+                                        </>
+                                    )}
                                 </>
                              )}
 

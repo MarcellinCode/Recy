@@ -39,6 +39,8 @@ import {
     TelemetryFeed, 
     RouteOptimizationOverlay 
 } from "@/components/dashboard/LogisticsComponents";
+import { GEOGRAPHY_HIERARCHY } from "@/constants/geography";
+
 
 const MapComponent = dynamic(() => import("@/components/map/MapComponent"), {
     ssr: false,
@@ -335,6 +337,74 @@ function CityOSClient({ initialData, profile }: { initialData: any; profile: any
     const [newAgent, setNewAgent] = useState({ fullName: "", email: "", password: "", phone: "", city: initialData.mairieCity || "Abidjan", zoneId: "" });
     const [sanctionForm, setSanctionForm] = useState({ orgId: "", type: "RETARD COLLECTE", description: "", amount: 0, severity: "medium" as any });
     const [newZone, setNewZone] = useState({ name: "", city: initialData.mairieCity || "", status: "available", description: "", district: "", commune: "" });
+    const [selectedQuartiers, setSelectedQuartiers] = useState<string[]>([]);
+    const [selectedSousQuartiers, setSelectedSousQuartiers] = useState<string[]>([]);
+    const [isNameManuallyEdited, setIsNameManuallyEdited] = useState(false);
+
+    const toggleQuartier = (quartier: string) => {
+        if (selectedQuartiers.includes(quartier)) {
+            setSelectedQuartiers(selectedQuartiers.filter(q => q !== quartier));
+            const assocSous = GEOGRAPHY_HIERARCHY[newZone.commune]?.[quartier] || [];
+            setSelectedSousQuartiers(selectedSousQuartiers.filter(sq => !assocSous.includes(sq)));
+        } else {
+            setSelectedQuartiers([...selectedQuartiers, quartier]);
+            const assocSous = GEOGRAPHY_HIERARCHY[newZone.commune]?.[quartier] || [];
+            setSelectedSousQuartiers(prev => {
+                const unique = new Set([...prev, ...assocSous]);
+                return Array.from(unique);
+            });
+        }
+    };
+
+    const toggleSousQuartier = (sq: string) => {
+        if (selectedSousQuartiers.includes(sq)) {
+            setSelectedSousQuartiers(selectedSousQuartiers.filter(item => item !== sq));
+        } else {
+            setSelectedSousQuartiers([...selectedSousQuartiers, sq]);
+        }
+    };
+
+    const hasAllSousQuartiers = (quartier: string) => {
+        const assocSous = GEOGRAPHY_HIERARCHY[newZone.commune]?.[quartier] || [];
+        return assocSous.every(sq => selectedSousQuartiers.includes(sq));
+    };
+
+    const toggleAllSousQuartiersForQuartier = (quartier: string) => {
+        const assocSous = GEOGRAPHY_HIERARCHY[newZone.commune]?.[quartier] || [];
+        if (hasAllSousQuartiers(quartier)) {
+            setSelectedSousQuartiers(selectedSousQuartiers.filter(sq => !assocSous.includes(sq)));
+        } else {
+            setSelectedSousQuartiers(prev => {
+                const unique = new Set([...prev, ...assocSous]);
+                return Array.from(unique);
+            });
+        }
+    };
+
+    useEffect(() => {
+        setSelectedQuartiers([]);
+        setSelectedSousQuartiers([]);
+        setIsNameManuallyEdited(false);
+    }, [newZone.commune]);
+
+    useEffect(() => {
+        if (!isNameManuallyEdited && newZone.commune) {
+            let generatedName = "";
+            if (selectedSousQuartiers.length > 0) {
+                if (selectedSousQuartiers.length <= 3) {
+                    generatedName = `${newZone.commune} - ${selectedSousQuartiers.join(", ")}`;
+                } else if (selectedQuartiers.length <= 2) {
+                    generatedName = `${newZone.commune} - ${selectedQuartiers.join(" & ")}`;
+                } else {
+                    generatedName = `${newZone.commune} - Multi-quartier`;
+                }
+            } else if (newZone.commune) {
+                generatedName = `${newZone.commune} - Nouvelle Concession`;
+            }
+            setNewZone(prev => ({ ...prev, name: generatedName }));
+        }
+    }, [newZone.commune, selectedQuartiers, selectedSousQuartiers, isNameManuallyEdited]);
+
     const [partnerType, setPartnerType] = useState<"entreprise" | "organisation">("entreprise");
     const [isAttributingDirectly, setIsAttributingDirectly] = useState(false);
     const [selectedOrgId, setSelectedOrgId] = useState("");
@@ -513,8 +583,15 @@ function CityOSClient({ initialData, profile }: { initialData: any; profile: any
 
         // On s'assure que la zone est liée à la mairie actuelle et on formate
         const zoneToCreate = {
-            name: `${newZone.name} (${newZone.commune || 'Générale'})`,
-            description: `District: ${newZone.district || 'Non spécifié'} | Commune: ${newZone.commune || 'Non spécifiée'} | ${newZone.description || ''}`,
+            name: newZone.name || `${newZone.commune || 'Générale'} - Zone de Concession`,
+            description: `District: ${newZone.district || 'Non spécifié'} | Commune: ${newZone.commune || 'Non spécifiée'} | Quartiers: ${selectedQuartiers.join(', ') || 'Aucun'} | Sous-quartiers: ${selectedSousQuartiers.join(', ') || 'Aucun'} | ${newZone.description || ''}`,
+            boundaries: {
+                type: "subdivisions",
+                district: newZone.district || "Non spécifié",
+                commune: newZone.commune || "Non spécifiée",
+                quartiers: selectedQuartiers,
+                sous_quartiers: selectedSousQuartiers
+            },
             organization_id: targetMairieId || user.id
         };
 
@@ -542,6 +619,9 @@ function CityOSClient({ initialData, profile }: { initialData: any; profile: any
 
         // Réinitialiser le formulaire
         setNewZone({ name: "", city: mairieCity || "Abidjan", status: "available", description: "", district: "", commune: "" });
+        setSelectedQuartiers([]);
+        setSelectedSousQuartiers([]);
+        setIsNameManuallyEdited(false);
         setSelectedOrgId("");
         setIsAttributingDirectly(false);
         setPartnerType("entreprise");
@@ -1353,12 +1433,12 @@ function CityOSClient({ initialData, profile }: { initialData: any; profile: any
                  <form onSubmit={handleAddZoneSubmit} className="space-y-6">
                     <div className="space-y-2">
                         <label htmlFor="zoneName" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Nom de la Zone</label>
-                        <input id="zoneName" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black uppercase outline-none text-zinc-900 placeholder:text-zinc-300" placeholder="Ex: Zone Nord..." value={newZone.name} onChange={(e) => setNewZone({...newZone, name: e.target.value})} />
+                        <input id="zoneName" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-black uppercase outline-none text-zinc-900 placeholder:text-zinc-300" placeholder="Ex: Zone Nord..." value={newZone.name} onChange={(e) => { setIsNameManuallyEdited(true); setNewZone({...newZone, name: e.target.value}); }} />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label htmlFor="zoneDistrict" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">District *</label>
-                            <select id="zoneDistrict" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900" value={newZone.district} onChange={(e) => setNewZone({...newZone, district: e.target.value})}>
+                            <select id="zoneDistrict" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900" value={newZone.district} onChange={(e) => setNewZone({...newZone, district: e.target.value, commune: ""})}>
                                 <option value="">Choisir un district...</option>
                                 <option value="District Autonome d'Abidjan">District Autonome d'Abidjan</option>
                                 <option value="District Autonome de Yamoussoukro">District Autonome de Yamoussoukro</option>
@@ -1371,22 +1451,106 @@ function CityOSClient({ initialData, profile }: { initialData: any; profile: any
                         <div className="space-y-2">
                             <label htmlFor="zoneCommune" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Commune *</label>
                             <select id="zoneCommune" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900" value={newZone.commune} onChange={(e) => setNewZone({...newZone, commune: e.target.value})}>
-                                <option value="">Choisir la commune...</option>
-                                <option value="Cocody">Cocody</option>
-                                <option value="Yopougon">Yopougon</option>
-                                <option value="Plateau">Plateau</option>
-                                <option value="Treichville">Treichville</option>
-                                <option value="Marcory">Marcory</option>
-                                <option value="Koumassi">Koumassi</option>
-                                <option value="Abobo">Abobo</option>
-                                <option value="Adjamé">Adjamé</option>
-                                <option value="Port-Bouët">Port-Bouët</option>
-                                <option value="Bingerville">Bingerville</option>
-                                <option value="Songon">Songon</option>
-                                <option value="Autre Commune">Autre Commune</option>
+                                {newZone.district === "District Autonome d'Abidjan" ? (
+                                    <>
+                                        <option value="">Choisir la commune...</option>
+                                        {Object.keys(GEOGRAPHY_HIERARCHY).map(commune => (
+                                            <option key={commune} value={commune}>{commune}</option>
+                                        ))}
+                                        <option value="Autre Commune">Autre Commune</option>
+                                    </>
+                                ) : (
+                                    <>
+                                        <option value="">Choisir la commune...</option>
+                                        <option value="Cocody">Cocody</option>
+                                        <option value="Yopougon">Yopougon</option>
+                                        <option value="Plateau">Plateau</option>
+                                        <option value="Treichville">Treichville</option>
+                                        <option value="Marcory">Marcory</option>
+                                        <option value="Koumassi">Koumassi</option>
+                                        <option value="Abobo">Abobo</option>
+                                        <option value="Adjamé">Adjamé</option>
+                                        <option value="Port-Bouët">Port-Bouët</option>
+                                        <option value="Bingerville">Bingerville</option>
+                                        <option value="Songon">Songon</option>
+                                        <option value="Autre Commune">Autre Commune</option>
+                                    </>
+                                )}
                             </select>
                         </div>
                     </div>
+
+                    {/* Sélection des quartiers et sous-quartiers si Abidjan et Commune sélectionnée */}
+                    {newZone.district === "District Autonome d'Abidjan" && newZone.commune && GEOGRAPHY_HIERARCHY[newZone.commune] && (
+                        <div className="space-y-4 pt-2">
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+                                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Quartiers de {newZone.commune} *</label>
+                                <div className="flex flex-wrap gap-2 p-4 bg-zinc-50 border border-zinc-100 rounded-2xl">
+                                    {Object.keys(GEOGRAPHY_HIERARCHY[newZone.commune]).map(quartier => {
+                                        const isSelected = selectedQuartiers.includes(quartier);
+                                        return (
+                                            <button
+                                                key={quartier}
+                                                type="button"
+                                                onClick={() => toggleQuartier(quartier)}
+                                                className={cn(
+                                                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border",
+                                                    isSelected 
+                                                        ? "bg-emerald-500 text-white border-emerald-500 shadow-sm" 
+                                                        : "bg-white text-zinc-500 border-zinc-200 hover:border-zinc-300"
+                                                )}
+                                            >
+                                                {quartier}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {selectedQuartiers.length > 0 && (
+                                <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
+                                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Sous-quartiers à inclure dans la concession</label>
+                                    <div className="space-y-4 p-5 bg-zinc-50 border border-zinc-100 rounded-2xl max-h-[220px] overflow-y-auto">
+                                        {selectedQuartiers.map(quartier => {
+                                            const sousQuartiers = GEOGRAPHY_HIERARCHY[newZone.commune]?.[quartier] || [];
+                                            if (sousQuartiers.length === 0) return null;
+                                            return (
+                                                <div key={quartier} className="space-y-2">
+                                                    <div className="flex items-center justify-between border-b border-zinc-200/50 pb-1 mb-1">
+                                                        <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">{quartier}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => toggleAllSousQuartiersForQuartier(quartier)}
+                                                            className="text-[8px] font-bold text-emerald-600 hover:text-emerald-500 uppercase tracking-wider"
+                                                        >
+                                                            {hasAllSousQuartiers(quartier) ? "Tout décocher" : "Tout cocher"}
+                                                        </button>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2">
+                                                        {sousQuartiers.map(sq => {
+                                                            const isSqSelected = selectedSousQuartiers.includes(sq);
+                                                            return (
+                                                                <label key={sq} className="flex items-center space-x-2 p-2 bg-white rounded-lg border border-zinc-100 cursor-pointer hover:border-zinc-200 transition-all select-none">
+                                                                    <input
+                                                                        type="checkbox"
+                                                                        checked={isSqSelected}
+                                                                        onChange={() => toggleSousQuartier(sq)}
+                                                                        className="rounded text-emerald-600 focus:ring-emerald-500 w-3.5 h-3.5"
+                                                                    />
+                                                                    <span className="text-[9px] font-bold uppercase text-zinc-700 tracking-wide">{sq}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
                     <div className="space-y-2">
                         <label htmlFor="zoneDesc" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Description technique</label>
                         <textarea id="zoneDesc" className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-sm font-medium min-h-[80px] outline-none text-zinc-900 placeholder:text-zinc-300" placeholder="Description de la zone..." value={newZone.description} onChange={(e) => setNewZone({...newZone, description: e.target.value})} />
