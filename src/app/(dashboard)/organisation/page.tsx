@@ -208,6 +208,7 @@ export default function OrganizationDashboard() {
     const [bidAmount, setBidAmount] = useState(0);
     const [topUpAmount, setTopUpAmount] = useState(50000);
     const [activeMissions, setActiveMissions] = useState<any[]>([]); // NEW
+    const [selectedAgentForMissions, setSelectedAgentForMissions] = useState<any>(null);
     
     useEffect(() => {
         fetchData();
@@ -560,7 +561,14 @@ export default function OrganizationDashboard() {
                                     </button>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    {agents.map((agent) => <AgentCard key={agent.id} agent={agent} />)}
+                                    {agents.map((agent) => (
+                                        <AgentCard 
+                                            key={agent.id} 
+                                            agent={agent} 
+                                            activeMissions={activeMissions}
+                                            onShowMissions={() => setSelectedAgentForMissions(agent)}
+                                        />
+                                    ))}
                                     {agents.length === 0 && (
                                         <div className="col-span-2 py-16 text-center bg-gray-50 dark:bg-zinc-900 rounded-[2rem] border-2 border-dashed border-gray-100 dark:border-zinc-800">
                                             <Users size={32} className="mx-auto mb-4 text-zinc-300" />
@@ -840,15 +848,78 @@ export default function OrganizationDashboard() {
             </Modal>
 
             <AddAgentForm 
-                isOpen={isAddAgentMenuOpen}
-                onClose={() => setIsAddAgentMenuOpen(false)}
-                onSuccess={fetchData}
-                concessions={concessions}
-                vehicles={vehicles}
-            />
-        </div>
-    );
-}
+                                                isOpen={isAddAgentMenuOpen}
+                                                onClose={() => setIsAddAgentMenuOpen(false)}
+                                                onSuccess={fetchData}
+                                                concessions={concessions}
+                                                vehicles={vehicles}
+                                            />
+
+                                            <Modal 
+                                                isOpen={!!selectedAgentForMissions} 
+                                                onClose={() => setSelectedAgentForMissions(null)} 
+                                                title={`Historique des Missions - ${selectedAgentForMissions?.full_name}`}
+                                            >
+                                                {selectedAgentForMissions && (
+                                                    <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+                                                        <div className="overflow-x-auto no-scrollbar">
+                                                            <table className="w-full text-left border-collapse">
+                                                                <thead>
+                                                                    <tr className="border-b border-gray-100 dark:border-zinc-800 text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                                                                        <th className="pb-4 pr-4">Client / Type</th>
+                                                                        <th className="pb-4 pr-4">Lieu</th>
+                                                                        <th className="pb-4 pr-4">Poids (KG)</th>
+                                                                        <th className="pb-4 text-right">Statut</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    {activeMissions
+                                                                        .filter((m: any) => m.assigned_agent_id === selectedAgentForMissions.id)
+                                                                        .map((mission: any) => {
+                                                                            const statusDetails = getMissionStatusDetails(mission.status);
+                                                                            return (
+                                                                                <tr key={mission.id} className="border-b border-gray-50 dark:border-zinc-800/50 text-xs font-semibold text-zinc-700 dark:text-zinc-300">
+                                                                                    <td className="py-4 pr-4">
+                                                                                        <p className="font-black uppercase italic dark:text-white">
+                                                                                            {mission.profiles?.full_name || 'Client Inconnu'}
+                                                                                        </p>
+                                                                                        <p className="text-[9px] text-zinc-400 uppercase font-bold">
+                                                                                            {mission.mission_type === 'subscription_pickup' ? 'Abonnement' : 'Dépôt unique'}
+                                                                                        </p>
+                                                                                    </td>
+                                                                                    <td className="py-4 pr-4 text-zinc-500 dark:text-zinc-400">
+                                                                                        {mission.location || 'Lieu non spécifié'}
+                                                                                    </td>
+                                                                                    <td className="py-4 pr-4 text-primary font-bold">
+                                                                                        {mission.final_weight || mission.estimated_weight || 0} KG
+                                                                                    </td>
+                                                                                    <td className="py-4 text-right">
+                                                                                        <span className={cn(
+                                                                                            "px-2.5 py-0.5 font-black uppercase text-[8px] rounded-lg tracking-widest",
+                                                                                            statusDetails.badge
+                                                                                        )}>
+                                                                                            {statusDetails.label}
+                                                                                        </span>
+                                                                                    </td>
+                                                                                </tr>
+                                                                            );
+                                                                        })}
+                                                                    {activeMissions.filter((m: any) => m.assigned_agent_id === selectedAgentForMissions.id).length === 0 && (
+                                                                        <tr>
+                                                                            <td colSpan={4} className="py-8 text-center text-zinc-400 text-[10px] font-black uppercase tracking-widest">
+                                                                                Aucune mission enregistrée pour cet agent
+                                                                            </td>
+                                                                        </tr>
+                                                                    )}
+                                                                </tbody>
+                                                            </table>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </Modal>
+                                        </div>
+                                    );
+                                }
 
 function MiniStatsCard({ label, value, icon: Icon, color }: any) {
     return (
@@ -864,7 +935,21 @@ function MiniStatsCard({ label, value, icon: Icon, color }: any) {
     );
 }
 
-function AgentCard({ agent }: any) {
+function AgentCard({ agent, activeMissions = [], onShowMissions }: any) {
+    const agentMissions = activeMissions.filter((m: any) => m.assigned_agent_id === agent.id);
+    const latestMission = agentMissions[0];
+    
+    let latestActionText = "Aucune action récente";
+    if (latestMission) {
+        let statusText = "Collecte planifiée";
+        if (latestMission.status === "in_progress") {
+            statusText = "Collecte en cours";
+        } else if (latestMission.status === "collected") {
+            statusText = "Collecte validée";
+        }
+        latestActionText = `${statusText} à ${latestMission.location || "Lieu inconnu"}`;
+    }
+
     return (
         <div className="p-8 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] shadow-sm hover:border-primary/30 transition-all group">
             <div className="flex items-center justify-between mb-6">
@@ -882,10 +967,10 @@ function AgentCard({ agent }: any) {
             
             <div className="p-4 bg-gray-50 dark:bg-zinc-800/50 rounded-2xl mb-6">
                  <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">Dernière Action</p>
-                 <p className="text-xs font-black dark:text-white italic">Collecte validée à Yopougon</p>
+                 <p className="text-xs font-black dark:text-white italic">{latestActionText}</p>
             </div>
 
-            <button onClick={() => showToast("Chargement de l'historique des missions...", "success")} className="w-full py-4 bg-primary text-[10px] font-black uppercase tracking-widest text-white rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all">
+            <button onClick={onShowMissions} className="w-full py-4 bg-primary text-[10px] font-black uppercase tracking-widest text-white rounded-2xl shadow-lg shadow-primary/20 hover:scale-[1.02] transition-all">
                 Détails Missions
             </button>
         </div>
