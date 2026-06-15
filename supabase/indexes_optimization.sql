@@ -59,6 +59,15 @@ CREATE INDEX IF NOT EXISTS idx_concessions_status ON public.concessions(status);
 -- 8. Index pour la table 'zones' (Périmètres / Communes)
 CREATE INDEX IF NOT EXISTS idx_zones_organization_id ON public.zones(organization_id);
 
+-- 9. Correctif de relation de clé étrangère pour la table 'tenders' (Appels d'Offres)
+-- Rétablit le lien manquant avec la table 'zones' pour permettre les jointures PostgREST
+ALTER TABLE public.tenders DROP CONSTRAINT IF EXISTS fk_tenders_zones;
+ALTER TABLE public.tenders DROP CONSTRAINT IF EXISTS tenders_zone_id_fkey;
+
+ALTER TABLE public.tenders 
+ADD CONSTRAINT fk_tenders_zones 
+FOREIGN KEY (zone_id) REFERENCES public.zones(id) ON DELETE CASCADE;
+
 -- =========================================================================
 -- FIN DU SCRIPT D'OPTIMISATION
 -- =========================================================================

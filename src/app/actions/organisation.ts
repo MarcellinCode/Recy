@@ -30,17 +30,27 @@ export async function addAgent(formData: any) {
 
     try {
         // 1. Création de l'utilisateur Auth
+        // Si aucun email n'est fourni, on génère un email par défaut unique basé sur le numéro de téléphone
+        const emailToUse = formData.email?.trim() 
+            ? formData.email.trim() 
+            : `agent.${formData.phone.replace(/[^0-9]/g, '')}@cleanzone.tech`;
+
         // On génère un mot de passe aléatoire sécurisé (cryptographique) pour éviter les mots de passe en dur
         const generatedPassword = crypto.randomBytes(12).toString('hex') + "!";
         const defaultPassword = formData.pin ? `Agent${formData.pin}!` : generatedPassword;
         
+        // On mappe les rôles de l'interface ('collector' ou 'driver') vers le rôle de base de données 'agent_collecteur'
+        const mappedRole = (formData.role === 'collector' || formData.role === 'driver')
+            ? 'agent_collecteur'
+            : formData.role;
+
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-            email: formData.email,
+            email: emailToUse,
             password: defaultPassword,
             email_confirm: true,
             user_metadata: {
                 full_name: formData.fullName,
-                role: formData.role,
+                role: mappedRole,
                 phone: formData.phone
             }
         });
