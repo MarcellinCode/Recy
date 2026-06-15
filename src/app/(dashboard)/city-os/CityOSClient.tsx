@@ -1621,7 +1621,7 @@ function CityOSClient({ initialData, profile }: { initialData: any; profile: any
                                         <Zap size={14} /> ANALYSE IA AIDA
                                     </h4>
                                     <p className="text-xs font-bold text-emerald-800 leading-relaxed italic uppercase">
-                                        "L'IA a détecté une accumulation de déchets plastiques non broyés en zone urbaine. Risque sanitaire modéré. Délai de résolution contractuel dépassé."
+                                        "AIDA a détecté une accumulation de déchets plastiques non broyés en zone urbaine. Risque sanitaire modéré. Délai de résolution contractuel dépassé."
                                     </p>
                                 </div>
 
