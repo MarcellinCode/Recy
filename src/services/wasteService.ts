@@ -42,23 +42,25 @@ export const wasteService = {
     // 2. Mettre à jour le statut du lot — filtre sur status='published'
     //    pour éviter la race condition (deux collecteurs simultanés)
     const { data, error: reserveError } = await supabase
-      .from('wastes')
-      .update({
-        status: 'reserved',
-        collector_id: collectorId
-      })
-      .eq('id', id)
-      .eq('status', 'published')   // ← verrou optimiste : échoue si déjà réservé
-      .select()
+      .rpc('reserve_waste', { p_waste_id: id, p_collecteur_id: collectorId })
       .single();
 
-    // Si reserveError ou data null → le lot était déjà pris au moment de l'UPDATE
     if (reserveError) {
-      console.error("Supabase reserve update error:", reserveError);
-      throw new Error(`Erreur Base de Données / RLS : ${reserveError.message} (Code: ${reserveError.code})`);
-    }
-    if (!data) {
-      throw new Error("Ce lot vient d'être réservé par un autre collecteur. Veuillez en choisir un autre.");
+      const msg = reserveError.message || '';
+      if (msg.includes('WASTE_ALREADY_RESERVED')) {
+        throw new Error("Ce lot vient d'être réservé par quelqu'un d'autre");
+      } else if (msg.includes('WASTE_UNAVAILABLE')) {
+        throw new Error("Ce lot n'est plus disponible");
+      } else if (msg.includes('ROLE_NOT_ALLOWED')) {
+        console.error("Rôle non autorisé pour la réservation :", reserveError);
+        throw new Error("Action non autorisée : votre rôle ne vous permet pas de réserver un lot.");
+      } else if (msg.includes('Non autorisé')) {
+        console.error("Accès non autorisé :", reserveError);
+        throw new Error("Session expirée ou non autorisée.");
+      } else {
+        console.error("Supabase reserve RPC error:", reserveError);
+        throw new Error(`Erreur lors de la réservation : ${msg}`);
+      }
     }
 
     // 3. Créer les notifications

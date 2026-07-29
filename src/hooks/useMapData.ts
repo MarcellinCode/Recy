@@ -143,7 +143,6 @@ export function useMapData({
             const [
                 zonesData,
                 concessionsData,
-                allProfiles,
                 wastesRaw,
                 wasteTypesData,
                 infractionsRaw,
@@ -151,7 +150,6 @@ export function useMapData({
             ] = await Promise.all([
                 safeQuery<any[]>(() => supabase.from("zones").select("*"), "zones", [], queryErrors),
                 safeQuery<any[]>(() => supabase.from("concessions").select("*"), "concessions", [], queryErrors),
-                safeQuery<any[]>(() => supabase.from("profiles").select("id, full_name, city"), "profiles", [], queryErrors),
                 safeQuery<any[]>(
                     () => supabase.from("wastes").select("*")
                         .in("status", ["published", "reserved"])
@@ -177,6 +175,30 @@ export function useMapData({
                     "agent_live_positions", [], queryErrors
                 ),
             ]);
+
+            // Récupérer les profils nécessaires uniquement (au lieu de toute la table pour fluidifier)
+            const profileIds = new Set<string>();
+            wastesRaw.forEach((w: any) => {
+                if (w.seller_id) profileIds.add(w.seller_id);
+                if (w.assigned_agent_id) profileIds.add(w.assigned_agent_id);
+            });
+            concessionsData.forEach((c: any) => {
+                if (c.organization_id) profileIds.add(c.organization_id);
+            });
+            infractionsRaw.forEach((i: any) => {
+                if (i.reported_by) profileIds.add(i.reported_by);
+            });
+            trackingData.forEach((t: any) => {
+                if (t.agent_id) profileIds.add(t.agent_id);
+            });
+
+            const uniqueProfileIds = Array.from(profileIds);
+            const allProfiles = uniqueProfileIds.length > 0
+                ? await safeQuery<any[]>(
+                    () => supabase.from("profiles").select("id, full_name, city").in("id", uniqueProfileIds),
+                    "profiles", [], queryErrors
+                  )
+                : [];
 
             // ── Traitement des zones ──
             let fetchedZones: ZoneMarker[] = [];
@@ -331,18 +353,41 @@ export function useMapData({
         }
     }, [supabase, isMairie, targetCity, mairieId, organizationId]);
 
-    // Chargement initial + cleanup
+    // Chargement initial + cleanup avec mise à jour en temps réel locale (sans requête DB)
     useEffect(() => {
         isMounted.current = true;
         fetchData(true);
 
         const channel = supabase.channel("map_tracking_changes")
             .on("postgres_changes", {
-                event: "INSERT",
+                event: "*", // INSERT, UPDATE, DELETE
                 schema: "public",
                 table: "agent_live_positions",
-            }, () => {
-                if (isMounted.current) fetchData(false);
+            }, (payload: any) => {
+                if (!isMounted.current) return;
+                const { eventType, new: newRow, old: oldRow } = payload;
+                
+                if (eventType === "DELETE") {
+                    setAgents(prev => prev.filter(a => a.agent_id !== oldRow.agent_id));
+                } else if (newRow && newRow.latitude && newRow.longitude) {
+                    setAgents(prev => {
+                        const exists = prev.some(a => a.agent_id === newRow.agent_id);
+                        if (exists) {
+                            return prev.map(a => a.agent_id === newRow.agent_id ? {
+                                ...a,
+                                latitude: newRow.latitude,
+                                longitude: newRow.longitude,
+                            } : a);
+                        } else {
+                            return [...prev, {
+                                id: newRow.id,
+                                agent_id: newRow.agent_id,
+                                latitude: newRow.latitude,
+                                longitude: newRow.longitude,
+                            } as AgentMarker];
+                        }
+                    });
+                }
             })
             .subscribe();
 
