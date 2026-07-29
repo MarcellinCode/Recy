@@ -45,7 +45,7 @@ export default function UsersPage() {
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<Profile | null>(null);
-    const [newUser, setNewUser] = useState({ full_name: "", email: "", role: "vendeur", city: "" });
+    const [newUser, setNewUser] = useState({ full_name: "", email: "", role: "producteur", city: "" });
     const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
     const [walletTargetUser, setWalletTargetUser] = useState<Profile | null>(null);
     const [walletAmount, setWalletAmount] = useState("");
@@ -83,7 +83,7 @@ export default function UsersPage() {
         } else {
             showToast("Utilisateur ajouté avec succès", "success");
             setIsAddModalOpen(false);
-            setNewUser({ full_name: "", email: "", role: "vendeur", city: "" });
+            setNewUser({ full_name: "", email: "", role: "producteur", city: "" });
             fetchUsers();
         }
     }
@@ -187,7 +187,7 @@ export default function UsersPage() {
             {/* Stats Cards for Users */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {[
-                    { label: "Citoyens", count: users.filter(u => u.role === 'vendeur').length, color: "text-blue-500" },
+                    { label: "Citoyens", count: users.filter(u => u.role === 'producteur').length, color: "text-blue-500" },
                     { label: "Collecteurs", count: users.filter(u => u.role === 'collecteur').length, color: "text-amber-500" },
                     { label: "Agents", count: users.filter(u => u.role === 'agent_collecteur').length, color: "text-emerald-500" },
                     { label: "Bannis", count: users.filter(u => u.status === 'Suspendu').length, color: "text-red-500" },
@@ -367,7 +367,7 @@ export default function UsersPage() {
                                 value={newUser.role}
                                 onChange={(e) => setNewUser({...newUser, role: e.target.value})}
                             >
-                                <option value="vendeur">Citoyen</option>
+                                <option value="producteur">Citoyen</option>
                                 <option value="collecteur">Collecteur</option>
                                 <option value="agent_collecteur">Agent</option>
                                 <option value="entreprise">Entreprise</option>
@@ -420,7 +420,7 @@ export default function UsersPage() {
                                     value={editingUser.role}
                                     onChange={(e) => setEditingUser({...editingUser, role: e.target.value})}
                                 >
-                                    <option value="vendeur">Citoyen</option>
+                                    <option value="producteur">Citoyen</option>
                                     <option value="collecteur">Collecteur</option>
                                     <option value="agent_collecteur">Agent</option>
                                     <option value="entreprise">Entreprise</option>

@@ -14,7 +14,7 @@ function SignupForm() {
     const searchParams = useSearchParams();
     const supabase = createClient();
 
-    const [role, setRole] = useState<"vendeur" | "collecteur" | "entreprise" | "organisation_admin" | "mairie" | null>(null);
+    const [role, setRole] = useState<"producteur" | "collecteur" | "entreprise" | "organisation_admin" | "mairie" | null>(null);
     const [step, setStep] = useState(1); // 1: Choose Role, 2: Specific Info, 3: Account Info
 
     useEffect(() => {
@@ -31,8 +31,8 @@ function SignupForm() {
                     setError("Le lien d'invitation est invalide ou expiré.");
                 }
             });
-        } else if (urlRole === "citoyen" || urlRole === "citizen" || urlRole === "vendeur") {
-            setRole("vendeur");
+        } else if (urlRole === "citoyen" || urlRole === "citizen" || urlRole === "producteur") {
+            setRole("producteur");
         } else if (urlRole === "collecteur" || urlRole === "collector") {
             setRole("collecteur");
         }
@@ -96,7 +96,7 @@ function SignupForm() {
             let resolvedDistrict = formData.district;
             let resolvedCommune = formData.commune;
 
-            if (role === "vendeur" && formData.city === "Abidjan" && selectedSousQuartier) {
+            if (role === "producteur" && formData.city === "Abidjan" && selectedSousQuartier) {
                 resolvedDistrict = `${selectedQuartier} (${selectedSousQuartier})`;
                 resolvedCommune = selectedCommune;
                 
@@ -157,7 +157,7 @@ function SignupForm() {
     const nextStep = () => {
         // Validation basique avant de passer à l'étape suivante
         if (step === 2) {
-            if (role === 'vendeur') {
+            if (role === 'producteur') {
                 const isAbidjan = formData.city === "Abidjan";
                 const isGeoComplete = isAbidjan ? (selectedCommune && selectedQuartier && selectedSousQuartier) : formData.district;
                 if (!formData.fullName || !formData.phone || !formData.city || !isGeoComplete) {
@@ -210,7 +210,7 @@ function SignupForm() {
                         <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 text-center uppercase tracking-widest">Vous êtes :</p>
 
                         <button
-                            onClick={() => { setRole("vendeur"); setStep(2); }}
+                            onClick={() => { setRole("producteur"); setStep(2); }}
                             className="flex items-center w-full p-4 transition-all border-2 rounded-2xl border-gray-100 hover:border-emerald-500 hover:bg-emerald-500/5 group text-left dark:border-zinc-800"
                         >
                             <div className="flex items-center justify-center w-10 h-10 mr-4 rounded-xl bg-emerald-50 text-emerald-600 dark:bg-emerald-950/30">
@@ -276,7 +276,7 @@ function SignupForm() {
                     <div className="space-y-4">
                         <div className="space-y-4 max-h-[50vh] overflow-y-auto px-1">
                              {/* Specific Fields */}
-                             {role === "vendeur" && (
+                             {role === "producteur" && (
                                 <>
                                     <div className="space-y-1">
                                         <label htmlFor="fullName" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom Complet</label>

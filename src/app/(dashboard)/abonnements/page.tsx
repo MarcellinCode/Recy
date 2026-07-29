@@ -53,7 +53,7 @@ export default function SubscriptionPage() {
             console.log('[Abonnement] Rôle détecté:', userRole, '| Profile role:', profile?.role, '| Metadata role:', user.user_metadata?.role);
             let plans = [];
 
-            if (userRole === 'vendeur') {
+            if (userRole === 'producteur') {
                 plans = [
                     { id: 'v1', name: 'Foyer', price_cfa: 2000, frequency_per_week: 1, description: 'Ramassage régulier pour les familles.' },
                     { id: 'v2', name: 'Entreprise', price_cfa: 6000, frequency_per_week: 3, description: 'Idéal pour les boutiques et bureaux.' },
@@ -136,7 +136,7 @@ export default function SubscriptionPage() {
         mairie: "Pour les mairies et collectivités territoriales."
     };
 
-    let currentCatalog = 'vendeur';
+    let currentCatalog = 'producteur';
     const firstPlanId = availablePlans[0]?.id;
     if (firstPlanId?.startsWith('m')) {
         currentCatalog = 'mairie';
@@ -245,17 +245,17 @@ export default function SubscriptionPage() {
                             <BenefitItem 
                                 icon={Calendar} 
                                 title="Planification Optimisée" 
-                                desc={currentCatalog === 'vendeur' ? "Passages réguliers 1 à 3 fois par semaine." : "Optimisation des tournées via IA."} 
+                                desc={currentCatalog === 'producteur' ? "Passages réguliers 1 à 3 fois par semaine." : "Optimisation des tournées via IA."} 
                             />
                             <BenefitItem 
                                 icon={ShieldCheck} 
                                 title="Certifications" 
-                                desc={currentCatalog === 'vendeur' ? "Points éco-citoyens et certificats de tri." : "Rapports d'impact RSE certifiés."} 
+                                desc={currentCatalog === 'producteur' ? "Points éco-citoyens et certificats de tri." : "Rapports d'impact RSE certifiés."} 
                             />
                             <BenefitItem 
                                 icon={Truck} 
                                 title="Gestion de Flotte" 
-                                desc={currentCatalog === 'vendeur' ? "Collecteurs géo-localisés en temps réel." : "Carnet d'entretien numérique complet."} 
+                                desc={currentCatalog === 'producteur' ? "Collecteurs géo-localisés en temps réel." : "Carnet d'entretien numérique complet."} 
                             />
                             <BenefitItem 
                                 icon={Zap} 

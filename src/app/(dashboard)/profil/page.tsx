@@ -122,7 +122,7 @@ export default function ProfilePage() {
                         )}>
                             {roleDetails.label}
                         </span>
-                        {profile?.role === 'vendeur' && (
+                        {profile?.role === 'producteur' && (
                             <div className="bg-green-500/10 text-green-600 text-[9px] font-black px-5 py-2 rounded-full border border-green-500/20 uppercase tracking-[0.2em] flex items-center gap-2">
                                 <Leaf className="w-3 h-3" />
                                 {profile?.eco_points || 0} Points Éco

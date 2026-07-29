@@ -33,7 +33,7 @@ export default async function DashboardPage() {
             const { count } = await supabase
                 .from('profiles')
                 .select('*', { count: 'exact', head: true })
-                .eq('role', 'vendeur')
+                .eq('role', 'producteur')
                 .ilike('city', `%${profile.city}%`);
             citizenCount = count || 0;
         } catch (e) {

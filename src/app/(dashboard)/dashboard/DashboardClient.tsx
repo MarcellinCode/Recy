@@ -50,7 +50,7 @@ export default function DashboardClient({ profile, stats, activeSub = null }: Da
             color: "bg-blue-500", 
             badge: unreadReservations
         },
-        ...(profile?.role !== 'vendeur' ? [{ 
+        ...(profile?.role !== 'producteur' ? [{ 
             title: "Carte Live", 
             description: "Explorer les déchets autour", 
             icon: MapPin, 
@@ -71,7 +71,7 @@ export default function DashboardClient({ profile, stats, activeSub = null }: Da
             href: "/wallet", 
             color: "bg-purple-500" 
         },
-        ...(profile?.role === 'vendeur' ? [
+        ...(profile?.role === 'producteur' ? [
             { 
                 title: "Mon Service", 
                 description: activeSub?.plan?.name || "Gestion abonnement & alertes", 

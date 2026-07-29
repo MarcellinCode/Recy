@@ -110,7 +110,7 @@ async function fetchRawMairieData(
         safeQuery(bidsQuery, "tender_bids"),
         safeQuery(supabase.from('transactions').select('*').eq('user_id', mairieId).order('created_at', { ascending: false }), "transactions"),
         safeQuery(supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false }), "sanctions"),
-        safeQuery(supabase.from('profiles').select('id, full_name, agent_count, role').in('role', ['entreprise', 'organisation_admin', 'collecteur']), "profiles for concessions"),
+        safeQuery(supabase.from('profiles').select('id, full_name, agent_count, role').in('role', ['producteur', 'organisation_admin', 'collecteur']), "profiles for concessions"),
         safeQuery(supabase.from('vehicles').select('*'), "vehicles"),
     ]);
 
