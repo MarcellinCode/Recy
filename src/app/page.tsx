@@ -89,9 +89,9 @@ export default async function Home() {
             <PillarCard 
               icon={Users}
               title="Citoyens"
-              subtitle="Cash & Salubrité"
-              desc="Vendez vos recyclables sur la marketplace ou abonnez-vous pour une collecte régulière sans effort."
-              features={["Marketplace rémunérée", "Abonnements confort", "Paiements Mobiles Instantanés"]}
+              subtitle="Confort & Salubrité"
+              desc="Abonnez-vous à un service de collecte régulier à domicile et configurez vos passages de ramassage."
+              features={["Abonnements confort", "Planification de passages", "Soutien aux organisations"]}
               color="bg-emerald-500"
             />
             <PillarCard 
@@ -136,23 +136,23 @@ export default async function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-24">
             <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4">Fonctionnement</h2>
-            <h3 className="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Simple. <span className="text-primary">Rapide.</span> Rentable.</h3>
+            <h3 className="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Simple. <span className="text-primary">Rapide.</span> Propre.</h3>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
             {/* Step 1 */}
             <div className="group space-y-8">
               <div className="aspect-[4/5] rounded-[3.5rem] overflow-hidden relative shadow-2xl">
-                <img src="/images/triage_v2.png" alt="Trier" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <img src="/images/triage_v2.png" alt="S'abonner" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
                 <div className="absolute bottom-10 left-10">
                   <span className="text-8xl font-black text-primary/40 italic tracking-tighter">01</span>
                 </div>
               </div>
               <div className="px-6">
-                <h4 className="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-3">Triez vos ressources</h4>
+                <h4 className="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-3">Abonnez-vous en ligne</h4>
                 <p className="text-[11px] text-gray-500 font-bold uppercase tracking-[0.15em] leading-loose">
-                  Séparez le plastique, l'aluminium et le papier. Prenez une photo et indiquez le poids estimé via notre application intuitive.
+                  Choisissez l'organisation agréée de votre secteur et souscrivez à un forfait adapté à vos besoins en quelques clics.
                 </p>
               </div>
             </div>
@@ -160,16 +160,16 @@ export default async function Home() {
             {/* Step 2 */}
             <div className="group space-y-8 lg:mt-16">
               <div className="aspect-[4/5] rounded-[3.5rem] overflow-hidden relative shadow-2xl">
-                <img src="https://www.kaweru.com/wp-content/uploads/2025/12/Cotonou.jpg" alt="Publier" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <img src="https://www.kaweru.com/wp-content/uploads/2025/12/Cotonou.jpg" alt="Planifier" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
                 <div className="absolute bottom-10 left-10">
                   <span className="text-8xl font-black text-primary/40 italic tracking-tighter">02</span>
                 </div>
               </div>
               <div className="px-6">
-                <h4 className="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-3">Publiez en un clic</h4>
+                <h4 className="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-3">Configurez vos passages</h4>
                 <p className="text-[11px] text-gray-500 font-bold uppercase tracking-[0.15em] leading-loose">
-                  Utilisez la géolocalisation haute précision pour aider les collecteurs à trouver votre lot. Votre annonce est visible sur la carte interactive.
+                  Définissez vos jours et créneaux horaires de ramassage préférés. Les agents partenaires sont automatiquement informés.
                 </p>
               </div>
             </div>
@@ -177,16 +177,16 @@ export default async function Home() {
             {/* Step 3 */}
             <div className="group space-y-8 lg:mt-32">
               <div className="aspect-[4/5] rounded-[3.5rem] overflow-hidden relative shadow-2xl">
-                <img src="/images/payment_v2.png" alt="Gagner" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                <img src="/images/payment_v2.png" alt="Collecter" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
                 <div className="absolute bottom-10 left-10">
                   <span className="text-8xl font-black text-primary/40 italic tracking-tighter">03</span>
                 </div>
               </div>
               <div className="px-6">
-                <h4 className="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-3">Encaissez vos gains</h4>
+                <h4 className="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-3">Triez, nous collectons</h4>
                 <p className="text-[11px] text-gray-500 font-bold uppercase tracking-[0.15em] leading-loose">
-                  Une fois la collecte validée par pesée réelle, le paiement est transféré immédiatement sur votre portefeuille numérique CleanZone.
+                  Triez vos ordures à la maison. Les collecteurs passent récupérer vos bacs et les acheminent vers les centres de tri officiels.
                 </p>
               </div>
             </div>
