@@ -10,6 +10,24 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes float {
+          0% { transform: translateY(0px); }
+          50% { transform: translateY(-12px); }
+          100% { transform: translateY(0px); }
+        }
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+        @keyframes slow-zoom {
+          0% { transform: scale(1.03) translateZ(0); }
+          50% { transform: scale(1.08) translateZ(0); }
+          100% { transform: scale(1.03) translateZ(0); }
+        }
+        .animate-slow-zoom {
+          animation: slow-zoom 25s ease-in-out infinite;
+        }
+      ` }} />
 
       {/* --- HERO SECTION IMMERSIF --- */}
       <section className="relative w-full min-h-[90vh] flex items-center justify-center overflow-hidden">
@@ -18,7 +36,7 @@ export default async function Home() {
           <img
             src="https://www.kaweru.com/wp-content/uploads/2025/12/Cotonou.jpg"
             alt="CleanZone - Plateforme d'Intelligence Urbaine et Gestion des Déchets"
-            className="w-full h-full object-cover scale-105 brightness-110"
+            className="w-full h-full object-cover brightness-110 animate-slow-zoom"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/60 to-transparent"></div>
         </div>
@@ -227,7 +245,7 @@ export default async function Home() {
 
                 <div className="relative">
                     <div className="absolute -inset-4 bg-primary/10 blur-[100px] rounded-full"></div>
-                    <div className="relative aspect-square rounded-[4rem] overflow-hidden bg-zinc-800 border-8 border-white dark:border-zinc-800 shadow-2xl">
+                    <div className="relative aspect-square rounded-[4rem] overflow-hidden bg-zinc-800 border-8 border-white dark:border-zinc-800 shadow-2xl animate-float">
                         <img src="/images/impact.png" alt="Dashboard Preview" className="w-full h-full object-cover" />
                     </div>
                 </div>
@@ -321,7 +339,7 @@ interface PillarCardProps {
 
 function PillarCard({ icon: Icon, title, subtitle, desc, features, color }: Readonly<PillarCardProps>) {
   return (
-    <div className="group relative p-10 bg-gray-50 dark:bg-zinc-900 rounded-[3rem] border border-gray-100 dark:border-zinc-800 hover:border-primary/30 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/5">
+    <div className="group relative p-10 bg-gray-50 dark:bg-zinc-900 rounded-[3rem] border border-gray-100 dark:border-zinc-800 hover:border-primary/30 hover:-translate-y-3 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10">
       <div className={cn("w-16 h-16 rounded-[1.5rem] flex items-center justify-center mb-8 shadow-lg group-hover:scale-110 transition-transform", color)}>
         <Icon className="w-8 h-8 text-white" />
       </div>
