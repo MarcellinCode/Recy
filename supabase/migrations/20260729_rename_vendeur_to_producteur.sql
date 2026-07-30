@@ -1,10 +1,12 @@
--- 1. Migration des utilisateurs existants ('vendeur' et 'entreprise') vers 'producteur'
+-- 1. Supprimer l'ancienne contrainte CHECK en premier pour autoriser temporairement le nouveau rôle 'producteur'
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+
+-- 2. Migration des utilisateurs existants ('vendeur' et 'entreprise') vers 'producteur'
 UPDATE public.profiles 
 SET role = 'producteur' 
 WHERE role IN ('vendeur', 'entreprise');
 
--- 2. Mise à jour de la contrainte CHECK sur le rôle de la table profiles
-ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+-- 3. Recréer la nouvelle contrainte CHECK avec les rôles mis à jour
 ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check 
   CHECK (role IN ('producteur', 'collecteur', 'mairie', 'organisation_admin', 'agent_collecteur', 'agent_police_verte', 'super_admin'));
 
