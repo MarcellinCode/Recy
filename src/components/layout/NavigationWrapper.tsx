@@ -3,7 +3,6 @@
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Header } from "@/components/layout/Header";
-import { BottomNavigation } from "@/components/layout/BottomNavigation";
 import { Footer } from "@/components/layout/Footer";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
@@ -118,7 +117,6 @@ export function NavigationWrapper({ children }: { children: React.ReactNode }) {
                 {children}
             </main>
 
-            {!shouldHideNav && <BottomNavigation />}
             {!shouldHideNav && <Footer />}
         </div>
     );
