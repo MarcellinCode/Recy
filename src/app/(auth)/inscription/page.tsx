@@ -14,7 +14,7 @@ function SignupForm() {
     const searchParams = useSearchParams();
     const supabase = createClient();
 
-    const [role, setRole] = useState<"producteur" | "collecteur" | "entreprise" | "organisation_admin" | "mairie" | null>(null);
+    const [role, setRole] = useState<"producteur" | "collecteur" | "organisation_admin" | "mairie" | null>(null);
     const [step, setStep] = useState(1); // 1: Choose Role, 2: Specific Info, 3: Account Info
 
     useEffect(() => {
@@ -90,7 +90,7 @@ function SignupForm() {
 
         try {            let fullName = formData.fullName;
             if (role === 'mairie') fullName = formData.municipalityName;
-            else if (role === 'organisation_admin' || role === 'entreprise') fullName = formData.orgName;
+            else if (role === 'organisation_admin') fullName = formData.orgName;
  
             let resolvedZoneId = formData.zoneId || null;
             let resolvedDistrict = formData.district;
@@ -169,7 +169,7 @@ function SignupForm() {
                 setError("Veuillez remplir tous les champs (y compris la ville).");
                 return;
             }
-            if ((role === 'organisation_admin' || role === 'entreprise') && (!formData.orgName || !formData.contactPerson || !formData.rccm || !formData.phone || !formData.city || !formData.district || !formData.commune)) {
+            if ((role === 'organisation_admin') && (!formData.orgName || !formData.contactPerson || !formData.rccm || !formData.phone || !formData.city || !formData.district || !formData.commune)) {
                 setError("Veuillez remplir tous les champs (y compris la ville, le district et la commune).");
                 return;
             }
@@ -217,8 +217,8 @@ function SignupForm() {
                                 <User className="w-5 h-5" />
                             </div>
                             <div className="flex-1">
-                                <h3 className="font-bold text-gray-900 dark:text-white text-sm uppercase">Citoyen (Foyer)</h3>
-                                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-tight">Je vends mes déchets & je gère mes ordures.</p>
+                                <h3 className="font-bold text-gray-900 dark:text-white text-sm uppercase">Citoyen / Producteur</h3>
+                                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-tight">Je m'abonne au service de collecte et de tri.</p>
                             </div>
                             <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-emerald-500" />
                         </button>
@@ -251,19 +251,7 @@ function SignupForm() {
                             <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-indigo-500" />
                         </button>
  
-                        <button
-                            onClick={() => { setRole("entreprise"); setStep(2); }}
-                            className="flex items-center w-full p-4 transition-all border-2 rounded-2xl border-gray-100 hover:border-blue-500 hover:bg-blue-500/5 group text-left dark:border-zinc-800"
-                        >
-                            <div className="flex items-center justify-center w-10 h-10 mr-4 rounded-xl bg-blue-50 text-blue-600 dark:bg-blue-950/30">
-                                <Building2 className="w-5 h-5" />
-                            </div>
-                            <div className="flex-1">
-                                <h3 className="font-bold text-gray-900 dark:text-white text-sm uppercase">Entreprise Privée</h3>
-                                <p className="text-[10px] text-gray-500 font-medium uppercase tracking-tight">Société de collecte, tri et recyclage commerciale.</p>
-                            </div>
-                            <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-blue-500" />
-                        </button>
+
 
                         <div className="pt-4 mt-4 border-t border-gray-100 dark:border-zinc-800 text-center">
                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">Accès Officiel Mairie</p>
@@ -531,7 +519,7 @@ function SignupForm() {
                                 </>
                              )}
 
-                             {(role === "organisation_admin" || role === "entreprise") && (
+                             {(role === "organisation_admin") && (
                                 <>
                                     <div className="space-y-1">
                                         <label htmlFor="orgName" className="text-[10px] font-black uppercase tracking-widest text-gray-400">Nom de la structure</label>
@@ -541,7 +529,7 @@ function SignupForm() {
                                             value={formData.orgName}
                                             onChange={(e) => setFormData({...formData, orgName: e.target.value})}
                                             className="w-full px-5 py-3 text-sm bg-gray-50 border border-gray-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white"
-                                            placeholder={role === "entreprise" ? "Ex: RecyCo Côte d'Ivoire" : "Ex: ONG Salubrité Propre"}
+                                            placeholder="Ex: ONG Salubrité Propre"
                                         />
                                     </div>
                                     <div className="space-y-1">
