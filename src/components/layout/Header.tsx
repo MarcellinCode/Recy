@@ -11,10 +11,9 @@ import { useUnreadBadges } from "@/hooks/useUnreadBadges";
 
 function getRoleLinks(unreadMessages: number): Record<string, { href: string; label: string; badge?: number }[]> {
     return {
-        vendeur: [
+        producteur: [
             { href: "/dashboard",   label: "Hub" },
             { href: "/marketplace", label: "Marché" },
-            { href: "/mes-dechets", label: "Mes Lots" },
             { href: "/chat",        label: "Messages", badge: unreadMessages },
         ],
         collecteur: [
@@ -27,16 +26,10 @@ function getRoleLinks(unreadMessages: number): Record<string, { href: string; la
             { href: "/dashboard",   label: "Hub" },
             { href: "/chat",        label: "Messages", badge: unreadMessages },
         ],
-        entreprise: [
-            { href: "/dashboard",    label: "Hub" },
-            { href: "/marketplace",  label: "Marché" },
-            { href: "/appels-offres", label: "B2B" },
-            { href: "/chat",         label: "Messages", badge: unreadMessages },
-        ],
         organisation_admin: [
             { href: "/dashboard",    label: "Hub" },
             { href: "/marketplace",  label: "Marché" },
-            { href: "/appels-offres", label: "B2B" },
+            { href: "/mes-dechets",  label: "Mes Lots" },
             { href: "/chat",         label: "Messages", badge: unreadMessages },
         ],
         mairie: [
@@ -82,7 +75,7 @@ function renderRoleIcon(role: string | null) {
     if (role === 'mairie') {
         return <School className="w-4 h-4 text-emerald-500" />;
     }
-    if (role === 'entreprise' || role === 'organisation_admin') {
+    if (role === 'organisation_admin') {
         return <Building2 className="w-4 h-4 text-indigo-400" />;
     }
     if (role === 'agent_police_verte') {

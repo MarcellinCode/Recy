@@ -16,10 +16,9 @@ type NavLink = { href: string; label: string; icon: any; badge?: number };
 
 /* ─── Configurations de navigation par rôle ─── */
 const NAV_CONFIG: Record<string, NavLink[]> = {
-    vendeur: [
+    producteur: [
         { href: "/dashboard",   label: "Hub",       icon: Home },
         { href: "/marketplace", label: "Marché",    icon: Map },
-        { href: "/mes-dechets", label: "Mes lots",  icon: Package },
         { href: "/chat",        label: "Messages",  icon: MessageSquare },
         { href: "/profil",      label: "Profil",    icon: UserCircle },
     ],
@@ -35,17 +34,10 @@ const NAV_CONFIG: Record<string, NavLink[]> = {
         { href: "/chat",        label: "Messages",   icon: MessageSquare },
         { href: "/profil",      label: "Profil",     icon: UserCircle },
     ],
-    entreprise: [
-        { href: "/dashboard",           label: "Hub",      icon: Home },
-        { href: "/marketplace",         label: "Marché",   icon: Map },
-        { href: "/appels-offres",       label: "B2B",      icon: BarChart3 },
-        { href: "/chat",                label: "Messages", icon: MessageSquare },
-        { href: "/profil",              label: "Profil",   icon: UserCircle },
-    ],
     organisation_admin: [
         { href: "/dashboard",           label: "Hub",      icon: Home },
         { href: "/marketplace",         label: "Marché",   icon: Map },
-        { href: "/appels-offres",       label: "B2B",      icon: BarChart3 },
+        { href: "/mes-dechets",         label: "Mes lots",  icon: Package },
         { href: "/chat",                label: "Messages", icon: MessageSquare },
         { href: "/profil",              label: "Profil",   icon: UserCircle },
     ],
