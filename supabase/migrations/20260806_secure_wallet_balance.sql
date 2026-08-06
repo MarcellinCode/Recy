@@ -23,7 +23,10 @@ BEGIN
     v_desc := 'Paiement Service (Simulation)';
   END IF;
 
-  -- 3. Mettre à jour le solde
+  -- 3. Positionner le flag de bypass pour cette transaction seulement
+  PERFORM set_config('app.bypass_profile_protection', 'true', true);
+
+  -- 4. Mettre à jour le solde
   UPDATE public.profiles
   SET wallet_balance = wallet_balance + p_amount
   WHERE id = p_user_id
@@ -33,7 +36,7 @@ BEGIN
     RAISE EXCEPTION 'Solde insuffisant';
   END IF;
 
-  -- 4. Journaliser dans la table transactions (utilisation de user_id conforme au schéma réel)
+  -- 5. Journaliser dans la table transactions (user_id)
   INSERT INTO public.transactions (user_id, amount, type, description, status)
   VALUES (p_user_id, p_amount, p_operation_type, v_desc, 'completed');
 
@@ -41,34 +44,35 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- 🛡️ Trigger de protection des colonnes sensibles sur profiles
+-- 🛡️ Trigger de protection des colonnes sensibles sur profiles (sans SECURITY DEFINER pour respecter le rôle de l'invocateur)
 CREATE OR REPLACE FUNCTION public.fn_protect_profile_columns()
 RETURNS TRIGGER
 LANGUAGE plpgsql
-SECURITY DEFINER
 AS $$
 BEGIN
-  -- 1. Permettre aux rôles système de tout modifier sans restriction (comme postgres pour les RPC)
+  -- 1. Si le flag de bypass est positionné (mis par nos RPC sécurisées), on laisse passer
+  IF current_setting('app.bypass_profile_protection', true) = 'true' THEN
+    RETURN NEW;
+  END IF;
+
+  -- 2. Permettre aux rôles système de tout modifier sans restriction (lors de migrations directes via SQL editor)
   IF current_user IN ('postgres', 'service_role', 'supabase_admin') THEN
     RETURN NEW;
   END IF;
 
-  -- 2. Restreindre la modification directe de wallet_balance par les clients
+  -- 3. Restreindre la modification directe des colonnes sensibles par les clients
   IF NEW.wallet_balance IS DISTINCT FROM OLD.wallet_balance THEN
     RAISE EXCEPTION 'Interdit : Modification directe du solde non autorisée. Utilisez l''API officielle.';
   END IF;
 
-  -- 3. Restreindre la modification directe de eco_points par les clients
   IF NEW.eco_points IS DISTINCT FROM OLD.eco_points THEN
     RAISE EXCEPTION 'Interdit : Modification directe des points éco non autorisée.';
   END IF;
 
-  -- 4. Restreindre la modification directe du rôle par les clients
   IF NEW.role IS DISTINCT FROM OLD.role THEN
     RAISE EXCEPTION 'Interdit : Modification directe du rôle non autorisée.';
   END IF;
 
-  -- 5. Restreindre la modification directe du statut par les clients
   IF NEW.status IS DISTINCT FROM OLD.status THEN
     RAISE EXCEPTION 'Interdit : Modification directe du statut non autorisée.';
   END IF;
