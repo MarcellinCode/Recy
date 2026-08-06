@@ -33,9 +33,9 @@ BEGIN
     RAISE EXCEPTION 'Solde insuffisant';
   END IF;
 
-  -- 4. Journaliser dans la table transactions
-  INSERT INTO public.transactions (profile_id, amount, type, description, status)
-  VALUES (p_user_id, p_amount, p_operation_type, v_desc, 'Succeeded');
+  -- 4. Journaliser dans la table transactions (utilisation de user_id conforme au schéma réel)
+  INSERT INTO public.transactions (user_id, amount, type, description, status)
+  VALUES (p_user_id, p_amount, p_operation_type, v_desc, 'completed');
 
   RETURN v_new_balance;
 END;
