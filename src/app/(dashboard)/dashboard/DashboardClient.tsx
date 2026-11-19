@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { 
     BarChart3, 
     Leaf, 
     Zap, 
     Award, 
     ShieldCheck, 
-    ArrowUpRight, 
+    ArrowUpRight,
+    ArrowRight,
     Package, 
     Wallet, 
     MapPin, 
@@ -21,7 +20,7 @@ import {
     Truck,
     Users
 } from "lucide-react";
-import { motion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUnreadBadges } from "@/hooks/useUnreadBadges";
 
@@ -38,7 +37,6 @@ interface DashboardClientProps {
 }
 
 export default function DashboardClient({ profile, stats, activeSub = null }: DashboardClientProps) {
-    const router = useRouter();
     const { unreadMessages, unreadReservations } = useUnreadBadges();
 
     const hubCards = [
@@ -139,161 +137,113 @@ export default function DashboardClient({ profile, stats, activeSub = null }: Da
         welcomeSubText = "Espace de gestion entreprise";
     }
 
-    return (
-        <div className="bg-transparent min-h-screen">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 pb-24">
-                {/* Header section with User emphasis */}
-                <motion.header 
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-12"
-                >
-                    <div className="flex items-center gap-2 mb-2">
-                        <span className="w-8 h-[2px] bg-primary"></span>
-                        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary italic">CleanZone Central Hub</p>
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
-                        <div>
-                            <h1 className="text-4xl sm:text-5xl font-black uppercase italic tracking-tighter leading-none text-zinc-900">
-                                Bonjour, <span className="text-primary">{profile?.full_name?.split(' ')[0] || "Eco-Guerrier"}</span>
-                            </h1>
-                            <p className="text-sm font-medium text-zinc-500 mt-2">
-                                {welcomeSubText}
-                            </p>
-                        </div>
-                        
-                        {/* Quick Wallet Summary */}
-                        <Link 
-                            href="/wallet" 
-                            onClick={(e) => { e.preventDefault(); router.push("/wallet"); }}
-                            className="group flex items-center gap-4 bg-white p-4 rounded-[2rem] border border-gray-100 shadow-md self-start sm:self-auto transition-all hover:scale-105"
-                        >
-                            <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
-                                <CircleDollarSign className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-450">Solde Actuel</p>
-                                <p className="text-lg font-black text-zinc-900 italic tracking-tighter">{(profile?.wallet_balance || 0).toLocaleString()} F CFA</p>
-                            </div>
-                            <ArrowUpRight className="w-5 h-5 text-zinc-400 group-hover:text-primary transition-colors ml-2" />
-                        </Link>
-                    </div>
-                </motion.header>
+    const firstName = profile?.full_name?.split(" ")[0] || "";
 
-                {/* Quick Stats Grid */}
-                <section className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
-                    <MiniStat 
-                        label="Recyclé" 
-                        value={`${stats.totalWeight}kg`} 
-                        icon={Zap} 
-                        delay={0.1}
+    return (
+        <div className="min-h-screen bg-background">
+            <div className="mx-auto max-w-[1200px] px-6 pb-24 pt-10 sm:pt-14">
+
+                {/* En-tête */}
+                <header className="mb-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+                    <div>
+                        <h1 className="m-0 text-[32px] font-extrabold leading-tight tracking-[-0.03em] text-ink sm:text-[40px]">
+                            <span className="cz-mask"><span className="cz-line">{firstName ? "Bonjour, " + firstName : "Bonjour"}</span></span>
+                        </h1>
+                        <p className="cz-in cz-t1 m-0 mt-2 text-base text-muted-foreground">{welcomeSubText}</p>
+                    </div>
+
+                    <Link
+                        href="/wallet"
+                        className="cz-card cz-in cz-t2 flex items-center gap-4 self-start rounded-3xl border border-border bg-white p-4 pr-5 sm:self-auto"
+                    >
+                        <span className="cz-tile flex h-11 w-11 items-center justify-center rounded-2xl bg-[#E6F5EC]">
+                            <CircleDollarSign className="h-5 w-5 text-primary" aria-hidden="true" />
+                        </span>
+                        <span className="flex flex-col">
+                            <span className="text-[13px] text-muted-foreground">Solde du portefeuille</span>
+                            <strong className="text-lg tracking-[-0.01em] text-ink">{Number(profile?.wallet_balance || 0).toLocaleString("fr-FR")} FCFA</strong>
+                        </span>
+                        <ArrowUpRight className="cz-go h-5 w-5 text-primary" aria-hidden="true" />
+                    </Link>
+                </header>
+
+                {/* Indicateurs */}
+                <section aria-label="Vos indicateurs" className="cz-in cz-t2 mb-12 grid grid-cols-2 gap-4 lg:grid-cols-4">
+                    <MiniStat label="Recyclé" value={stats.totalWeight + " kg"} icon={Zap} />
+                    <MiniStat label="CO₂ évité" value={stats.co2Saved.toFixed(0) + " kg"} icon={Leaf} />
+                    <MiniStat
+                        label={profile?.role === "mairie" ? "Citoyens" : "Points éco"}
+                        value={profile?.role === "mairie" ? stats.citizenCount : stats.ecoPoints}
+                        icon={profile?.role === "mairie" ? Users : Award}
+                        highlight={profile?.role !== "mairie"}
                     />
-                    <MiniStat 
-                        label="CO2 Évité" 
-                        value={`${stats.co2Saved.toFixed(0)}kg`} 
-                        icon={Leaf} 
-                        delay={0.2}
-                    />
-                    <MiniStat 
-                        label={profile?.role === 'mairie' ? "Citoyens" : "Points"} 
-                        value={profile?.role === 'mairie' ? stats.citizenCount : stats.ecoPoints} 
-                        icon={profile?.role === 'mairie' ? Users : Award} 
-                        delay={0.3}
-                    />
-                    <MiniStat 
-                        label="Collectes" 
-                        value={stats.collectionsCount} 
-                        icon={ShieldCheck} 
-                        delay={0.4}
-                    />
+                    <MiniStat label="Collectes" value={stats.collectionsCount} icon={ShieldCheck} />
                 </section>
 
-                {/* Main Hub Navigation */}
-                <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500 mb-6">Menu Principal</h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {hubCards.map((card, idx) => (
-                        <motion.div
+                {/* Accès rapides */}
+                <h2 className="cz-in cz-t3 m-0 mb-5 text-xl font-bold tracking-[-0.01em] text-ink">Accès rapides</h2>
+                <div className="cz-in cz-t3 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {hubCards.map((card) => (
+                        <Link
                             key={card.title}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.1 * idx }}
+                            href={card.href}
+                            className="cz-card flex flex-col gap-3 rounded-3xl border border-border bg-white p-7 text-ink"
                         >
-                            <Link 
-                                href={card.href}
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    router.push(card.href);
-                                }}
-                                className="group relative flex flex-col p-8 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:border-primary/30 transition-all overflow-hidden"
-                            >
-                                <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6 shadow-md relative", card.color)}>
-                                    <card.icon className="w-7 h-7 text-white" />
-                                    {card.badge ? (
-                                        <span className="absolute -top-2 -right-2 flex items-center justify-center min-w-[24px] h-[24px] text-[10px] font-black text-white bg-red-500 rounded-full px-1.5 shadow-lg border-4 border-white">
-                                            {card.badge}
-                                        </span>
-                                    ) : null}
-                                </div>
-                                
-                                <h4 className="text-xl font-black uppercase italic tracking-tighter text-zinc-900 mb-2">{card.title}</h4>
-                                <p className="text-xs font-medium text-zinc-500">{card.description}</p>
-
-                                <div className="mt-8 flex items-center text-[10px] font-black uppercase tracking-widest text-primary gap-2 group-hover:gap-3 transition-all">
-                                    Explorer <ArrowUpRight className="w-3.5 h-3.5" />
-                                </div>
-
-                                {/* Background Pattern */}
-                                <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-gray-100/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <card.icon className="w-16 h-16 text-zinc-300/30" />
-                                </div>
-                            </Link>
-                        </motion.div>
+                            <span className="cz-tile relative flex h-12 w-12 items-center justify-center rounded-2xl bg-[#E6F5EC]">
+                                <card.icon className="h-[22px] w-[22px] text-primary" aria-hidden="true" />
+                                {card.badge ? (
+                                    <span className="absolute -right-2 -top-2 flex h-6 min-w-[24px] items-center justify-center rounded-full border-[3px] border-white bg-[#D93025] px-1.5 text-[11px] font-bold text-white">
+                                        {card.badge}
+                                    </span>
+                                ) : null}
+                            </span>
+                            <strong className="flex items-center gap-2 text-[19px] tracking-[-0.01em]">
+                                {card.title}
+                                <ArrowUpRight className="cz-go h-4 w-4 text-primary" strokeWidth={2.4} aria-hidden="true" />
+                            </strong>
+                            <span className="text-[15px] leading-relaxed text-muted-foreground">{card.description}</span>
+                        </Link>
                     ))}
                 </div>
 
-                {/* Bottom Promotional / System Card - Only for collectors looking to upgrade */}
-                {(profile?.role === 'collecteur') && (
-                    <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        whileInView={{ opacity: 1, y: 0 }}
-                        viewport={{ once: true }}
-                        className="mt-12 p-1 bg-gradient-to-r from-primary/40 to-emerald-500/40 rounded-[3rem]"
-                    >
-                        <div className="bg-white rounded-[2.9rem] p-8 sm:p-12 flex flex-col lg:flex-row items-center justify-between gap-8 border border-gray-100">
-                            <div className="text-center lg:text-left">
-                                <h3 className="text-2xl sm:text-3xl font-black uppercase italic tracking-tighter mb-2 text-zinc-900">Devenez un <span className="text-primary italic">Partenaire Certifié</span></h3>
-                                <p className="text-xs sm:text-sm font-medium text-zinc-500 max-w-xl">Boostez votre visibilité et accédez à des lots premium en passant au forfait Business.</p>
-                            </div>
-                            <Link 
-                                href="/abonnements" 
-                                onClick={(e) => { e.preventDefault(); router.push("/abonnements"); }}
-                                className="px-10 py-5 bg-primary text-white font-black uppercase tracking-widest text-[10px] rounded-full shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all"
-                            >
-                                En savoir plus
-                            </Link>
+                {/* Offre pour les collecteurs */}
+                {profile?.role === "collecteur" && (
+                    <div className="cz-reveal mt-12 flex flex-col items-start justify-between gap-6 rounded-[32px] bg-forest p-8 text-white sm:p-12 lg:flex-row lg:items-center">
+                        <div>
+                            <h2 className="m-0 mb-2 text-2xl font-extrabold tracking-[-0.02em] sm:text-3xl">Passez à Acheteur Premium</h2>
+                            <p className="m-0 max-w-xl text-[15px] leading-relaxed text-[#C9DDD1]">
+                                Réservations illimitées sur la marketplace, au lieu de 3 par mois avec le plan gratuit.
+                            </p>
                         </div>
-                    </motion.div>
+                        <Link href="/abonnements" className="cz-btn inline-flex h-[52px] shrink-0 items-center gap-2.5 rounded-full bg-leaf px-6 text-[15px] font-bold text-forest hover:bg-[#5BCB50]">
+                            Voir l&apos;offre
+                            <ArrowRight className="cz-arrow h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
+                        </Link>
+                    </div>
                 )}
             </div>
         </div>
     );
 }
 
-function MiniStat({ label, value, icon: Icon, delay }: any) {
+function MiniStat({ label, value, icon: Icon, highlight = false }: Readonly<{
+    label: string;
+    value: string | number;
+    icon: LucideIcon;
+    highlight?: boolean;
+}>) {
     return (
-        <motion.div 
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay }}
-            className="p-4 bg-white rounded-3xl border border-gray-100 shadow-sm flex items-center gap-3 sm:gap-4"
-        >
-            <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center shadow-inner">
-                <Icon className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-                <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">{label}</p>
-                <p className="text-sm sm:text-base font-black italic tracking-tighter text-zinc-900">{value}</p>
-            </div>
-        </motion.div>
+        <div className={cn(
+            "flex items-center gap-3 rounded-3xl p-4 sm:gap-4 sm:p-5",
+            highlight ? "bg-[#FBF1D6]" : "border border-border bg-white"
+        )}>
+            <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-xl", highlight ? "bg-gold" : "bg-[#E6F5EC]")}>
+                <Icon className={cn("h-[18px] w-[18px]", highlight ? "text-ink" : "text-primary")} aria-hidden="true" />
+            </span>
+            <span className="flex min-w-0 flex-col">
+                <span className={cn("text-[13px]", highlight ? "font-semibold text-[#6B4E00]" : "text-muted-foreground")}>{label}</span>
+                <strong className="truncate text-lg tracking-[-0.01em] text-ink">{value}</strong>
+            </span>
+        </div>
     );
 }

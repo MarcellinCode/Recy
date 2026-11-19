@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { NavigationWrapper } from "@/components/layout/NavigationWrapper";
 import "./globals.css";
 import { ToastProvider } from "@/components/ui/toast";
 
-const inter = {
-  variable: "font-sans",
-};
+// Police de la charte, servie par Next (pas de requête externe côté navigateur)
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 // --- SHIELD: Immunize against intrusive browser extensions ---
 if (typeof globalThis.window !== 'undefined') {

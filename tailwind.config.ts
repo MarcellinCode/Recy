@@ -8,7 +8,16 @@ const config: Config = {
     ],
     theme: {
         extend: {
+            fontFamily: {
+                sans: ["var(--font-inter)", "Inter", "system-ui", "sans-serif"],
+            },
             colors: {
+                // Charte CleanZone 2.0
+                brand: "#02A548",   // vert du logo : logo, icônes, grands titres
+                leaf: "#46BE3A",    // vert feuille : accents sur fond sombre
+                forest: "#0B3D2A",  // sections sombres
+                gold: "#E9C46A",    // points éco, gains (texte encre uniquement)
+                ink: "#0F1B14",     // texte principal
                 border: "hsl(var(--border))",
                 input: "hsl(var(--input))",
                 ring: "hsl(var(--ring))",

@@ -68,15 +68,6 @@ function safeSetRole(newRole: string | null) {
     }
 }
 
-function getLinkClass(isActive: boolean, isDarkRole: boolean): string {
-    if (isActive) {
-        return "text-emerald-500 bg-emerald-500/10 shadow-lg shadow-emerald-500/5";
-    }
-    if (isDarkRole) {
-        return "text-white/60 hover:text-white hover:bg-white/5";
-    }
-    return "text-zinc-900/60 hover:text-zinc-900 hover:bg-zinc-900/5";
-}
 
 function renderRoleIcon(role: string | null) {
     if (role === 'mairie') {
@@ -111,7 +102,7 @@ export function Header() {
         setIsMobileMenuOpen(false);
 
         // 2. Trigger network logout in the background without blocking the client redirect
-        supabase.auth.signOut().catch((e: any) => {
+        supabase.auth.signOut().catch((e: unknown) => {
             console.error("SignOut background error:", e);
         });
         
@@ -139,60 +130,40 @@ export function Header() {
     const desktopLinks = user
         ? (role ? links[role] : []) ?? []
         : [
-            { href: "/#features", label: "Fonctionnalités" },
-            { href: "/#impact",   label: "Notre Impact" },
+            { href: "/#fonctionnement", label: "Comment ça marche" },
+            { href: "/#profils",        label: "Pour qui ?" },
+            { href: "/#marketplace",    label: "Marketplace" },
+            { href: "/#mairies",        label: "Mairies" },
           ];
 
-    const isDashboardPath = pathname.includes('/dashboard') || 
-                           pathname.includes('/city-os') || 
-                           pathname.includes('/chat') || 
-                           pathname.includes('/mes-dechets') ||
-                           pathname.includes('/marketplace');
-
-    const isDarkRole = false;
-
     return (
-        <header className={cn(
-            "sticky top-0 z-50 w-full border-b backdrop-blur-xl transition-all duration-500",
-            isDarkRole 
-                ? "border-white/5 bg-zinc-950/40 text-white shadow-2xl" 
-                : "border-gray-100 bg-white/80 dark:border-zinc-800 dark:bg-zinc-950/80"
-        )}>
-            <div className="flex items-center justify-between h-16 px-4 mx-auto max-w-7xl sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-50 w-full border-b border-border bg-white/90 backdrop-blur-xl">
+            <div className="mx-auto flex h-[68px] max-w-[1200px] items-center justify-between gap-4 px-6">
 
                 {/* Logo */}
-                <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0">
-                    <div className={cn(
-                        "flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl group-hover:scale-105 transition-all shadow-md overflow-hidden",
-                        isDarkRole ? "bg-zinc-900 border border-white/10" : "bg-white"
-                    )}>
-                        <img src="/logo.png" alt="CleanZone Logo" className="w-full h-full object-cover" />
-                    </div>
-                    <span className={cn(
-                        "text-xl sm:text-3xl font-black tracking-tighter uppercase italic leading-none",
-                        isDarkRole ? "text-white" : "text-gray-900 dark:text-white"
-                    )}>
-                        Clean<span className="text-primary tracking-tighter">Zone</span>
-                    </span>
+                <Link href="/" className="flex shrink-0 items-center gap-2.5 text-ink">
+                    <img src="/logo-mark.png" alt="" className="h-9 w-9" />
+                    <span className="text-xl font-extrabold tracking-[-0.02em]">CleanZone</span>
                 </Link>
 
-                {/* Navigation Desktop */}
-                <nav className="hidden md:flex items-center gap-8">
+                {/* Navigation (ordinateur) */}
+                <nav aria-label="Navigation principale" className="hidden items-center gap-7 md:flex">
                     {desktopLinks.map((link) => {
                         const isActive = pathname === link.href || pathname.startsWith(link.href + "/");
                         return (
                             <Link
                                 key={link.href}
                                 href={link.href}
+                                aria-current={isActive ? "page" : undefined}
                                 className={cn(
-                                    "text-[11px] font-black uppercase tracking-[0.2em] transition-all duration-300 relative flex items-center gap-2 px-3 py-2 rounded-xl",
-                                    getLinkClass(isActive, isDarkRole)
+                                    "cz-link flex items-center gap-2 pb-0.5 text-[15px] font-medium",
+                                    isActive ? "text-primary" : "text-[#2C3A31] hover:text-ink"
                                 )}
                             >
                                 {link.label}
                                 {link.badge ? (
-                                    <span className="flex items-center justify-center min-w-[18px] h-[18px] text-[10px] font-black text-white bg-red-500 rounded-full px-1 shadow-sm shadow-red-500/20">
-                                        {link.badge > 99 ? '99+' : link.badge}
+                                    <span className="flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#D93025] px-1 text-[10px] font-bold text-white">
+                                        {link.badge > 99 ? "99+" : link.badge}
                                     </span>
                                 ) : null}
                             </Link>
@@ -201,100 +172,110 @@ export function Header() {
                 </nav>
 
                 {/* Actions */}
-                <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex items-center gap-2">
                     {user && (
-                        <Link href="/notifications" className="p-2 text-gray-500 transition-colors rounded-full relative group hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-zinc-800">
-                            <Bell className="w-5 h-5 group-hover:text-primary transition-colors" />
+                        <Link href="/notifications" aria-label="Notifications" className="relative flex h-11 w-11 items-center justify-center rounded-full border border-border bg-white text-ink transition-colors hover:border-brand">
+                            <Bell className="h-5 w-5" />
                             {unreadNotifications > 0 && (
-                                <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white dark:border-zinc-950 shadow-sm shadow-red-500/20"></span>
+                                <span className="cz-live absolute right-2.5 top-2.5 h-2 w-2 rounded-full bg-[#D93025]" />
                             )}
                         </Link>
                     )}
 
                     {user ? (
-                            <div className="hidden md:flex items-center gap-3">
-                                <Link
-                                    href="/profil"
-                                    className={cn(
-                                        "flex items-center gap-2 px-4 py-2 text-[10px] font-black uppercase tracking-widest transition-all",
-                                        isDarkRole 
-                                            ? "bg-zinc-900 border border-white/10 text-white hover:bg-zinc-800" 
-                                            : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-zinc-800 dark:text-gray-200"
-                                    )}
-                                    style={{ borderRadius: '14px' }}
-                                >
-                                    {renderRoleIcon(role)}
-                                    {user.user_metadata?.full_name?.split(' ')[0] || "Profil"}
-                                </Link>
-                                <button
-                                    onClick={handleLogout}
-                                    className="p-2 text-red-500 hover:bg-red-50 rounded-full transition-colors dark:hover:bg-red-950/30"
-                                >
-                                    <LogOut className="w-5 h-5" />
-                                </button>
-                            </div>
-                        ) : (
+                        <div className="hidden items-center gap-2 md:flex">
                             <Link
-                                href="/connexion"
-                                className="px-4 sm:px-6 py-2 sm:py-2.5 text-[10px] sm:text-xs font-black uppercase tracking-widest text-white transition-all rounded-full bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 active:scale-95"
+                                href="/profil"
+                                className="flex h-11 items-center gap-2 rounded-full border border-border bg-white px-4 text-sm font-semibold text-ink transition-colors hover:border-brand"
                             >
-                                <span className="hidden xs:inline">Connexion</span>
-                                <span className="xs:hidden">Login</span>
+                                {renderRoleIcon(role)}
+                                {user.user_metadata?.full_name?.split(" ")[0] || "Profil"}
                             </Link>
-                        )
-                    }
+                            <button
+                                type="button"
+                                onClick={handleLogout}
+                                aria-label="Se déconnecter"
+                                className="flex h-11 w-11 items-center justify-center rounded-full text-[#A1251B] transition-colors hover:bg-[#FCE8E6]"
+                            >
+                                <LogOut className="h-5 w-5" />
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="hidden items-center gap-1 sm:flex">
+                            <Link href="/connexion" className="flex h-11 items-center rounded-full px-4 text-[15px] font-semibold text-ink">
+                                Se connecter
+                            </Link>
+                            <Link href="/inscription" className="cz-btn flex h-11 items-center rounded-full bg-primary px-5 text-[15px] font-semibold text-white hover:bg-[#016B2F]">
+                                Créer un compte
+                            </Link>
+                        </div>
+                    )}
 
-                    {/* Menu Mobile */}
+                    {/* Menu téléphone */}
                     <button
-                        className="p-2 text-gray-500 md:hidden hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+                        type="button"
+                        aria-label={isMobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+                        aria-expanded={isMobileMenuOpen}
+                        className="flex h-11 w-11 items-center justify-center rounded-xl border border-border text-ink md:hidden"
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                     >
-                        {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                        {isMobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                     </button>
                 </div>
             </div>
 
-            {/* Menu Mobile déroulant */}
+            {/* Menu déroulant téléphone */}
             {isMobileMenuOpen && (
-                <div className="border-t border-gray-100 md:hidden dark:border-zinc-800 bg-white dark:bg-zinc-950 p-6 space-y-4">
+                <div className="cz-in space-y-4 border-t border-border bg-white p-6 md:hidden">
                     {user ? (
                         <>
-                            <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-zinc-900 rounded-2xl mb-4">
-                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                            <div className="mb-2 flex items-center gap-3 rounded-2xl bg-background p-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E6F5EC] font-bold text-primary">
                                     {user.user_metadata?.full_name?.[0] || "U"}
                                 </div>
                                 <div>
-                                    <p className="font-bold text-sm">{user.user_metadata?.full_name || "Utilisateur"}</p>
-                                    <p className="text-[10px] text-gray-500">{user.email}</p>
+                                    <p className="text-sm font-bold">{user.user_metadata?.full_name || "Utilisateur"}</p>
+                                    <p className="text-xs text-muted-foreground">{user.email}</p>
                                 </div>
                             </div>
-                            <nav className="space-y-2">
+                            <nav aria-label="Navigation principale" className="space-y-1">
                                 {desktopLinks.map(link => (
-                                    <Link key={link.href} href={link.href} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between p-3 font-bold text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-zinc-900 rounded-xl transition-colors">
+                                    <Link key={link.href} href={link.href} onClick={() => setIsMobileMenuOpen(false)} className="flex items-center justify-between rounded-xl p-3 text-[15px] font-semibold text-[#2C3A31] transition-colors hover:bg-background">
                                         {link.label}
                                         {link.badge ? (
-                                            <span className="flex items-center justify-center min-w-[20px] h-[20px] text-[10px] font-black text-white bg-red-500 rounded-full px-1.5 shadow-sm shadow-red-500/20">
-                                                {link.badge > 99 ? '99+' : link.badge}
+                                            <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#D93025] px-1.5 text-[10px] font-bold text-white">
+                                                {link.badge > 99 ? "99+" : link.badge}
                                             </span>
                                         ) : null}
                                     </Link>
                                 ))}
+                                <Link href="/profil" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center rounded-xl p-3 text-[15px] font-semibold text-[#2C3A31] transition-colors hover:bg-background">
+                                    Mon profil
+                                </Link>
                             </nav>
                             <button
+                                type="button"
                                 onClick={handleLogout}
-                                className="w-full flex items-center justify-center gap-2 p-3 text-red-500 font-bold text-sm bg-red-50 dark:bg-red-950/20 rounded-2xl"
+                                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FCE8E6] p-3 text-sm font-bold text-[#A1251B]"
                             >
-                                <LogOut className="w-4 h-4" />
+                                <LogOut className="h-4 w-4" />
                                 Déconnexion
                             </button>
                         </>
                     ) : (
                         <>
-                            <Link href="/connexion" className="block w-full px-4 py-3 text-center text-xs font-black uppercase tracking-widest text-white rounded-2xl bg-primary">
-                                Se connecter
-                            </Link>
-                            <Link href="/inscription" className="block w-full px-4 py-3 text-center text-xs font-black uppercase tracking-widest text-gray-700 bg-gray-100 rounded-2xl">
+                            <nav aria-label="Navigation principale" className="space-y-1">
+                                {desktopLinks.map(link => (
+                                    <Link key={link.href} href={link.href} onClick={() => setIsMobileMenuOpen(false)} className="block rounded-xl p-3 text-[15px] font-semibold text-[#2C3A31] hover:bg-background">
+                                        {link.label}
+                                    </Link>
+                                ))}
+                            </nav>
+                            <Link href="/inscription" className="flex h-12 w-full items-center justify-center rounded-full bg-primary text-[15px] font-semibold text-white">
                                 Créer un compte
+                            </Link>
+                            <Link href="/connexion" className="flex h-12 w-full items-center justify-center rounded-full border-[1.5px] border-ink text-[15px] font-semibold text-ink">
+                                Se connecter
                             </Link>
                         </>
                     )}

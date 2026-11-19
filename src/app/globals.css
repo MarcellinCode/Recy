@@ -4,47 +4,40 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    /* Blanc dominant */
-    --foreground: 222.2 84% 4.9%;
+    /* Charte CleanZone 2.0 — couleurs issues du logo */
+    --background: 90 22% 96%;          /* #F6F8F4 fond */
+    --foreground: 145 29% 8%;          /* #0F1B14 encre */
 
-    /* Vert émeraude (Eco-Friendly) */
-    --primary: 153 60% 41%;
-    /* #2A9D8F ou similaire */
-    --primary-foreground: 210 40% 98%;
+    --primary: 146 98% 24%;            /* #017A35 vert action (texte blanc 5,5:1) */
+    --primary-foreground: 0 0% 100%;
 
-    /* Gris ardoise clair */
-    --secondary: 210 14% 96%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 140 20% 93%;
+    --secondary-foreground: 145 29% 8%;
 
-    /* Jaune (Touches d'accent) */
-    --accent: 43 96% 58%;
-    /* #E9C46A ou similaire */
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 43 74% 66%;              /* #E9C46A or (toujours avec texte encre) */
+    --accent-foreground: 145 29% 8%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 100 18% 93%;
+    --muted-foreground: 143 8% 39%;    /* #5B6B61 texte secondaire (5,6:1) */
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 145 29% 8%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 145 29% 8%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 153 60% 41%;
-    /* Focus ring = Primary Green */
+    --border: 111 13% 90%;             /* #E2E8E1 */
+    --input: 111 13% 90%;
+    --ring: 146 98% 24%;
 
-    --radius: 0.75rem;
-    /* Coins très arrondis "App Feel" */
+    --radius: 1rem;
   }
 
   .dark {
     --background: 240 10% 3.9%; /* Zinc 950 profond */
     --foreground: 0 0% 98%;
 
-    --primary: 153 60% 41%;
+    --primary: 145 96% 33%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 240 3.7% 15.9%; /* Zinc 800 */
@@ -64,7 +57,7 @@
 
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 153 60% 41%;
+    --ring: 145 96% 33%;
   }
 }
 
@@ -110,4 +103,69 @@
 
 .animate-marquee {
   animation: marquee 30s linear infinite;
+}
+
+
+/* =====================================================================
+   MOTION DESIGN CleanZone — courbes longues, distances courtes, sans rebond.
+   Désactivé automatiquement si l'utilisateur réduit les animations.
+   ===================================================================== */
+@keyframes czLine { from { transform: translateY(110%); } to { transform: none; } }
+@keyframes czIn { from { opacity: 0; transform: translateY(14px); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+@keyframes czWipe { from { clip-path: inset(100% 0 0 0 round 28px); } to { clip-path: inset(0 0 0 0 round 28px); } }
+@keyframes czSettle { from { transform: scale(1.12); } to { transform: scale(1); } }
+@keyframes czSlide { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: none; } }
+@keyframes czFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes czDraw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes czMarq { to { transform: translateX(-50%); } }
+@keyframes czRipple { 0% { transform: scale(1); opacity: .5; } 100% { transform: scale(2.6); opacity: 0; } }
+
+@layer utilities {
+  .cz-mask { display: block; overflow: hidden; padding-bottom: .06em; }
+  .cz-line { display: block; animation: czLine 1.1s cubic-bezier(.16,1,.3,1) both; }
+  .cz-l2 { animation-delay: .09s; }
+  .cz-in { animation: czIn 1s cubic-bezier(.16,1,.3,1) both; }
+  .cz-t1 { animation-delay: .35s; } .cz-t2 { animation-delay: .5s; } .cz-t3 { animation-delay: .75s; }
+  .cz-wipe { animation: czWipe 1.3s cubic-bezier(.76,0,.24,1) .15s both; }
+  .cz-settle { animation: czSettle 2.2s cubic-bezier(.16,1,.3,1) .15s both; }
+  .cz-n { animation: czSlide .8s cubic-bezier(.16,1,.3,1) both; }
+  .cz-n1 { animation-delay: 1.2s; } .cz-n2 { animation-delay: 1.45s; }
+  .cz-bar { transform-origin: left; animation: czFill 1.6s cubic-bezier(.16,1,.3,1) 1s both; }
+
+  .cz-btn { transition: background-color .3s, color .3s, border-color .3s; }
+  .cz-btn .cz-arrow { transition: transform .45s cubic-bezier(.16,1,.3,1); }
+  .cz-btn:hover .cz-arrow { transform: translateX(4px); }
+  .cz-link { background: linear-gradient(currentColor, currentColor) 0 100% / 0 1.5px no-repeat; transition: background-size .45s cubic-bezier(.16,1,.3,1), color .3s; }
+  .cz-link:hover, .cz-link[aria-current="page"] { background-size: 100% 1.5px; }
+
+  .cz-card { transition: border-color .4s, background-color .4s; }
+  .cz-card:hover { border-color: #02A548; }
+  .cz-card .cz-tile { transition: background-color .4s; }
+  .cz-card:hover .cz-tile { background-color: #017A35; }
+  .cz-card .cz-tile svg { transition: stroke .4s, color .4s; }
+  .cz-card:hover .cz-tile svg { color: #FFFFFF; }
+  .cz-card .cz-go { opacity: 0; transform: translateX(-6px); transition: opacity .4s, transform .45s cubic-bezier(.16,1,.3,1); }
+  .cz-card:hover .cz-go { opacity: 1; transform: none; }
+
+  .cz-marq-wrap { -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+  .cz-marq { animation: czMarq 70s linear infinite; }
+
+  .cz-live { position: relative; }
+  .cz-live::after { content: ""; position: absolute; inset: 0; border-radius: 999px; background: inherit; animation: czRipple 2.4s cubic-bezier(.16,1,.3,1) infinite; }
+
+  .cz-draw path, .cz-draw circle, .cz-draw rect { stroke-dasharray: 1; stroke-dashoffset: 0; }
+}
+
+/* Révélations au défilement (navigateurs compatibles ; sinon tout reste visible) */
+@supports (animation-timeline: view()) {
+  .cz-reveal { animation: czIn linear both; animation-timeline: view(); animation-range: entry 5% cover 28%; }
+  .cz-reveal-wipe { animation: czWipe linear both; animation-timeline: view(); animation-range: entry 0% cover 40%; }
+  .cz-draw path, .cz-draw circle, .cz-draw rect { animation: czDraw linear both; animation-timeline: view(); animation-range: entry 20% cover 45%; }
+  .cz-progress { transform-origin: left; animation: czFill linear both; animation-timeline: view(); animation-range: entry 30% cover 55%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cz-line, .cz-in, .cz-wipe, .cz-settle, .cz-n, .cz-bar, .cz-marq, .cz-reveal, .cz-reveal-wipe, .cz-progress,
+  .cz-live::after, .cz-draw path, .cz-draw circle, .cz-draw rect { animation: none !important; }
+  .cz-btn, .cz-btn .cz-arrow, .cz-link, .cz-card, .cz-card .cz-tile, .cz-card .cz-go { transition: none !important; }
 }

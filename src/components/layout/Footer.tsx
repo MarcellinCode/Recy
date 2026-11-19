@@ -1,123 +1,66 @@
 "use client";
 
 import Link from "next/link";
-import { Mail, Globe, Twitter, Linkedin, Facebook, ArrowUpRight } from "lucide-react";
+import { Mail } from "lucide-react";
 
 export function Footer() {
     const currentYear = new Date().getFullYear();
 
     return (
-        <footer className="relative bg-zinc-950 border-t border-white/5 pt-20 pb-10 overflow-hidden">
-            {/* Background elements */}
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 blur-[150px] rounded-full -translate-y-1/2"></div>
-            
-            <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8 mb-20">
-                    
-                    {/* Brand Section */}
-                    <div className="space-y-6">
-                        <Link href="/" className="flex items-center gap-4 group shrink-0">
-                            <div className="flex items-center justify-center w-16 h-16 rounded-2xl bg-zinc-900 group-hover:scale-105 transition-all shadow-2xl overflow-hidden border border-white/10">
-                                <img src="/logo.png" alt="CleanZone Logo" className="w-full h-full object-cover" />
-                            </div>
-                            <span className="text-3xl font-black tracking-tighter uppercase italic leading-none text-white">
-                                Clean<span className="text-primary tracking-tighter">Zone</span>
-                            </span>
-                        </Link>
-                        <p className="text-zinc-400 text-sm leading-relaxed font-medium">
-                            L'Intelligence Urbaine au service de l'économie circulaire. Transformez chaque déchet en ressource précieuse pour votre cité.
-                        </p>
-                        <div className="flex items-center gap-4">
-                            <SocialLink icon={Twitter} href="#" />
-                            <SocialLink icon={Linkedin} href="#" />
-                            <SocialLink icon={Facebook} href="#" />
-                        </div>
-                    </div>
-
-                    {/* Platform Links */}
-                    <div className="space-y-6">
-                        <h4 className="text-xs font-black text-white uppercase tracking-[0.3em]">Plateforme</h4>
-                        <ul className="space-y-4">
-                            <FooterLink href="/marketplace">Marketplace</FooterLink>
-                            <FooterLink href="/inscription">Rejoindre l'écosystème</FooterLink>
-                            <FooterLink href="/city-os">City OS (Mairies)</FooterLink>
-                            <FooterLink href="/bourse">Bourse des matières</FooterLink>
-                        </ul>
-                    </div>
-
-                    {/* Company / Support */}
-                    <div className="space-y-6">
-                        <h4 className="text-xs font-black text-white uppercase tracking-[0.3em]">Entreprise</h4>
-                        <ul className="space-y-4">
-                            <FooterLink href="/a-propos">À propos</FooterLink>
-                            <FooterLink href="/contact">Nous contacter</FooterLink>
-                            <FooterLink href="/impact-rse">Impact & RSE</FooterLink>
-                        </ul>
-                    </div>
-
-                    {/* Legal */}
-                    <div className="space-y-6">
-                        <h4 className="text-xs font-black text-white uppercase tracking-[0.3em]">Légal</h4>
-                        <ul className="space-y-4">
-                            <FooterLink href="/conditions">Conditions Générales</FooterLink>
-                            <FooterLink href="/confidentialite">Confidentialité</FooterLink>
-                            <FooterLink href="/mentions-legales">Mentions Légales</FooterLink>
-                        </ul>
-                    </div>
-                </div>
-
-                {/* Bottom Bar */}
-                <div className="pt-10 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
-                    <p className="text-zinc-500 text-[10px] uppercase font-bold tracking-widest">
-                        © {currentYear} CleanZone. Tous droits réservés.
+        <footer className="border-t border-border bg-white">
+            <div className="mx-auto flex max-w-[1200px] flex-wrap justify-between gap-10 px-6 pb-10 pt-14">
+                <div className="flex max-w-[320px] flex-col gap-3">
+                    <Link href="/" className="flex items-center gap-2.5 text-ink">
+                        <img src="/logo-mark.png" alt="" className="h-8 w-8" />
+                        <strong className="text-lg tracking-[-0.02em]">CleanZone</strong>
+                    </Link>
+                    <p className="m-0 text-sm leading-relaxed text-muted-foreground">
+                        La plateforme de gestion intelligente des déchets en Côte d&apos;Ivoire.
                     </p>
-                    <div className="flex items-center gap-8">
-                        <div className="flex items-center gap-2 text-zinc-500">
-                             <Globe className="w-3 h-3" />
-                             <span className="text-[10px] uppercase font-bold tracking-widest">Afrique / Worldwide</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-zinc-500">
-                             <Mail className="w-3 h-3" />
-                             <span className="text-[10px] uppercase font-bold tracking-widest">contact@cleanzone.com</span>
-                        </div>
-                    </div>
+                    <a href="mailto:contact@cleanzone.com" className="cz-link flex items-center gap-2 self-start text-sm text-muted-foreground hover:text-ink">
+                        <Mail className="h-4 w-4" aria-hidden="true" />
+                        contact@cleanzone.com
+                    </a>
                 </div>
+
+                <div className="flex flex-wrap gap-12 text-sm">
+                    <FooterColumn title="Plateforme" links={[
+                        ["/marketplace", "Marketplace"],
+                        ["/abonnements", "Abonnements"],
+                        ["/bourse", "Bourse des matières"],
+                        ["/inscription", "Créer un compte"],
+                    ]} />
+                    <FooterColumn title="Société" links={[
+                        ["/a-propos", "À propos"],
+                        ["/contact", "Contact"],
+                        ["/mairie/connexion", "Espace Mairie"],
+                    ]} />
+                    <FooterColumn title="Légal" links={[
+                        ["/conditions", "Conditions générales"],
+                        ["/confidentialite", "Confidentialité"],
+                        ["/mentions-legales", "Mentions légales"],
+                    ]} />
+                </div>
+            </div>
+
+            <div className="border-t border-border">
+                <p className="mx-auto m-0 max-w-[1200px] px-6 py-6 text-[13px] text-muted-foreground">
+                    © {currentYear} CleanZone. Tous droits réservés.
+                </p>
             </div>
         </footer>
     );
 }
 
-interface SocialLinkProps {
-    readonly icon: React.ComponentType<any>;
-    readonly href: string;
-}
-
-function SocialLink({ icon: Icon, href }: Readonly<SocialLinkProps>) {
+function FooterColumn({ title, links }: Readonly<{ title: string; links: [string, string][] }>) {
     return (
-        <a 
-            href={href} 
-            className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-zinc-400 hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all"
-        >
-            <Icon className="w-4 h-4" />
-        </a>
-    );
-}
-
-interface FooterLinkProps {
-    readonly href: string;
-    readonly children: React.ReactNode;
-}
-
-function FooterLink({ href, children }: Readonly<FooterLinkProps>) {
-    return (
-        <li>
-            <Link 
-                href={href} 
-                className="text-zinc-400 text-xs font-bold uppercase tracking-widest hover:text-white flex items-center group transition-colors"
-            >
-                {children}
-                <ArrowUpRight className="w-3 h-3 ml-2 opacity-0 -translate-y-1 translate-x-1 group-hover:opacity-100 group-hover:translate-y-0 group-hover:translate-x-0 transition-all" />
-            </Link>
-        </li>
+        <div className="flex flex-col gap-2.5">
+            <strong className="text-ink">{title}</strong>
+            {links.map(([href, label]) => (
+                <Link key={href} href={href} className="cz-link self-start text-muted-foreground hover:text-ink">
+                    {label}
+                </Link>
+            ))}
+        </div>
     );
 }

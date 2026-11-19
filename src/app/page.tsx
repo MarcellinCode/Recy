@@ -1,386 +1,290 @@
 import Link from "next/link";
-import { ArrowRight, Recycle, Leaf, Banknote, LayoutDashboard, Building2, Users, Truck, Sparkles, ShieldCheck, TrendingUp } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, Home as HomeIcon, Truck, Building2, UserRound, ShieldCheck, Landmark, Check } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { createClient } from "@/lib/supabase-server";
-import { cn } from "@/lib/utils";
 
 export default async function Home() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-
   return (
-    <div className="flex flex-col min-h-screen">
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes float {
-          0% { transform: translateY(0px); }
-          50% { transform: translateY(-12px); }
-          100% { transform: translateY(0px); }
-        }
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
-        }
-        @keyframes slow-zoom {
-          0% { transform: scale(1.03) translateZ(0); }
-          50% { transform: scale(1.08) translateZ(0); }
-          100% { transform: scale(1.03) translateZ(0); }
-        }
-        .animate-slow-zoom {
-          animation: slow-zoom 25s ease-in-out infinite;
-        }
-      ` }} />
-
-      {/* --- HERO SECTION IMMERSIF --- */}
-      <section className="relative w-full min-h-[90vh] flex items-center justify-center overflow-hidden">
-        {/* Background Image avec Overlay */}
-        <div className="absolute inset-0 z-0">
-          <img
-            src="https://www.kaweru.com/wp-content/uploads/2025/12/Cotonou.jpg"
-            alt="CleanZone - Plateforme d'Intelligence Urbaine et Gestion des Déchets"
-            className="w-full h-full object-cover brightness-110 animate-slow-zoom"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/60 to-transparent"></div>
-        </div>
-
-        <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32">
-          <div className="max-w-4xl space-y-8">
-            <div className="inline-flex items-center gap-3 px-4 py-2 border border-primary/20 rounded-full bg-primary/10 backdrop-blur-md text-primary">
-              <Sparkles className="w-4 h-4" />
-              <span className="text-xs font-black tracking-[0.2em] uppercase">City Waste Management OS</span>
-            </div>
-
-            <h1 
-              aria-label="CleanZone - L'Intelligence Urbaine"
-              className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter text-white leading-none sm:leading-[0.85] uppercase italic drop-shadow-2xl"
-            >
-              L'Intelligence <br />
-              <span className="text-primary italic">Urbaine</span> <br />
-              CleanZone
+    <div className="flex flex-col bg-background text-ink">
+      {/* ------------------------------------------------------------ HERO */}
+      <section className="bg-forest text-white">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-14 px-6 pb-24 pt-20 md:pb-28 md:pt-24">
+          <div className="flex min-w-0 flex-[1_1_480px] flex-col gap-7">
+            <h1 className="m-0 text-[40px] font-extrabold leading-[1.04] tracking-[-0.035em] sm:text-[52px] lg:text-[62px]">
+              <span className="cz-mask"><span className="cz-line">La propreté de</span></span>
+              <span className="cz-mask"><span className="cz-line cz-l2">votre ville,</span></span>
+              <span className="cz-mask"><span className="cz-line cz-l2 text-leaf [animation-delay:.18s]">enfin organisée.</span></span>
             </h1>
-
-            <p className="max-w-2xl text-lg md:text-2xl text-gray-300 font-medium leading-relaxed">
-              CleanZone transforme la gestion des déchets en un écosystème rentable pour les citoyens, efficace pour les agents et transparent pour les municipalités.
+            <p className="cz-in cz-t1 m-0 max-w-[540px] text-lg leading-relaxed text-[#C9DDD1] md:text-[19px]">
+              CleanZone relie citoyens, collecteurs, organisations et mairies sur une même plateforme :
+              collecte à domicile, marketplace des matières recyclables, signalements et suivi en temps réel.
             </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 pt-6">
+            <div className="cz-in cz-t2 flex flex-wrap gap-3">
               {user ? (
-                <Link
-                  href="/dashboard"
-                  className="flex items-center justify-center px-10 py-5 text-sm font-black text-white transition-all shadow-2xl rounded-2xl bg-primary hover:bg-primary/90 hover:scale-105 active:scale-95 shadow-primary/20 uppercase tracking-widest"
-                >
-                  <LayoutDashboard className="w-5 h-5 mr-3" />
-                  Accéder au Central Hub
-                  <ArrowRight className="w-5 h-5 ml-3" />
-                </Link>
-              ) : (
-                <>
-                  <Link
-                    href="/inscription?role=citoyen"
-                    className="flex items-center justify-center px-10 py-5 text-sm font-black text-white transition-all shadow-2xl rounded-2xl bg-primary hover:bg-primary/90 hover:scale-105 active:scale-95 shadow-primary/20 uppercase tracking-widest"
-                  >
-                    Commencer l'expérience
-                    <ArrowRight className="w-5 h-5 ml-3" />
-                  </Link>
-                  <Link
-                    href="#ecosystem"
-                    className="flex items-center justify-center px-10 py-5 text-sm font-black transition-all border-2 rounded-2xl border-white/20 text-white backdrop-blur-md hover:bg-white/10 active:scale-95 uppercase tracking-widest"
-                  >
-                    Découvrir l'écosystème
-                  </Link>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* --- L'ÉCOSYSTÈME CleanZone (LES 3 PILIERS) --- */}
-      <section id="ecosystem" className="py-32 bg-white dark:bg-zinc-950">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-20 animate-in fade-in slide-in-from-bottom duration-1000">
-            <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4">L'Écosystème</h2>
-            <h3 className="text-4xl md:text-6xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic leading-none">
-              Un système <br className="sm:hidden" /> <span className="text-primary italic">Triple-Win</span>
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <PillarCard 
-              icon={Users}
-              title="Citoyens"
-              subtitle="Confort & Salubrité"
-              desc="Abonnez-vous à un service de collecte régulier à domicile et configurez vos passages de ramassage."
-              features={["Abonnements confort", "Planification de passages", "Soutien aux organisations"]}
-              color="bg-emerald-500"
-            />
-            <PillarCard 
-              icon={Truck}
-              title="Organisations"
-              subtitle="Logistique ERP"
-              desc="Optimisez vos tournées d'agents et gérez votre flotte de véhicules avec un suivi technique en temps réel."
-              features={["Gestion de Flotte & Maintenance", "Recrutement d'agents", "Suivi des revenus & Wallet"]}
-              color="bg-blue-600"
-            />
-            <PillarCard 
-              icon={Building2}
-              title="Municipalités"
-              subtitle="Gouvernance OS"
-              desc="Prenez le contrôle de la propreté urbaine et suivez l'impact écologique de votre cité avec des données certifiées."
-              features={["Supervision des zones", "Rapports Impact RSE", "Blockchain & Traçabilité"]}
-              color="bg-zinc-900"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* --- BOURSE TEMPS RÉEL (DYNAMIC BANNER) --- */}
-      <section className="py-12 bg-zinc-900 overflow-hidden relative">
-        <div className="flex animate-marquee whitespace-nowrap gap-12 items-center">
-            <BourseTicker name="Plastique HDPE" price="150" trend={+4.2} />
-            <BourseTicker name="Aluminium" price="400" trend={+1.5} />
-            <BourseTicker name="Papier / Carton" price="55" trend={-2.1} />
-            <BourseTicker name="Verre" price="32" trend={+0.8} />
-            <BourseTicker name="Métal / Feraille" price="250" trend={+5.6} />
-            {/* Repeat for seamless loop */}
-            <BourseTicker name="Plastique HDPE" price="150" trend={+4.2} />
-            <BourseTicker name="Aluminium" price="400" trend={+1.5} />
-            <BourseTicker name="Papier / Carton" price="55" trend={-2.1} />
-            <BourseTicker name="Verre" price="32" trend={+0.8} />
-            <BourseTicker name="Métal / Feraille" price="250" trend={+5.6} />
-        </div>
-      </section>
-
-      {/* --- COMMENT ÇA MARCHE SECTION --- */}
-      <section className="py-32 bg-white dark:bg-zinc-950 overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-24">
-            <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.4em] mb-4">Fonctionnement</h2>
-            <h3 className="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Simple. <span className="text-primary">Rapide.</span> Propre.</h3>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {/* Step 1 */}
-            <div className="group space-y-8">
-              <div className="aspect-[4/5] rounded-[3.5rem] overflow-hidden relative shadow-2xl">
-                <img src="/images/triage_v2.png" alt="S'abonner" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
-                <div className="absolute bottom-10 left-10">
-                  <span className="text-8xl font-black text-primary/40 italic tracking-tighter">01</span>
-                </div>
-              </div>
-              <div className="px-6">
-                <h4 className="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-3">Abonnez-vous en ligne</h4>
-                <p className="text-[11px] text-gray-500 font-bold uppercase tracking-[0.15em] leading-loose">
-                  Choisissez l'organisation agréée de votre secteur et souscrivez à un forfait adapté à vos besoins en quelques clics.
-                </p>
-              </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="group space-y-8 lg:mt-16">
-              <div className="aspect-[4/5] rounded-[3.5rem] overflow-hidden relative shadow-2xl">
-                <img src="https://www.kaweru.com/wp-content/uploads/2025/12/Cotonou.jpg" alt="Planifier" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
-                <div className="absolute bottom-10 left-10">
-                  <span className="text-8xl font-black text-primary/40 italic tracking-tighter">02</span>
-                </div>
-              </div>
-              <div className="px-6">
-                <h4 className="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-3">Configurez vos passages</h4>
-                <p className="text-[11px] text-gray-500 font-bold uppercase tracking-[0.15em] leading-loose">
-                  Définissez vos jours et créneaux horaires de ramassage préférés. Les agents partenaires sont automatiquement informés.
-                </p>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="group space-y-8 lg:mt-32">
-              <div className="aspect-[4/5] rounded-[3.5rem] overflow-hidden relative shadow-2xl">
-                <img src="/images/payment_v2.png" alt="Collecter" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
-                <div className="absolute bottom-10 left-10">
-                  <span className="text-8xl font-black text-primary/40 italic tracking-tighter">03</span>
-                </div>
-              </div>
-              <div className="px-6">
-                <h4 className="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter mb-3">Triez, nous collectons</h4>
-                <p className="text-[11px] text-gray-500 font-bold uppercase tracking-[0.15em] leading-loose">
-                  Triez vos ordures à la maison. Les collecteurs passent récupérer vos bacs et les acheminent vers les centres de tri officiels.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* --- BUSINESS INTELLIGENCE SECTION --- */}
-      <section className="py-32 bg-gray-50 dark:bg-zinc-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                <div className="space-y-8">
-                    <div className="inline-flex items-center gap-3 px-4 py-2 bg-primary/10 rounded-full text-primary">
-                        <TrendingUp className="w-4 h-4" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Performance Industrielle</span>
-                    </div>
-                    <h3 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter leading-none">
-                        Un ERP Logistique <br />
-                        <span className="text-primary italic">Sans Précédent</span>
-                    </h3>
-                    <p className="text-gray-500 dark:text-zinc-400 font-medium leading-relaxed">
-                        CleanZone fournit aux entreprises de collecte des outils de gestion de pointe. Optimisez chaque litre de carburant et chaque minute de vos agents sur le terrain.
-                    </p>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        <div className="p-6 bg-white dark:bg-zinc-800 rounded-3xl border border-gray-100 dark:border-zinc-700 shadow-xl shadow-gray-100/50 dark:shadow-none">
-                            <Truck className="w-8 h-8 text-primary mb-4" />
-                            <h4 className="font-black text-gray-900 dark:text-white uppercase text-xs mb-2">Gestion Technique</h4>
-                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Suivi automatique du carnet d'entretien & vidanges.</p>
-                        </div>
-                        <div className="p-6 bg-white dark:bg-zinc-800 rounded-3xl border border-gray-100 dark:border-zinc-700 shadow-xl shadow-gray-100/50 dark:shadow-none">
-                            <ShieldCheck className="w-8 h-8 text-emerald-500 mb-4" />
-                            <h4 className="font-black text-gray-900 dark:text-white uppercase text-xs mb-2">Transparence RSE</h4>
-                            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-wider">Rapports d'impact CO2 certifiés pour vos clients.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="relative">
-                    <div className="absolute -inset-4 bg-primary/10 blur-[100px] rounded-full"></div>
-                    <div className="relative aspect-square rounded-[4rem] overflow-hidden bg-zinc-800 border-8 border-white dark:border-zinc-800 shadow-2xl animate-float">
-                        <img src="/images/impact.png" alt="Dashboard Preview" className="w-full h-full object-cover" />
-                    </div>
-                </div>
-            </div>
-        </div>
-      </section>
-
-      {/* --- IMPACT RÉEL SECTION --- */}
-      <section className="relative w-full py-40 overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img src="/images/impact.png" alt="Impact" className="w-full h-full object-cover grayscale brightness-50" />
-          <div className="absolute inset-0 bg-primary/20 mix-blend-multiply"></div>
-          <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-950/80 to-zinc-950"></div>
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 text-center text-white">
-          <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.5em] mb-8">Impact Réel</h2>
-          <h3 className="text-4xl md:text-6xl font-black mb-20 uppercase tracking-tighter italic max-w-4xl mx-auto">
-            Bâtissons ensemble <br />
-            la Cité <span className="text-primary italic">Verte</span> de demain
-          </h3>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
-            <div className="space-y-2">
-              <p className="text-5xl font-black text-primary tracking-tighter italic">20K+</p>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Tonnes Collectées</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-5xl font-black text-primary tracking-tighter italic">15M</p>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">FCFA Redistribués</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-5xl font-black text-primary tracking-tighter italic">500+</p>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Collecteurs Actifs</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-5xl font-black text-primary tracking-tighter italic">98%</p>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Taux de Recyclage</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* --- FINAL CTA --- */}
-      <section className="py-32 bg-white dark:bg-zinc-950">
-        <div className="max-w-5xl mx-auto px-4 text-center">
-          <div className="bg-gray-50 dark:bg-zinc-900 rounded-[5rem] p-16 md:p-32 border border-gray-100 dark:border-zinc-800 shadow-2xl shadow-primary/5">
-            <h2 className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white mb-8 uppercase tracking-tighter italic">Prêt à <span className="text-primary">Lancer</span> l'Experience ?</h2>
-            <p className="text-lg text-gray-400 font-bold uppercase tracking-widest mb-16 max-w-2xl mx-auto leading-relaxed">Rejoignez l'écosystème qui transforme les déchets en ressources précieuses pour l'Afrique.</p>
-            <div className="flex flex-col sm:flex-row gap-6 justify-center">
-              {user ? (
-                <Link
-                  href="/dashboard"
-                  className="px-14 py-7 bg-primary text-white font-black rounded-3xl hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/30 uppercase tracking-[0.2em] text-sm"
-                >
+                <Link href="/dashboard" className="cz-btn inline-flex h-14 items-center gap-2.5 rounded-full bg-leaf px-7 text-base font-bold text-forest hover:bg-[#5BCB50]">
                   Accéder à mon espace
+                  <ArrowRight className="cz-arrow h-[18px] w-[18px]" strokeWidth={2.2} aria-hidden="true" />
                 </Link>
               ) : (
                 <>
-                  <Link
-                    href="/inscription"
-                    className="px-14 py-7 bg-primary text-white font-black rounded-3xl hover:bg-primary/90 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-primary/30 uppercase tracking-[0.2em] text-sm"
-                  >
-                    Créer mon compte
+                  <Link href="/inscription?role=citoyen" className="cz-btn inline-flex h-14 items-center gap-2.5 rounded-full bg-leaf px-7 text-base font-bold text-forest hover:bg-[#5BCB50]">
+                    S&apos;abonner à la collecte
+                    <ArrowRight className="cz-arrow h-[18px] w-[18px]" strokeWidth={2.2} aria-hidden="true" />
                   </Link>
-                  <Link
-                    href="/connexion"
-                    className="px-14 py-7 bg-white dark:bg-zinc-800 text-gray-900 dark:text-white border-2 border-gray-100 dark:border-zinc-700 font-black rounded-3xl hover:bg-gray-50 transition-all uppercase tracking-[0.2em] text-sm"
-                  >
-                    Se connecter
+                  <Link href="/inscription" className="cz-btn inline-flex h-14 items-center rounded-full border-[1.5px] border-white/35 px-7 text-base font-semibold text-white hover:border-white/70">
+                    Je suis une organisation
                   </Link>
                 </>
               )}
             </div>
           </div>
+
+          <div className="flex min-w-0 flex-[1_1_420px] flex-col items-start">
+            <div className="cz-wipe relative h-[380px] w-[86%] overflow-hidden rounded-[28px] md:h-[460px]">
+              <Image
+                src="/images/payment_v2.png"
+                alt="Une habitante consulte l'application CleanZone sur son téléphone dans la rue"
+                fill
+                priority
+                sizes="(max-width: 768px) 86vw, 520px"
+                className="cz-settle object-cover"
+              />
+            </div>
+            <div className="cz-in cz-t3 -mt-[200px] flex w-[78%] max-w-[360px] flex-col gap-3.5 self-end rounded-[28px] bg-white p-[22px] text-ink shadow-[0_30px_60px_rgba(0,0,0,0.28)] md:-mt-[230px]">
+              <span className="text-[13px] font-semibold text-muted-foreground">Votre prochaine collecte</span>
+              <div className="flex flex-col gap-2 rounded-[20px] bg-background p-[18px]">
+                <span className="text-[13px] font-semibold text-primary">Prochain passage</span>
+                <strong className="text-2xl tracking-[-0.02em]">Mardi · 8 h – 10 h</strong>
+                <span className="text-sm text-muted-foreground">Selon votre zone de collecte</span>
+                <div className="mt-1 h-1 overflow-hidden rounded-full bg-border">
+                  <div className="cz-bar h-full w-[64%] rounded-full bg-brand" />
+                </div>
+              </div>
+              <div className="flex flex-col gap-2.5">
+                <div className="cz-n cz-n1 flex items-center gap-3 rounded-2xl border border-border p-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary">
+                    <Truck className="h-[18px] w-[18px] text-white" aria-hidden="true" />
+                  </span>
+                  <div className="flex flex-col"><strong className="text-sm">Collecte en cours</strong><span className="text-[13px] text-muted-foreground">L&apos;équipe est en route</span></div>
+                </div>
+                <div className="cz-n cz-n2 flex items-center gap-3 rounded-2xl border border-border p-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-forest">
+                    <Check className="h-[18px] w-[18px] text-leaf" aria-hidden="true" />
+                  </span>
+                  <div className="flex flex-col"><strong className="text-sm">Signalement résolu</strong><span className="text-[13px] text-muted-foreground">Dépôt sauvage nettoyé</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-    </div>
-  );
-}
-
-interface PillarCardProps {
-  readonly icon: React.ComponentType<any>;
-  readonly title: string;
-  readonly subtitle: string;
-  readonly desc: string;
-  readonly features: readonly string[];
-  readonly color: string;
-}
-
-function PillarCard({ icon: Icon, title, subtitle, desc, features, color }: Readonly<PillarCardProps>) {
-  return (
-    <div className="group relative p-10 bg-gray-50 dark:bg-zinc-900 rounded-[3rem] border border-gray-100 dark:border-zinc-800 hover:border-primary/30 hover:-translate-y-3 transition-all duration-500 hover:shadow-2xl hover:shadow-primary/10">
-      <div className={cn("w-16 h-16 rounded-[1.5rem] flex items-center justify-center mb-8 shadow-lg group-hover:scale-110 transition-transform", color)}>
-        <Icon className="w-8 h-8 text-white" />
+      {/* ------------------------------------------- BANDEAU DES MATIÈRES */}
+      <div aria-hidden="true" className="cz-marq-wrap overflow-hidden border-t border-white/5 bg-[#082E20] py-5">
+        <div className="cz-marq flex w-max gap-10 whitespace-nowrap text-[17px] font-medium text-[#9CC9AE]">
+          {[0, 1].map((k) => (
+            <div key={k} className="flex gap-10">
+              {MATERIALS.map((m) => (
+                <span key={m} className="flex gap-10">{m}<span className="text-[#2F6B4E]">/</span></span>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
 
-      <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-2">{subtitle}</h4>
-      <h3 className="text-3xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic mb-4">{title}</h3>
-      <p className="text-sm text-gray-500 font-bold uppercase tracking-widest leading-loose mb-8">
-        {desc}
-      </p>
+      {/* --------------------------------------------------------- PROFILS */}
+      <section id="profils" className="mx-auto flex w-full max-w-[1200px] flex-col gap-10 px-6 pb-14 pt-24 md:pt-[104px]">
+        <div className="cz-reveal flex flex-wrap items-end justify-between gap-4">
+          <h2 className="m-0 max-w-[620px] text-[32px] font-extrabold leading-[1.1] tracking-[-0.03em] md:text-[42px]">
+            Un espace dédié pour chaque acteur de la propreté
+          </h2>
+          <p className="m-0 max-w-[380px] text-base leading-relaxed text-muted-foreground">
+            Chacun voit uniquement ce qui le concerne. Tout le monde est relié en temps réel.
+          </p>
+        </div>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-4">
+          {PROFILES.map((p) => <ProfileCard key={p.title} {...p} />)}
+        </div>
+      </section>
 
-      <ul className="space-y-4">
-        {features.map((feature: string) => (
-          <li key={feature} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-zinc-400">
-            <ShieldCheck className="w-4 h-4 text-primary" />
-            {feature}
-          </li>
-        ))}
-      </ul>
+      {/* -------------------------------------------------- FONCTIONNEMENT */}
+      <section id="fonctionnement" className="mx-auto flex w-full max-w-[1200px] flex-col gap-12 px-6 pb-24 pt-14 md:pb-[104px]">
+        <h2 className="cz-reveal m-0 text-[32px] font-extrabold leading-[1.1] tracking-[-0.03em] md:text-[42px]">
+          Du déchet à la valeur, en trois étapes
+        </h2>
+        <div className="relative h-0.5 rounded-full bg-border" aria-hidden="true">
+          <div className="cz-progress absolute inset-0 rounded-full bg-brand" />
+        </div>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-6">
+          {STEPS.map((s, i) => (
+            <div key={s.title} className="cz-reveal flex flex-col gap-4">
+              <div className="flex h-[200px] items-center justify-center rounded-3xl border border-border bg-white">
+                <svg className="cz-draw" width="96" height="96" viewBox="0 0 48 48" fill="none" stroke="#017A35" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  {s.icon}
+                </svg>
+              </div>
+              <span className="text-sm font-semibold text-primary">Étape {i + 1}</span>
+              <strong className="text-[21px] tracking-[-0.01em]">{s.title}</strong>
+              <p className="m-0 text-[15px] leading-relaxed text-muted-foreground">{s.text}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ----------------------------------------------------- MARKETPLACE */}
+      <section id="marketplace" className="border-y border-border bg-white">
+        <div className="mx-auto flex max-w-[1200px] flex-wrap items-center gap-12 px-6 py-24">
+          <div className="flex min-w-0 flex-[1_1_380px] flex-col gap-[18px]">
+            <div className="cz-reveal-wipe relative h-[300px] overflow-hidden rounded-3xl">
+              <Image src="/images/triage_v2.png" alt="Bouteilles plastiques et canettes triées dans des caisses Plastique et Aluminium" fill sizes="(max-width: 768px) 100vw, 560px" className="object-cover" />
+            </div>
+            <h2 className="cz-reveal m-0 mt-2 text-[32px] font-extrabold leading-[1.1] tracking-[-0.03em] md:text-[40px]">
+              Les matières recyclables ont un prix
+            </h2>
+            <p className="cz-reveal m-0 text-base leading-relaxed text-muted-foreground">
+              Les lots sont publiés par des organisations agréées, réservés par des collecteurs et payés à la pesée finale.
+            </p>
+            <Link href="/marketplace" className="cz-btn cz-reveal inline-flex h-12 items-center gap-2.5 self-start rounded-full bg-primary px-[22px] text-[15px] font-semibold text-white hover:bg-[#016B2F]">
+              Voir les lots disponibles
+              <ArrowRight className="cz-arrow h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
+            </Link>
+          </div>
+          <div className="grid min-w-0 flex-[1_1_480px] grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3">
+            {["Plastique PET", "Plastique HDPE", "Aluminium", "Papier / carton"].map((m) => (
+              <Link key={m} href="/marketplace" className="cz-card cz-reveal flex flex-col gap-1.5 rounded-[20px] border border-border p-5 text-ink">
+                <span className="text-sm text-muted-foreground">{m}</span>
+                <strong className="flex items-center gap-2 text-lg">
+                  Voir les lots
+                  <ArrowRight className="cz-go h-4 w-4 text-primary" strokeWidth={2.4} aria-hidden="true" />
+                </strong>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------- IMPACT */}
+      <section className="mx-auto flex w-full max-w-[1200px] flex-wrap items-center gap-12 px-6 py-24 md:py-[104px]">
+        <div className="cz-reveal-wipe relative h-[320px] min-w-0 flex-[1_1_440px] overflow-hidden rounded-[28px] md:h-[420px]">
+          <Image src="/images/impact.png" alt="Vue aérienne d'une ville verte au coucher du soleil" fill sizes="(max-width: 768px) 100vw, 580px" className="object-cover" />
+        </div>
+        <div className="flex min-w-0 flex-[1_1_400px] flex-col gap-6">
+          <h2 className="cz-reveal m-0 text-[32px] font-extrabold leading-[1.1] tracking-[-0.03em] md:text-[40px]">
+            Un impact mesuré, quartier par quartier
+          </h2>
+          <p className="cz-reveal m-0 text-base leading-relaxed text-muted-foreground">
+            Chaque collecte est pesée et géolocalisée. Les mairies suivent l&apos;évolution de la propreté de leurs zones
+            et les organisations disposent de leur bilan écologique, prêt à partager.
+          </p>
+          <ul className="m-0 flex list-none flex-col gap-3 p-0">
+            {["Poids collecté par matière et par zone", "Dépôts sauvages signalés et résolus", "Bilan RSE exportable pour les organisations"].map((t) => (
+              <li key={t} className="cz-reveal flex items-center gap-3 text-[15px]">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#E6F5EC]">
+                  <Check className="h-4 w-4 text-primary" strokeWidth={2.4} aria-hidden="true" />
+                </span>
+                {t}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      {/* --------------------------------------------------------- MAIRIES */}
+      <section id="mairies" className="mx-auto w-full max-w-[1200px] px-6 pb-24 md:pb-[104px]">
+        <div className="cz-reveal flex flex-wrap items-center justify-between gap-8 rounded-[32px] bg-forest p-8 text-white md:p-14">
+          <div className="flex min-w-0 flex-[1_1_520px] flex-col gap-3.5">
+            <h2 className="m-0 text-[28px] font-extrabold leading-[1.12] tracking-[-0.03em] md:text-[38px]">
+              Pilotez la propreté de votre commune depuis City OS
+            </h2>
+            <p className="m-0 text-base leading-relaxed text-[#C9DDD1]">
+              Zones et concessions, appels d&apos;offres, Police Verte, sanctions et éco-taxe : tout au même endroit, avec des données vérifiables.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link href="/contact" className="cz-btn inline-flex h-[52px] items-center gap-2.5 rounded-full bg-leaf px-6 text-[15px] font-bold text-forest hover:bg-[#5BCB50]">
+              Demander une démonstration
+              <ArrowRight className="cz-arrow h-4 w-4" strokeWidth={2.2} aria-hidden="true" />
+            </Link>
+            <Link href="/mairie/connexion" className="cz-btn inline-flex h-[52px] items-center rounded-full border-[1.5px] border-white/35 px-6 text-[15px] font-semibold text-white hover:border-white/70">
+              Espace Mairie
+            </Link>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }
 
-interface BourseTickerProps {
-  readonly name: string;
-  readonly price: string;
-  readonly trend: number;
+const MATERIALS = ["Plastique PET", "Plastique HDPE", "Aluminium", "Papier et carton", "Verre", "Ferraille", "Déchets organiques"];
+
+type Profile = { title: string; text: string; href: string; icon: LucideIcon; dark?: boolean };
+
+const PROFILES: Profile[] = [
+  { title: "Citoyens", text: "Abonnement de collecte, signalement des dépôts sauvages, points éco.", href: "/inscription?role=citoyen", icon: HomeIcon },
+  { title: "Collecteurs", text: "Réservez des lots recyclables près de vous et payez à la pesée.", href: "/inscription?role=collecteur", icon: Truck },
+  { title: "Organisations & ONG", text: "Agents, flotte, concessions, appels d'offres et vente de vos lots.", href: "/inscription", icon: Building2 },
+  { title: "Agents de collecte", text: "Missions du jour, itinéraire, preuve photo et pesée sur le terrain.", href: "/connexion", icon: UserRound },
+  { title: "Police Verte", text: "Constats d'infraction géolocalisés dans votre juridiction, même hors ligne.", href: "/connexion", icon: ShieldCheck },
+  { title: "Mairies", text: "City OS : zones, concessions, sanctions, fiscalité et suivi de la propreté.", href: "/mairie/connexion", icon: Landmark, dark: true },
+];
+
+function ProfileCard({ title, text, href, icon: Icon, dark }: Readonly<Profile>) {
+  return (
+    <Link
+      href={href}
+      className={
+        "cz-card cz-reveal flex flex-col gap-3 rounded-3xl border p-7 " +
+        (dark ? "border-forest bg-forest text-white" : "border-border bg-white text-ink")
+      }
+    >
+      <span className={"cz-tile flex h-12 w-12 items-center justify-center rounded-2xl " + (dark ? "bg-leaf/20" : "bg-[#E6F5EC]")}>
+        <Icon className={"h-[22px] w-[22px] " + (dark ? "text-leaf" : "text-primary")} aria-hidden="true" />
+      </span>
+      <strong className="flex items-center gap-2 text-[19px]">
+        {title}
+        <ArrowRight className={"cz-go h-4 w-4 " + (dark ? "text-leaf" : "text-primary")} strokeWidth={2.4} aria-hidden="true" />
+      </strong>
+      <span className={"text-[15px] leading-relaxed " + (dark ? "text-[#C9DDD1]" : "text-muted-foreground")}>{text}</span>
+    </Link>
+  );
 }
 
-function BourseTicker({ name, price, trend }: Readonly<BourseTickerProps>) {
-    const isUp = trend > 0;
-    return (
-        <div className="flex items-center gap-4 px-8 py-3 bg-zinc-800/50 rounded-2xl border border-zinc-700/50">
-            <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">{name}</span>
-            <span className="text-sm font-black text-white italic tracking-tight">{price} FCFA/kg</span>
-            <span className={cn(
-                "text-[10px] font-black flex items-center gap-1 uppercase italic",
-                isUp ? "text-emerald-500" : "text-red-500"
-            )}>
-                {isUp ? <TrendingUp className="w-3 h-3" /> : <TrendingUp className="w-3 h-3 rotate-180" />}
-                {isUp ? "+" : ""}{trend}%
-            </span>
-        </div>
-    );
-}
+const STEPS = [
+  {
+    title: "Signaler ou publier",
+    text: "Le citoyen signale un dépôt sauvage en photo. L'organisation publie ses lots triés sur la marketplace.",
+    icon: (
+      <>
+        <rect pathLength={1} x="6" y="13" width="36" height="26" rx="5" />
+        <path pathLength={1} d="M17 13l3-5h8l3 5" />
+        <circle pathLength={1} cx="24" cy="26" r="7" />
+      </>
+    ),
+  },
+  {
+    title: "Collecter",
+    text: "Un agent reçoit la mission sur son téléphone, se rend sur place et confirme la collecte avec la pesée.",
+    icon: (
+      <>
+        <path pathLength={1} d="M4 12h24v20H4zM28 19h8l6 6v7H28" />
+        <circle pathLength={1} cx="12" cy="36" r="4" />
+        <circle pathLength={1} cx="35" cy="36" r="4" />
+      </>
+    ),
+  },
+  {
+    title: "Valoriser et payer",
+    text: "Le paiement est réparti automatiquement : vendeur, plateforme et éco-taxe de la mairie.",
+    icon: (
+      <>
+        <rect pathLength={1} x="5" y="12" width="38" height="26" rx="5" />
+        <path pathLength={1} d="M5 20h38" />
+        <path pathLength={1} d="M31 29h6" />
+      </>
+    ),
+  },
+];
