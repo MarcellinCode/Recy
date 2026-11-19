@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { createClient } from "@/lib/supabase";
 import { 
     LayoutDashboard, 
     Users, 
@@ -116,7 +117,14 @@ export function SuperAdminSidebar() {
                             </p>
                         </div>
 
-                        <button className="flex items-center gap-4 px-6 py-4 w-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-2xl transition-all group">
+                        <button
+                            onClick={async () => {
+                                const supabase = createClient();
+                                await supabase.auth.signOut();
+                                window.location.href = '/connexion';
+                            }}
+                            className="flex items-center gap-4 px-6 py-4 w-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-2xl transition-all group"
+                        >
                             <LogOut size={18} className="group-hover:translate-x-1 transition-transform" />
                             <span className="text-xs font-black uppercase tracking-widest">Déconnexion</span>
                         </button>

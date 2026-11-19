@@ -71,22 +71,30 @@ export function useUnreadBadges() {
 
             if (!active) return;
 
-            // Setup Realtime channels
+            // Setup debounced Realtime channels filtered to current user where supported
+            let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+            const scheduleFetchCounts = () => {
+                if (debounceTimer) clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    fetchCounts();
+                }, 400);
+            };
+
             const uniqueId = Math.random().toString(36).substring(7);
             
             const msgChannel = supabase
                 .channel(`messages_badge_${user.id}_${uniqueId}`)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, fetchCounts)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'messages', filter: `receiver_id=eq.${user.id}` }, scheduleFetchCounts)
                 .subscribe();
 
             const notifChannel = supabase
                 .channel(`notifications_badge_${user.id}_${uniqueId}`)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, fetchCounts)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `profile_id=eq.${user.id}` }, scheduleFetchCounts)
                 .subscribe();
 
             const wasteChannel = supabase
                 .channel(`wastes_badge_${user.id}_${uniqueId}`)
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'wastes' }, fetchCounts)
+                .on('postgres_changes', { event: '*', schema: 'public', table: 'wastes' }, scheduleFetchCounts)
                 .subscribe();
 
             channels.push(msgChannel, notifChannel, wasteChannel);

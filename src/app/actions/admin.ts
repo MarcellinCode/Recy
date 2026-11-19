@@ -42,7 +42,7 @@ export async function adjustWallet(userId: string, amount: number, isAddition: b
     await supabase.from('transactions').insert({
         user_id: userId,
         amount: amount,
-        type: isAddition ? 'income' : 'expense',
+        type: isAddition ? 'credit' : 'debit',
         status: 'completed',
         description: `Ajustement manuel par Super Admin: ${isAddition ? '+' : '-'}${amount}`
     });

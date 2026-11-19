@@ -69,6 +69,8 @@ export async function middleware(request: NextRequest) {
         '/appels-offres',
         '/bourse',
         '/organisation',
+        '/flotte',
+        '/impact-rse',
         '/admin',
         '/city-os',
     ]

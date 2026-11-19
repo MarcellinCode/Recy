@@ -38,7 +38,14 @@ function getRoleLinks(unreadMessages: number): Record<string, { href: string; la
             { href: "/chat",         label: "Messages", badge: unreadMessages },
         ],
         agent_police_verte: [
-            { href: "/city-os",      label: "Radar" },
+            { href: "/dashboard",    label: "Hub" },
+            { href: "/carte",        label: "Carte" },
+            { href: "/chat",         label: "Messages", badge: unreadMessages },
+        ],
+        super_admin: [
+            { href: "/dashboard",    label: "Hub" },
+            { href: "/admin",        label: "Admin" },
+            { href: "/marketplace",  label: "Marché" },
             { href: "/chat",         label: "Messages", badge: unreadMessages },
         ],
     };

@@ -17,9 +17,11 @@ export async function confirmCollection(wasteId: string, finalWeight: number) {
 
         if (wasteError || !waste) throw new Error("Lot introuvable.");
 
-        // 2. Vérifier l'utilisateur
+        // 2. Vérifier l'utilisateur (collecteur ou agent assigné)
         const { data: { user } } = await supabase.auth.getUser();
-        if (!user || user.id !== waste.collector_id) throw new Error("Non autorisé. Seul le collecteur assigné peut confirmer.");
+        if (!user || (user.id !== waste.collector_id && user.id !== waste.assigned_agent_id)) {
+            throw new Error("Non autorisé. Seul le collecteur ou l'agent assigné peut confirmer.");
+        }
 
         if (waste.status !== 'reserved') {
             throw new Error("Ce lot ne peut pas être collecté car son statut est : " + waste.status);

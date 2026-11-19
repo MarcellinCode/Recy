@@ -20,34 +20,36 @@ export const walletService = {
    */
   async getWalletData(userId: string) {
     const supabase = createClient();
-    
-    // Balance
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
 
-    // Transactions — essayer Supabase, sinon simulation
-    const { data: transactions, error: txError } = await supabase
-      .from('transactions')
-      .select('*')
-      .eq('profile_id', userId)
-      .order('created_at', { ascending: false });
+    const [
+      { data: profile },
+      { data: transactions },
+      { data: weightData },
+    ] = await Promise.all([
+      supabase
+        .from('profiles')
+        .select('id, wallet_balance, eco_points, full_name, role')
+        .eq('id', userId)
+        .single(),
+      supabase
+        .from('transactions')
+        .select('id, user_id, type, amount, description, status, created_at')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50),
+      supabase
+        .from('wastes')
+        .select('final_weight')
+        .eq('seller_id', userId)
+        .eq('status', 'collected'),
+    ]);
 
-    // Total Weight
-    const { data: weightData } = await supabase
-      .from('wastes')
-      .select('final_weight')
-      .eq('seller_id', userId)
-      .eq('status', 'collected');
-    
-    const totalWeight = weightData?.reduce((acc: any, curr: any) => acc + (Number(curr.final_weight) || 0), 0) || 0;
+    const totalWeight = weightData?.reduce((acc: number, curr: { final_weight: number | null }) => acc + (Number(curr.final_weight) || 0), 0) || 0;
 
     return {
-      profile: profile || { wallet_balance: 12500, eco_points: 340 },
-      transactions: (transactions && transactions.length > 0) ? transactions : SIMULATION_TRANSACTIONS,
-      totalWeight: totalWeight || 35.5
+      profile: profile || { wallet_balance: 0, eco_points: 0 },
+      transactions: transactions || [],
+      totalWeight
     };
   },
 

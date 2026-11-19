@@ -12,6 +12,10 @@ export async function topUpWallet(amount: number) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: "Non authentifié" };
 
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { success: false, error: "Montant invalide" };
+  }
+
   // 1. Récupérer le solde actuel
   const { data: profile } = await supabase
     .from('profiles')
@@ -33,7 +37,8 @@ export async function topUpWallet(amount: number) {
   await supabase.from('transactions').insert({
     user_id: user.id,
     amount: amount,
-    type: 'income',
+    type: 'credit',
+    status: 'completed',
     description: `Recharge simulation (+${amount} CFA)`
   });
 

@@ -46,6 +46,24 @@ const NAV_CONFIG: Record<string, NavLink[]> = {
         { href: "/city-os",         label: "Admin",  icon: Building2 },
         { href: "/profil",          label: "Profil", icon: UserCircle },
     ],
+    agent_police_verte: [
+        { href: "/dashboard",       label: "Hub",    icon: Home },
+        { href: "/carte",           label: "Carte",  icon: Map },
+        { href: "/notifications",   label: "Alertes", icon: MessageSquare },
+        { href: "/profil",          label: "Profil", icon: UserCircle },
+    ],
+    super_admin: [
+        { href: "/dashboard",       label: "Hub",    icon: Home },
+        { href: "/admin",           label: "Admin",  icon: BarChart3 },
+        { href: "/marketplace",     label: "Marché", icon: Map },
+        { href: "/profil",          label: "Profil", icon: UserCircle },
+    ],
+    entreprise: [
+        { href: "/dashboard",       label: "Hub",    icon: Home },
+        { href: "/marketplace",     label: "Marché", icon: Map },
+        { href: "/chat",            label: "Messages", icon: MessageSquare },
+        { href: "/profil",          label: "Profil", icon: UserCircle },
+    ],
 };
 
 const DEFAULT_NAV: NavLink[] = [
@@ -114,8 +132,8 @@ export function BottomNavigation() {
                             </div>
                             
                             <span className={cn(
-                                "text-[9px] font-black uppercase tracking-widest mt-1 transition-all duration-300",
-                                isActive ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"
+                                "text-[10px] font-semibold mt-1 transition-all duration-200",
+                                isActive ? "text-primary opacity-100" : "opacity-80"
                             )}>
                                 {link.label}
                             </span>
