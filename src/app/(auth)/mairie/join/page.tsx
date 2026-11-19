@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Landmark, ShieldCheck, Mail, Lock, Phone, ArrowRight, Loader2, Building, CreditCard, CheckCircle2, QrCode, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
-import { validateInvitation, consumeInvitation } from "@/app/actions/invitations";
+import { validateInvitation } from "@/app/actions/invitations";
 import { motion, AnimatePresence } from "framer-motion";
 
 function getStepStatusClasses(currentStep: number, targetStep: number): string {
@@ -64,14 +64,15 @@ function MairieJoinForm() {
         setError(null);
 
         try {
-            const { data, error: authError } = await supabase.auth.signUp({
+            const { error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
                 options: {
                     data: {
                         full_name: formData.municipalityName,
                         role: "mairie",
-                        subscription_tier: "mairie",
+                        // Le code est vérifié ET consommé côté base par le trigger d'inscription
+                        invitation_code: searchParams.get("token"),
                         phone: formData.phone,
                         official_department: formData.officialDepartment
                     },
@@ -79,11 +80,6 @@ function MairieJoinForm() {
             });
 
             if (authError) throw authError;
-
-            const token = searchParams.get("token");
-            if (token && data.user) {
-                await consumeInvitation(token, data.user.id);
-            }
 
             // Successfully finished
             setStep(4);
@@ -94,7 +90,10 @@ function MairieJoinForm() {
             }, 3000);
 
         } catch (err: any) {
-            setError(err.message || "Erreur de configuration du compte.");
+            const msg: string = err?.message || "";
+            setError(msg.toLowerCase().includes("database error")
+                ? "Invitation invalide, expirée ou déjà utilisée."
+                : (msg || "Erreur de configuration du compte."));
         } finally {
             setLoading(false);
         }

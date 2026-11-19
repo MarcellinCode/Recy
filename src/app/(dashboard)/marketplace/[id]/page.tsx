@@ -175,9 +175,12 @@ function WasteDetailsContent({ id }: { id: string }) {
             if (user) {
                 setCurrentUser(user);
                 const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
-                setUserTier(profile?.subscription_tier || 'free');
+                // 'starter' (défaut à l'inscription) = plan gratuit
+                const rawTier = profile?.subscription_tier;
+                const tier = !rawTier || ['free', 'starter', 'citizen'].includes(rawTier) ? 'free' : rawTier;
+                setUserTier(tier);
                 
-                if (profile?.subscription_tier === 'free' || !profile?.subscription_tier) {
+                if (tier === 'free') {
                     const count = await wasteService.getMonthlyReservationCount(user.id);
                     setReservationCount(count);
                 }

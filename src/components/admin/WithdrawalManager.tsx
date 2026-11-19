@@ -77,7 +77,7 @@ export default function WithdrawalManager({
                             <div key={tx.id} className="flex flex-col md:flex-row md:items-center justify-between p-4 border border-gray-100 dark:border-zinc-800 rounded-2xl bg-gray-50/50 dark:bg-zinc-800/20">
                                 <div className="mb-4 md:mb-0">
                                     <div className="flex items-center gap-2 mb-1">
-                                        <span className="text-[9px] font-black uppercase text-gray-400">ID: {tx.id.split('-')[0]}</span>
+                                        <span className="text-[9px] font-black uppercase text-gray-400">ID: {String(tx.id).split("-")[0]}</span>
                                         <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-600 text-[8px] font-black uppercase tracking-widest">
                                             En attente
                                         </span>
@@ -86,13 +86,13 @@ export default function WithdrawalManager({
                                         {tx.profiles?.full_name || 'Utilisateur inconnu'}
                                     </h3>
                                     <p className="text-[11px] font-bold text-primary italic">
-                                        Demande : {Number(tx.amount).toLocaleString()} FCFA
+                                        Demande : {Math.abs(Number(tx.amount)).toLocaleString()} FCFA{tx.metadata?.phone ? ` → ${tx.metadata.phone}` : ""}
                                     </p>
                                 </div>
                                 
                                 <div className="flex items-center gap-2">
                                     <button 
-                                        onClick={() => handleReject(tx.id)}
+                                        onClick={() => handleReject(String(tx.id))}
                                         disabled={processingId === tx.id}
                                         className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 hover:bg-red-500 hover:text-white dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
                                     >
@@ -100,7 +100,7 @@ export default function WithdrawalManager({
                                         Refuser
                                     </button>
                                     <button 
-                                        onClick={() => handleApprove(tx.id)}
+                                        onClick={() => handleApprove(String(tx.id))}
                                         disabled={processingId === tx.id}
                                         className="flex items-center gap-2 px-4 py-2 bg-emerald-500 text-white hover:bg-emerald-600 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-emerald-500/20"
                                     >

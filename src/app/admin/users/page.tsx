@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/Modal";
-import { adjustWallet, updateSystemRole } from "@/app/actions/admin";
+import { adjustWallet, setUserStatus, updateUserProfile, createUserAccount, deleteUserAccount } from "@/app/actions/admin";
 
 type Profile = {
     id: string;
@@ -50,6 +50,7 @@ export default function UsersPage() {
     const [walletTargetUser, setWalletTargetUser] = useState<Profile | null>(null);
     const [walletAmount, setWalletAmount] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
+    const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null);
     const supabase = createClient();
 
     useEffect(() => {
@@ -74,14 +75,15 @@ export default function UsersPage() {
 
     async function handleAddUser(e: React.FormEvent) {
         e.preventDefault();
-        const { error } = await supabase.from('profiles').insert([
-            { ...newUser, status: 'Actif' }
-        ]);
+        setIsProcessing(true);
+        const res = await createUserAccount(newUser);
+        setIsProcessing(false);
 
-        if (error) {
-            showToast("Erreur lors de l'ajout : " + error.message, "error");
+        if (!res.success) {
+            showToast("Erreur lors de l'ajout : " + res.error, "error");
         } else {
             showToast("Utilisateur ajouté avec succès", "success");
+            if (res.password) setCreatedCredentials({ email: newUser.email, password: res.password });
             setIsAddModalOpen(false);
             setNewUser({ full_name: "", email: "", role: "producteur", city: "" });
             fetchUsers();
@@ -90,13 +92,10 @@ export default function UsersPage() {
 
     async function toggleBan(user: Profile) {
         const newStatus = user.status === 'Suspendu' ? 'Actif' : 'Suspendu';
-        const { error } = await supabase
-            .from('profiles')
-            .update({ status: newStatus })
-            .eq('id', user.id);
+        const res = await setUserStatus(user.id, newStatus);
 
-        if (error) {
-            showToast("Erreur lors de la modification du statut", "error");
+        if (!res.success) {
+            showToast("Erreur lors de la modification du statut : " + res.error, "error");
         } else {
             showToast(newStatus === 'Suspendu' ? "Utilisateur suspendu" : "Utilisateur réactivé", "success");
             fetchUsers();
@@ -106,13 +105,10 @@ export default function UsersPage() {
     async function deleteUser(id: string) {
         if (!confirm("Êtes-vous sûr de vouloir supprimer cet utilisateur ? Cette action est irréversible.")) return;
 
-        const { error } = await supabase
-            .from('profiles')
-            .delete()
-            .eq('id', id);
+        const res = await deleteUserAccount(id);
 
-        if (error) {
-            showToast("Erreur lors de la suppression", "error");
+        if (!res.success) {
+            showToast("Erreur lors de la suppression : " + res.error, "error");
         } else {
             showToast("Utilisateur supprimé avec succès", "success");
             fetchUsers();
@@ -124,18 +120,13 @@ export default function UsersPage() {
         if (!editingUser) return;
         setIsProcessing(true);
         try {
-            await updateSystemRole(editingUser.id, editingUser.role);
-            
-            const { error } = await supabase
-                .from('profiles')
-                .update({
-                    full_name: editingUser.full_name,
-                    city: editingUser.city,
-                    status: editingUser.status
-                })
-                .eq('id', editingUser.id);
-
-            if (error) throw error;
+            const res = await updateUserProfile(editingUser.id, {
+                full_name: editingUser.full_name,
+                city: editingUser.city,
+                role: editingUser.role,
+                status: editingUser.status
+            });
+            if (!res.success) throw new Error(res.error);
             showToast("Profil utilisateur mis à jour", "success");
             setEditingUser(null);
             fetchUsers();
@@ -167,6 +158,25 @@ export default function UsersPage() {
 
     return (
         <div className="space-y-10">
+            {createdCredentials && (
+                <div className="p-6 rounded-3xl bg-emerald-50 border border-emerald-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <p className="text-xs font-black uppercase tracking-widest text-emerald-800">Compte créé — identifiants à transmettre (affichés une seule fois)</p>
+                        <p className="font-mono text-sm mt-2 select-all">{createdCredentials.email}</p>
+                        <p className="font-mono text-sm select-all">{createdCredentials.password}</p>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => { navigator.clipboard?.writeText(`Identifiant : ${createdCredentials.email}\nMot de passe : ${createdCredentials.password}`).catch(() => {}); showToast("Identifiants copiés", "success"); }}
+                            className="px-4 py-2 rounded-xl bg-white border border-emerald-200 text-[10px] font-black uppercase tracking-widest"
+                        >Copier</button>
+                        <button
+                            onClick={() => setCreatedCredentials(null)}
+                            className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest"
+                        >Fermer</button>
+                    </div>
+                </div>
+            )}
             {/* Header Area */}
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
@@ -370,7 +380,8 @@ export default function UsersPage() {
                                 <option value="producteur">Citoyen</option>
                                 <option value="collecteur">Collecteur</option>
                                 <option value="agent_collecteur">Agent</option>
-                                <option value="entreprise">Entreprise</option>
+                                <option value="organisation_admin">Organisation</option>
+                                <option value="agent_police_verte">Police Verte</option>
                                 <option value="mairie">Mairie</option>
                             </select>
                         </div>
@@ -423,7 +434,8 @@ export default function UsersPage() {
                                     <option value="producteur">Citoyen</option>
                                     <option value="collecteur">Collecteur</option>
                                     <option value="agent_collecteur">Agent</option>
-                                    <option value="entreprise">Entreprise</option>
+                                    <option value="organisation_admin">Organisation</option>
+                                <option value="agent_police_verte">Police Verte</option>
                                     <option value="mairie">Mairie</option>
                                     <option value="super_admin">Super Admin</option>
                                 </select>
@@ -438,7 +450,7 @@ export default function UsersPage() {
                                 >
                                     <option value="Actif">Actif</option>
                                     <option value="Suspendu">Suspendu</option>
-                                    <option value="Vérifié">Vérifié</option>
+                                    <option value="En attente">En attente</option>
                                 </select>
                             </div>
                         </div>

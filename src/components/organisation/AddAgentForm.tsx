@@ -19,7 +19,8 @@ interface AddAgentFormProps {
 export function AddAgentForm({ isOpen, onClose, onSuccess, vehicles, concessions }: AddAgentFormProps) {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
-    
+    const [credentials, setCredentials] = useState<{ email: string; password: string } | null>(null);
+
     // Form fields
     const [formData, setFormData] = useState({
         fullName: "",
@@ -53,20 +54,16 @@ export function AddAgentForm({ isOpen, onClose, onSuccess, vehicles, concessions
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        if (!formData.pin || formData.pin.length < 4) {
-            showToast("Un code PIN d'au moins 4 chiffres est requis", "error");
-            return;
-        }
 
         setLoading(true);
 
         try {
             const res = await addAgent(formData);
-            
+
             if (res.success) {
-                showToast("L'agent a été ajouté et notifié par SMS", "success");
+                showToast("Agent créé. Transmettez-lui ses identifiants.", "success");
                 onSuccess(); // Actualiser fetchData()
+                setCredentials(res.credentials ?? null);
                 setFormData({
                     fullName: "",
                     phone: "",
@@ -77,7 +74,6 @@ export function AddAgentForm({ isOpen, onClose, onSuccess, vehicles, concessions
                     pin: ""
                 });
                 setStep(1);
-                onClose();
             } else {
                 showToast(res.error || "Erreur serveur", "error");
             }
@@ -89,7 +85,43 @@ export function AddAgentForm({ isOpen, onClose, onSuccess, vehicles, concessions
     };
 
     return (
-        <Modal isOpen={isOpen} onClose={onClose} title="Recruter un Agent Tactique">
+        <Modal isOpen={isOpen} onClose={() => { setCredentials(null); onClose(); }} title="Recruter un Agent Tactique">
+            {credentials ? (
+                <div className="py-4 space-y-6">
+                    <div className="p-6 rounded-3xl bg-emerald-50 border border-emerald-100 text-center">
+                        <CheckCircle2 size={32} className="mx-auto text-emerald-600 mb-3" />
+                        <p className="text-sm font-black uppercase tracking-tight text-emerald-800">Agent créé</p>
+                        <p className="text-[11px] text-emerald-700 mt-1">Ces identifiants ne seront plus affichés. Notez-les et transmettez-les à l&apos;agent.</p>
+                    </div>
+                    <div className="space-y-3">
+                        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">Identifiant (email)</p>
+                            <p className="font-mono text-sm break-all select-all">{credentials.email}</p>
+                        </div>
+                        <div className="p-4 rounded-2xl bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800">
+                            <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400 flex items-center gap-1"><Lock size={10} /> Mot de passe provisoire</p>
+                            <p className="font-mono text-sm break-all select-all">{credentials.password}</p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            navigator.clipboard?.writeText(`Identifiant : ${credentials.email}\nMot de passe : ${credentials.password}`).catch(() => {});
+                            showToast("Identifiants copiés", "success");
+                        }}
+                        className="w-full py-4 bg-gray-100 dark:bg-zinc-800 rounded-3xl text-[10px] font-black uppercase tracking-widest"
+                    >
+                        Copier les identifiants
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => { setCredentials(null); onClose(); }}
+                        className="w-full py-4 bg-primary text-white rounded-3xl text-[10px] font-black uppercase tracking-widest"
+                    >
+                        Terminé
+                    </button>
+                </div>
+            ) : (
             <div className="py-2">
                 {/* Stepper */}
                 <div className="flex justify-between mb-8 px-4">
@@ -272,24 +304,10 @@ export function AddAgentForm({ isOpen, onClose, onSuccess, vehicles, concessions
                                     <div className="w-16 h-16 bg-white dark:bg-zinc-900 rounded-full flex items-center justify-center mx-auto shadow-sm mb-4">
                                         <ShieldCheck size={28} className="text-primary" />
                                     </div>
-                                    <h3 className="font-black italic uppercase tracking-tighter text-lg mb-2">Code d'accès mobile</h3>
-                                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest max-w-[250px] mx-auto">
-                                        Ce code temporaire permettra à l'agent de se connecter sur l'application terrain CleanZone Operations.
+                                    <h3 className="font-black italic uppercase tracking-tighter text-lg mb-2">Accès application terrain</h3>
+                                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest max-w-[280px] mx-auto">
+                                        Un mot de passe sécurisé sera généré. Il s'affichera une seule fois : transmettez-le à l'agent.
                                     </p>
-                                </div>
-
-                                <div className="relative group">
-                                    <div className="absolute inset-y-0 left-0 pl-6 flex items-center pointer-events-none text-zinc-400 group-focus-within:text-primary transition-colors">
-                                        <Lock size={18} />
-                                    </div>
-                                    <input 
-                                        placeholder="Définir un Code PIN (ex: 1234) *"
-                                        type="password"
-                                        maxLength={6}
-                                        className="w-full pl-14 pr-6 py-5 sm:py-6 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 focus:border-primary focus:bg-white dark:focus:bg-zinc-900 rounded-3xl text-sm outline-none font-black text-center tracking-[0.5em] transition-all placeholder:text-zinc-400 placeholder:tracking-normal placeholder:text-left"
-                                        value={formData.pin}
-                                        onChange={(e) => handleInputChange("pin", e.target.value)}
-                                    />
                                 </div>
                                 
                                 <div className="flex gap-4">
@@ -320,6 +338,7 @@ export function AddAgentForm({ isOpen, onClose, onSuccess, vehicles, concessions
                     </AnimatePresence>
                 </div>
             </div>
+            )}
         </Modal>
     );
 }

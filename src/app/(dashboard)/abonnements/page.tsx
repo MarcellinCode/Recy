@@ -15,7 +15,17 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
-import { forceSimulateSubscription } from "@/app/actions/subscriptions";
+import { subscribeToPlatform } from "@/app/actions/subscriptions";
+
+// Correspondance plan affiché -> palier tarifé côté base (fn_subscribe_platform)
+const PLAN_TIERS: Record<string, string> = {
+    v1: "household",
+    v2: "business_local",
+    v3: "industry",
+    c1: "collector_premium",
+    o1: "organisation_standard",
+    m1: "mairie_elite",
+};
 
 export default function SubscriptionPage() {
     const supabase = createClient();
@@ -50,7 +60,6 @@ export default function SubscriptionPage() {
             // 3. Define Plans based on Role
             // Fallback: si le champ role n'est pas dans la table profiles, on le lit depuis user_metadata
             const userRole = profile?.role || user.user_metadata?.role;
-            console.log('[Abonnement] Rôle détecté:', userRole, '| Profile role:', profile?.role, '| Metadata role:', user.user_metadata?.role);
             let plans = [];
 
             if (userRole === 'producteur') {
@@ -61,9 +70,9 @@ export default function SubscriptionPage() {
                 ];
             } else if (userRole === 'collecteur') {
                 plans = [
-                    { id: 'c1', name: 'Acheteur Premium', price_cfa: 6000, frequency_per_week: 'Illimité', description: 'Pour les individus acheteurs de déchets recyclables.' }
+                    { id: 'c1', name: 'Acheteur Premium', price_cfa: 5000, frequency_per_week: 'Illimité', description: 'Pour les individus acheteurs de déchets recyclables.' }
                 ];
-            } else if (userRole === 'organisation_admin' || userRole === 'entreprise') {
+            } else if (userRole === 'organisation_admin') {
                 plans = [
                     { id: 'o1', name: 'Organisation', price_cfa: 20000, frequency_per_week: 'Gestion Zone', description: 'Gestion complète de votre zone.' }
                 ];
@@ -86,28 +95,26 @@ export default function SubscriptionPage() {
 
 
     const handleSubscribe = async (plan: any) => {
-        setIsSimulatingId(plan.id);
-        
-        // Simulation d'attente
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        
-        // Mettre à jour la base de données via l'action serveur (qui revalide le cache)
-        let newTier = 'citizen';
-        if (plan.id === 'o1') newTier = 'organisation';
-        else if (plan.id === 'm1') newTier = 'mairie';
-        else if (plan.id === 'c1') newTier = 'collector';
-        
-        const forceRes = await forceSimulateSubscription(newTier);
-        if (!forceRes.success) {
-            showToast("Erreur de simulation serveur.", "error");
+        const tier = PLAN_TIERS[plan.id];
+        if (!tier) {
+            showToast("Ce plan n'est pas encore disponible.", "error");
+            return;
         }
-        
+        setIsSimulatingId(plan.id);
+
+        // Paiement réel depuis le portefeuille (prix vérifié côté base)
+        const res = await subscribeToPlatform(tier);
+        setIsSimulatingId(null);
+
+        if (!res.success) {
+            showToast(res.error || "Souscription impossible.", "error");
+            return;
+        }
+
         setSubscription({
             status: 'active',
             subscription_plans: plan
         });
-        
-        setIsSimulatingId(null);
         showToast("Félicitations ! Votre abonnement est actif.", "success");
     };
 

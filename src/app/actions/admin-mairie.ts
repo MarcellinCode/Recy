@@ -1,11 +1,10 @@
 "use server";
 
-import { createClient } from '@supabase/supabase-js'
 import { fetchCommuneData } from '@/lib/geoService';
 import { getMunicipalityGeo } from '@/lib/geoIntelligence';
+import { requireRole, getAdminClient } from '@/lib/auth-guards';
 
-// Action serveur pour créer un compte Mairie via l'Admin
-// On initialise le client seulement au moment de l'appel pour éviter les erreurs au build
+// Action serveur pour créer un compte Mairie — RÉSERVÉE AU SUPER ADMIN
 export async function createMairieAccount(formData: {
     municipalityName: string;
     officialDepartment: string;
@@ -14,33 +13,35 @@ export async function createMairieAccount(formData: {
     phone: string;
     city: string;
 }) {
-    // Vérification des variables d'environnement sur le serveur
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // 🛡️ Sans ce contrôle, n'importe quel visiteur pouvait créer une Mairie
+    const guard = await requireRole(['super_admin']);
+    if (!guard.ok) return { success: false, error: guard.error };
 
-    if (!supabaseUrl || !serviceRoleKey) {
-        return { 
-            success: false, 
-            error: "Configuration serveur manquante (SUPABASE_SERVICE_ROLE_KEY). Veuillez vérifier vos variables d'environnement Vercel." 
+    if (!formData.password || formData.password.length < 8) {
+        return { success: false, error: "Le mot de passe doit contenir au moins 8 caractères." };
+    }
+
+    const supabaseAdmin = getAdminClient();
+    if (!supabaseAdmin) {
+        return {
+            success: false,
+            error: "Configuration serveur manquante (SUPABASE_SERVICE_ROLE_KEY). Veuillez vérifier vos variables d'environnement Vercel."
         };
     }
 
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
-
     try {
-        // 1. Création de l'utilisateur dans Supabase Auth avec toutes les métadonnées
-        // Cela permet au trigger handle_new_user de fonctionner correctement dès le début
+        // 1. Création du compte. Le rôle est placé dans app_metadata
+        //    (non modifiable par l'utilisateur) : c'est ce que lit le trigger.
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-            email: formData.email,
+            email: formData.email.trim().toLowerCase(),
             password: formData.password,
             email_confirm: true,
+            app_metadata: { role: 'mairie' },
             user_metadata: {
                 full_name: formData.municipalityName,
-                role: 'mairie',
                 city: formData.city,
                 phone: formData.phone,
-                official_department: formData.officialDepartment,
-                subscription_tier: 'mairie_elite'
+                official_department: formData.officialDepartment
             }
         });
 
@@ -54,7 +55,7 @@ export async function createMairieAccount(formData: {
                 id: authData.user.id,
                 full_name: formData.municipalityName,
                 role: 'mairie',
-                subscription_tier: 'mairie_elite',
+                subscription_tier: 'mairie',
                 phone: formData.phone,
                 city: formData.city,
                 status: 'Actif',
@@ -98,6 +99,7 @@ export async function createMairieAccount(formData: {
                 name: `TERRITOIRE OFFICIEL - ${formData.municipalityName}`,
                 city: formData.city,
                 created_by: authData.user.id,
+                organization_id: authData.user.id,
                 status: 'available',
                 latitude: lat,
                 longitude: lng,

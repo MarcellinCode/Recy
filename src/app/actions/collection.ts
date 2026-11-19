@@ -1,171 +1,37 @@
 "use server";
 
-import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
-import { getFiscalConfig } from "@/lib/fiscalConfig";
+import { requireRole, errorMessage } from "@/lib/auth-guards";
 
+/**
+ * Finalise une collecte (pesée finale + paiement + éco-taxe).
+ * Toute la logique financière est exécutée de façon atomique par la RPC
+ * sécurisée `fn_finalize_collection` (identique au mobile).
+ * Les notifications (in-app + push mobile/web) sont créées par la RPC et
+ * envoyées automatiquement par la base (trigger tr_notification_push).
+ */
 export async function confirmCollection(wasteId: string, finalWeight: number) {
-    const supabase = await createClient();
+    const guard = await requireRole(["collecteur", "agent_collecteur", "organisation_admin", "super_admin"]);
+    if (!guard.ok) return { success: false, error: guard.error };
+    const { supabase } = guard;
 
-    try {
-        // 1. Récupérer les détails du lot
-        const { data: waste, error: wasteError } = await supabase
-            .from('wastes')
-            .select('*, waste_types(*)')
-            .eq('id', wasteId)
-            .single();
-
-        if (wasteError || !waste) throw new Error("Lot introuvable.");
-
-        // 2. Vérifier l'utilisateur (collecteur ou agent assigné)
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user || (user.id !== waste.collector_id && user.id !== waste.assigned_agent_id)) {
-            throw new Error("Non autorisé. Seul le collecteur ou l'agent assigné peut confirmer.");
-        }
-
-        if (waste.status !== 'reserved') {
-            throw new Error("Ce lot ne peut pas être collecté car son statut est : " + waste.status);
-        }
-
-        const pricePerKg = waste.waste_types.price_per_kg;
-        const totalAmount = Number(finalWeight) * Number(pricePerKg);
-
-        // 📊 Taux fiscaux configurables (platform_settings ou valeurs par défaut)
-        const { commissionRate, ecoTaxRate } = await getFiscalConfig();
-        const commission   = totalAmount * commissionRate;
-        const sellerAmount = totalAmount - commission;
-
-        // 3. Mise à jour du lot
-        const { error: updateError } = await supabase
-            .from('wastes')
-            .update({
-                status: 'collected',
-                final_weight: finalWeight
-            })
-            .eq('id', wasteId);
-
-        if (updateError) throw updateError;
-
-        // 4. Mise à jour des Wallets (Simulation)
-        const { data: sellerProfile } = await supabase.from('profiles').select('wallet_balance, eco_points, push_token').eq('id', waste.seller_id).single();
-        const { data: collectorProfile } = await supabase.from('profiles').select('wallet_balance, push_token').eq('id', waste.collector_id).single();
-
-        if (sellerProfile && collectorProfile) {
-            // Crédit vendeur + Points Éco
-            const ecoPointsEarned = Math.round(finalWeight);
-            await supabase.from('profiles').update({
-                wallet_balance: Number(sellerProfile.wallet_balance) + sellerAmount,
-                eco_points: (sellerProfile.eco_points || 0) + ecoPointsEarned
-            }).eq('id', waste.seller_id);
-
-            // Débit collecteur
-            await supabase.from('profiles').update({
-                wallet_balance: Number(collectorProfile.wallet_balance) - totalAmount
-            }).eq('id', waste.collector_id);
-        }
-
-        // 5. Recherche de la Mairie (rôle 'mairie') pour l'Éco-Taxe configurable
-        const ecoTax = totalAmount * ecoTaxRate;
-        const { data: mairies } = await supabase.from('profiles').select('id, wallet_balance, push_token').eq('role', 'mairie').limit(1);
-        const mairie = mairies?.[0];
-
-        if (mairie) {
-            // Crédit de la Mairie
-            await supabase.from('profiles').update({
-                wallet_balance: Number(mairie.wallet_balance || 0) + ecoTax
-            }).eq('id', mairie.id);
-        }
-
-        // 6. Enregistrement des transactions
-        const transactionsToInsert = [
-            {
-                profile_id: waste.seller_id,
-                amount: sellerAmount,
-                type: 'income',
-                description: `Vente de ${finalWeight}kg de ${waste.waste_types.name}`
-            },
-            {
-                profile_id: waste.collector_id,
-                amount: -totalAmount,
-                type: 'outcome',
-                description: `Achat de ${finalWeight}kg de ${waste.waste_types.name}`
-            }
-        ];
-
-        if (mairie) {
-            transactionsToInsert.push({
-                profile_id: mairie.id,
-                amount: ecoTax,
-                type: 'income',
-                description: `Éco-taxe territoriale (2%) - Lot #${wasteId.split('-')[0]}`
-            });
-        }
-
-        await supabase.from('transactions').insert(transactionsToInsert);
-
-        // 7. Envoi des Notifications Internes
-        const notificationsToInsert = [
-            {
-                profile_id: waste.seller_id,
-                title: "Paiement Reçu !",
-                content: `Votre vente de ${waste.waste_types.name} est validée. +${sellerAmount} FCFA.`,
-                type: 'payment'
-            },
-            {
-                profile_id: waste.collector_id,
-                title: "Collecte Terminée",
-                content: `Vous avez finalisé la collecte de ${finalWeight}kg de ${waste.waste_types.name}.`,
-                type: 'collection'
-            }
-        ];
-
-        if (mairie) {
-             notificationsToInsert.push({
-                profile_id: mairie.id,
-                title: "Taxe Urbaine Perçue 🏛️",
-                content: `Une éco-taxe de ${ecoTax} FCFA a été prélevée sur une collecte.`,
-                type: 'system'
-             });
-        }
-
-        await supabase.from('notifications').insert(notificationsToInsert);
-
-        // 8. Envoi des Notifications Push
-        const { sendPushNotification } = await import("@/lib/push");
-        
-        if (sellerProfile?.push_token) {
-            await sendPushNotification(
-                sellerProfile.push_token,
-                "Paiement Reçu ! 💰",
-                `Votre vente de ${waste.waste_types.name} est validée. +${sellerAmount} FCFA.`,
-                { type: 'payment', wasteId }
-            );
-        }
-
-        if (collectorProfile?.push_token) {
-            await sendPushNotification(
-                collectorProfile.push_token,
-                "Collecte Terminée ✅",
-                `Vous avez finalisé la collecte de ${finalWeight}kg de ${waste.waste_types.name}.`,
-                { type: 'collection', wasteId }
-            );
-        }
-
-        if (mairie?.push_token) {
-            await sendPushNotification(
-                mairie.push_token,
-                "Taxe Urbaine Perçue 🏛️",
-                `+${ecoTax} FCFA provenant d'une collecte partenaire.`,
-                { type: 'system' }
-            );
-        }
-
-        revalidatePath(`/mes-dechets/${wasteId}`);
-        revalidatePath(`/wallet`);
-
-        return { success: true };
-    } catch (err: any) {
-        console.error("Erreur confirmCollection:", err);
-        return { success: false, error: err.message };
+    const weight = Number(finalWeight);
+    if (!Number.isFinite(weight) || weight <= 0) {
+        return { success: false, error: "Le poids final doit être strictement positif." };
     }
+
+    const { data, error } = await supabase.rpc("fn_finalize_collection", {
+        p_waste_id: wasteId,
+        p_final_weight: weight,
+    });
+
+    if (error) return { success: false, error: errorMessage(error) };
+    if (!data?.success) return { success: false, error: data?.error || "Finalisation impossible." };
+
+    revalidatePath(`/mes-dechets/${wasteId}`);
+    revalidatePath("/wallet");
+    revalidatePath("/missions");
+    revalidatePath("/reservations");
+
+    return { success: true, totalAmount: Number(data.total_amount) || 0 };
 }

@@ -49,3 +49,8 @@ lint_output.txt
 tmp_*.txt
 
 diagnostic_messages.ts
+
+# Exports de données personnelles (ne jamais versionner)
+users.json
+lucas_full_profile.json
+*_full_profile.json

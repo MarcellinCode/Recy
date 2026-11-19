@@ -1,84 +1,58 @@
 "use server";
 
 import { createClient } from "@/lib/supabase-server";
+import { requireRole, errorMessage } from "@/lib/auth-guards";
 
 export async function createInvitation(targetEmail?: string) {
-    const supabase = await createClient();
-    
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-        return { success: false, error: "Non authentifié" };
-    }
+    const guard = await requireRole(["super_admin"]);
+    if (!guard.ok) return { success: false, error: guard.error };
 
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-    if (!profile || profile.role !== 'super_admin') {
-        return { success: false, error: "Non autorisé" };
-    }
+    // Code imprévisible (32 caractères hexadécimaux)
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    const code = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 
-    const code = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    
-    const { data, error } = await supabase.from('system_invitations').insert({
+    const { data, error } = await guard.supabase.from("system_invitations").insert({
         code,
-        role: 'mairie',
-        target_email: targetEmail || null,
-        created_by: user.id
+        role: "mairie",
+        target_email: targetEmail?.trim().toLowerCase() || null,
+        created_by: guard.user.id,
     }).select().single();
 
-    if (error) {
-        console.error("Error creating invitation:", error);
-        return { success: false, error: error.message };
-    }
-
+    if (error) return { success: false, error: errorMessage(error) };
     return { success: true, invitation: data };
 }
 
 export async function getInvitations() {
-    const supabase = await createClient();
-    
-    // Check authorization first
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, invitations: [] };
-    
-    const { data, error } = await supabase.from('system_invitations')
-        .select('*')
-        .order('created_at', { ascending: false });
-    
-    if (error) {
-        console.error("Error fetching invitations:", error);
-        return { success: false, invitations: [] };
-    }
-    
+    const guard = await requireRole(["super_admin"]);
+    if (!guard.ok) return { success: false, invitations: [] };
+
+    const { data, error } = await guard.supabase
+        .from("system_invitations")
+        .select("*")
+        .order("created_at", { ascending: false });
+
+    if (error) return { success: false, invitations: [] };
     return { success: true, invitations: data || [] };
 }
 
+/**
+ * Vérifie un code d'invitation (page d'inscription Mairie, visiteur non connecté).
+ * La lecture directe de la table est réservée au Super Admin : on passe par une RPC.
+ */
 export async function validateInvitation(code: string) {
+    if (!code) return { valid: false };
     const supabase = await createClient();
-    
-    const { data, error } = await supabase.from('system_invitations')
-        .select('*')
-        .eq('code', code)
-        .eq('is_used', false)
-        .gt('expires_at', new Date().toISOString())
-        .single();
-        
-    if (error || !data) {
-        return { valid: false };
-    }
-    
-    return { valid: true, invitation: data };
+    const { data, error } = await supabase.rpc("fn_check_invitation", { p_code: code });
+    if (error) return { valid: false };
+    return { valid: data === true };
 }
 
-export async function consumeInvitation(code: string, userId: string) {
-    const supabase = await createClient();
-    
-    const { error } = await supabase.from('system_invitations')
-        .update({ is_used: true, used_by: userId })
-        .eq('code', code);
-        
-    if (error) {
-        console.error("Error consuming invitation:", error);
-        return false;
-    }
-    
+/**
+ * Conservé pour compatibilité : l'invitation est désormais consommée
+ * automatiquement par le trigger d'inscription (côté base), au moment
+ * même de la création du compte.
+ */
+export async function consumeInvitation(_code: string, _userId: string) {
     return true;
 }

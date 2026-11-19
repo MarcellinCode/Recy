@@ -1,22 +1,19 @@
 import { createClient } from "@/lib/supabase";
 
 // ============================================================
-// MODE SIMULATION — pas d'API de paiement pour l'instant
-// Toutes les opérations tentent Supabase, puis fallback local
+// Portefeuille — toutes les écritures passent par des RPC
+// sécurisées (identiques au mobile). Plus de faux « succès »
+// en cas d'erreur : l'utilisateur voit le vrai message.
 // ============================================================
 
-const SIMULATION_TRANSACTIONS = [
-  { id: 'sim_1', type: 'income', amount: 3500, description: 'Vente Plastique PET (12 kg)', created_at: new Date(Date.now() - 86400000 * 1).toISOString() },
-  { id: 'sim_2', type: 'outcome', amount: 2000, description: 'Abonnement Foyer (Mensuel)', created_at: new Date(Date.now() - 86400000 * 3).toISOString() },
-  { id: 'sim_3', type: 'income', amount: 7200, description: 'Vente Métaux Ferreux (8 kg)', created_at: new Date(Date.now() - 86400000 * 5).toISOString() },
-  { id: 'sim_4', type: 'income', amount: 1800, description: 'Vente Carton Mixte (15 kg)', created_at: new Date(Date.now() - 86400000 * 7).toISOString() },
-  { id: 'sim_5', type: 'outcome', amount: 500, description: 'Frais de service RecyCla', created_at: new Date(Date.now() - 86400000 * 10).toISOString() },
-];
+function readError(err: unknown, fallback: string) {
+  const msg = (err as { message?: string })?.message;
+  return msg || fallback;
+}
 
 export const walletService = {
   /**
    * Récupère les données du portefeuille (balance, transactions, poids total)
-   * Fallback simulation si Supabase échoue
    */
   async getWalletData(userId: string) {
     const supabase = createClient();
@@ -54,94 +51,46 @@ export const walletService = {
   },
 
   /**
-   * SIMULATION — Recharge portefeuille (Top-up)
-   * En production : sera remplacé par l'API Wave/Orange Money
+   * Recharge (mode simulation, plafonnée côté base)
    */
   async creditWallet(userId: string, amount: number): Promise<{ success: boolean; balance?: number; error?: string }> {
+    if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: 'Montant invalide' };
     const supabase = createClient();
-    
-    try {
-      // Tenter Supabase
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('wallet_balance')
-        .eq('id', userId)
-        .single();
-
-      const currentBalance = profile?.wallet_balance || 0;
-      const newBalance = currentBalance + amount;
-
-      // Enregistrer la transaction
-      await supabase.from('transactions').insert({
-        profile_id: userId,
-        type: 'income',
-        amount,
-        description: `Recharge Portefeuille (Simulation)`
-      });
-
-      // Mettre à jour le solde
-      const { error } = await supabase
-        .from('profiles')
-        .update({ wallet_balance: newBalance })
-        .eq('id', userId);
-
-      if (error) throw error;
-      return { success: true, balance: newBalance };
-    } catch (err: any) {
-      // Fallback simulation — on simule le succès
-      console.warn('[SIMULATION] creditWallet fallback:', err?.message);
-      return { success: true, balance: amount };
-    }
+    const { data, error } = await supabase.rpc('fn_adjust_wallet_balance', {
+      p_user_id: userId,
+      p_amount: amount,
+      p_operation_type: 'credit',
+    });
+    if (error) return { success: false, error: readError(error, 'Recharge impossible') };
+    return { success: true, balance: Number(data) };
   },
 
   /**
-   * SIMULATION — Débit portefeuille (Abonnement/Service)
-   * En production : sera remplacé par l'API Wave/Orange Money
+   * Débit pour un service
    */
   async debitWallet(userId: string, amount: number): Promise<{ success: boolean; balance?: number; error?: string }> {
+    if (!Number.isFinite(amount) || amount <= 0) return { success: false, error: 'Montant invalide' };
     const supabase = createClient();
-    
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('wallet_balance')
-        .eq('id', userId)
-        .single();
-
-      const currentBalance = profile?.wallet_balance || 0;
-      if (currentBalance < amount) {
-        return { success: false, error: 'Solde insuffisant' };
-      }
-
-      const newBalance = currentBalance - amount;
-
-      await supabase.from('transactions').insert({
-        profile_id: userId,
-        type: 'outcome',
-        amount: -amount,
-        description: `Paiement Service (Simulation)`
-      });
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({ wallet_balance: newBalance })
-        .eq('id', userId);
-
-      if (error) throw error;
-      return { success: true, balance: newBalance };
-    } catch (err: any) {
-      console.warn('[SIMULATION] debitWallet fallback:', err?.message);
-      return { success: true, balance: 0 };
-    }
+    const { data, error } = await supabase.rpc('fn_adjust_wallet_balance', {
+      p_user_id: userId,
+      p_amount: -amount,
+      p_operation_type: 'debit',
+    });
+    if (error) return { success: false, error: readError(error, 'Débit impossible') };
+    return { success: true, balance: Number(data) };
   },
 
   /**
-   * SIMULATION — Retrait vers Mobile Money
+   * Demande de retrait Mobile Money : le montant est bloqué (débité) et la
+   * demande apparaît « En attente » dans l'espace Finance du Super Admin.
    */
-  async withdraw(userId: string, amount: number, phone: string): Promise<{ success: boolean; error?: string }> {
-    // Simule un délai de traitement réseau
-    await new Promise(r => setTimeout(r, 1500));
-    console.log(`[SIMULATION] Retrait de ${amount} CFA vers ${phone} pour l'utilisateur ${userId}`);
-    return { success: true };
+  async withdraw(_userId: string, amount: number, phone: string): Promise<{ success: boolean; balance?: number; error?: string }> {
+    const supabase = createClient();
+    const { data, error } = await supabase.rpc('fn_request_withdrawal', {
+      p_amount: amount,
+      p_phone: phone,
+    });
+    if (error) return { success: false, error: readError(error, 'Demande de retrait impossible') };
+    return { success: true, balance: Number(data) };
   }
 };

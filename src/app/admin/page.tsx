@@ -74,7 +74,7 @@ export default function SuperAdminDashboard() {
             const { data: orgs } = await supabase
                 .from('profiles')
                 .select('*')
-                .in('role', ['mairie', 'entreprise'])
+                .in('role', ['mairie', 'organisation_admin'])
                 .limit(4)
                 .order('created_at', { ascending: false });
             

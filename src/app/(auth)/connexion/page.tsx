@@ -39,10 +39,17 @@ function LoginForm() {
 
             if (authError) throw authError;
 
-            router.push("/");
+            // Retour à la page demandée avant la connexion (chemin interne uniquement)
+            const next = searchParams.get("next");
+            const target = next && next.startsWith("/") && !next.startsWith("//") ? next : "/dashboard";
+            router.push(target);
             router.refresh();
         } catch (err: any) {
-            setError(err.message || "Email ou mot de passe incorrect.");
+            const raw: string = err?.message || "";
+            if (/invalid login credentials/i.test(raw)) setError("Email ou mot de passe incorrect.");
+            else if (/email not confirmed/i.test(raw)) setError("Confirmez d'abord votre email (lien reçu à l'inscription).");
+            else if (/banned/i.test(raw)) setError("Votre compte est suspendu. Contactez l'administration.");
+            else setError(raw || "Email ou mot de passe incorrect.");
         } finally {
             setLoading(false);
         }

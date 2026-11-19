@@ -35,18 +35,38 @@ export async function createPoliceAgent(formData: {
         return { success: false, error: "Action non autorisée. Rôle Mairie ou Super Admin requis." };
     }
 
+    // Sans zone, le trigger territorial bloque TOUS les PV de l'agent
+    if (!formData.zoneId) {
+        return { success: false, error: "Veuillez affecter une zone (juridiction) à l'agent." };
+    }
+    if (!formData.password || formData.password.length < 8) {
+        return { success: false, error: "Le mot de passe doit contenir au moins 8 caractères." };
+    }
+
+    // Une Mairie ne peut affecter un agent qu'à une zone de son territoire
+    if (profile.role === 'mairie') {
+        const { data: zone } = await supabase
+            .from('zones')
+            .select('organization_id, created_by')
+            .eq('id', formData.zoneId)
+            .single();
+        if (!zone || (zone.organization_id !== user.id && zone.created_by !== user.id)) {
+            return { success: false, error: "Cette zone n'appartient pas à votre territoire." };
+        }
+    }
+
     // Client admin pour la gestion des utilisateurs (uniquement après vérification)
     const supabaseAdmin = createAdminClient(supabaseUrl, serviceRoleKey);
 
     try {
-        // 1. Création du compte Auth (Confirmé automatiquement)
+        // 1. Création du compte Auth (rôle dans app_metadata, non modifiable par le client)
         const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
-            email: formData.email,
+            email: formData.email.trim().toLowerCase(),
             password: formData.password,
             email_confirm: true,
+            app_metadata: { role: 'agent_police_verte' },
             user_metadata: {
                 full_name: formData.fullName,
-                role: 'agent_police_verte',
                 phone: formData.phone,
                 city: formData.city
             }
@@ -54,16 +74,18 @@ export async function createPoliceAgent(formData: {
 
         if (authError) throw authError;
 
-        // 2. Forçage du profil (Le trigger handle_new_user s'occupe du reste, mais on assure la zone)
+        // 2. Juridiction de l'agent
         const { error: profileError } = await supabaseAdmin
             .from('profiles')
             .update({
+                role: 'agent_police_verte',
                 zone_id: formData.zoneId,
+                organization_id: user.id,
                 status: 'Actif'
             })
             .eq('id', authData.user.id);
 
-        if (profileError) console.error('Agent Profile Update Error:', profileError);
+        if (profileError) throw profileError;
 
         revalidatePath('/city-os');
         return { success: true, agentId: authData.user.id };

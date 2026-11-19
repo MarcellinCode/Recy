@@ -113,8 +113,9 @@ export default function PublishWastePage() {
                 .eq('id', user.id)
                 .single();
 
-            if (profile?.role === 'collecteur') {
-                throw new Error("Désolé, seuls les vendeurs peuvent publier des lots.");
+            // Même règle que la base et l'application mobile
+            if (profile?.role !== 'organisation_admin' && profile?.role !== 'super_admin') {
+                throw new Error("Seules les organisations agréées peuvent publier des lots sur la marketplace.");
             }
 
             const image_urls: string[] = [];

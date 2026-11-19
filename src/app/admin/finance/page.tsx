@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
 import { motion } from "framer-motion";
+import WithdrawalManager from "@/components/admin/WithdrawalManager";
 
 export default function FinancePage() {
     const [loading, setLoading] = useState(true);
@@ -37,10 +38,23 @@ export default function FinancePage() {
         setLoading(true);
         try {
             // Fetch Transactions
-            const { data: txs, error } = await supabase
+            // Pas de jointure implicite (transactions a deux colonnes propriétaires :
+            // user_id et profile_id) — on rattache les noms dans un second temps.
+            const { data: rawTxs } = await supabase
                 .from('transactions')
-                .select('*, profiles(full_name)')
-                .order('created_at', { ascending: false });
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(500);
+
+            let txs = rawTxs;
+            if (rawTxs && rawTxs.length > 0) {
+                const ownerIds = Array.from(new Set(rawTxs.map((t: any) => t.user_id || t.profile_id).filter(Boolean)));
+                const { data: owners } = ownerIds.length
+                    ? await supabase.from('profiles').select('id, full_name').in('id', ownerIds)
+                    : { data: [] as any[] };
+                const names = new Map((owners || []).map((o: any) => [o.id, o.full_name]));
+                txs = rawTxs.map((t: any) => ({ ...t, profiles: { full_name: names.get(t.user_id || t.profile_id) || null } }));
+            }
 
             if (txs) {
                 setTransactions(txs);
@@ -115,6 +129,12 @@ export default function FinancePage() {
                     </motion.div>
                 ))}
             </div>
+
+            {/* Demandes de retrait Mobile Money en attente de validation */}
+            <WithdrawalManager
+                pendingTransactions={transactions.filter((t: any) => t.status === 'Pending' && t.type === 'withdrawal')}
+                onRefresh={fetchFinanceData}
+            />
 
             {/* Transaction List */}
             <section className="bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 rounded-[2.5rem] overflow-hidden shadow-sm">

@@ -57,13 +57,13 @@ export default function DashboardClient({ profile, stats, activeSub = null }: Da
             href: "/carte", 
             color: "bg-emerald-500" 
         }] : []),
-        { 
-            title: "Mes Déchets", 
-            description: "Gérer vos publications", 
+        ...(profile?.role !== 'producteur' ? [{ 
+            title: profile?.role === 'organisation_admin' ? "Mes Lots" : "Mes Collectes", 
+            description: profile?.role === 'organisation_admin' ? "Gérer vos publications" : "Suivre vos lots collectés", 
             icon: Package, 
             href: "/mes-dechets", 
             color: "bg-amber-500" 
-        },
+        }] : []),
         { 
             title: "Mon Portefeuille", 
             description: "Consultez vos gains", 
@@ -98,7 +98,7 @@ export default function DashboardClient({ profile, stats, activeSub = null }: Da
                 color: "bg-primary" 
             }
         ] : []),
-        ...(profile?.role === 'entreprise' || profile?.role === 'organisation_admin' || profile?.role === 'collecteur' ? [
+        ...(profile?.role === 'organisation_admin' || profile?.role === 'collecteur' ? [
             { 
                 title: "Appels d'Offres", 
                 description: "Espace B2B & Entreprises", 

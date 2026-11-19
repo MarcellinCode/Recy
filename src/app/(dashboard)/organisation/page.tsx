@@ -30,7 +30,7 @@ import { Modal } from "@/components/ui/Modal";
 import { submitBid } from "@/app/actions/tenders";
 import { topUpWallet } from "@/app/actions/wallet";
 import { AddAgentForm } from "@/components/organisation/AddAgentForm";
-import { getOrganizationContext } from "@/app/actions/organisation";
+import { getOrganizationContext, takeChargeOfWaste, assignAgentToWaste, dispatchAgentToInfraction } from "@/app/actions/organisation";
 
 const MISSION_STATUS_CONFIG: Record<string, { badge: string; label: string }> = {
     in_progress: { badge: "bg-amber-100 text-amber-600", label: "EN COURS" },
@@ -58,149 +58,124 @@ export default function OrganizationDashboard() {
     const [concessionWastes, setConcessionWastes] = useState<any[]>([]);
     const [concessionInfractions, setConcessionInfractions] = useState<any[]>([]);
 
+    // Bumpé après chaque action pour rafraîchir les alertes de concession
+    const [alertsVersion, setAlertsVersion] = useState(0);
+
     useEffect(() => {
         if (!profile?.id) return;
-        
+
+        // Rectangle englobant d'une zone (GeoJSON Polygon / MultiPolygon)
+        const zoneBBox = (zone: any) => {
+            const geom = zone?.boundaries?.geometry;
+            if (!geom?.coordinates) return null;
+            const coords = geom.type === "MultiPolygon"
+                ? geom.coordinates.flatMap((poly: any) => poly[0])
+                : geom.coordinates[0];
+            if (!coords?.length) return null;
+            const lons = coords.map((c: any) => Number(c[0]));
+            const lats = coords.map((c: any) => Number(c[1]));
+            return { minLat: Math.min(...lats), maxLat: Math.max(...lats), minLon: Math.min(...lons), maxLon: Math.max(...lons) };
+        };
+
         const fetchConcessionAlerts = async () => {
             try {
-                // 1. Fetch active zones
                 const { data: concessionsRaw } = await supabase
                     .from('concessions')
-                    .select('*')
+                    .select('zone_id')
                     .eq('organization_id', profile.id)
                     .eq('status', 'active');
-                
-                let activeZones: any[] = [];
-                if (concessionsRaw && concessionsRaw.length > 0) {
-                    const zoneIds = concessionsRaw.map((c: any) => c.zone_id).filter(Boolean);
-                    if (zoneIds.length > 0) {
-                        const { data: zonesData } = await supabase
-                            .from('zones')
-                            .select('*')
-                            .in('id', zoneIds);
-                        activeZones = zonesData || [];
-                    }
+
+                const zoneIds = (concessionsRaw || []).map((c: any) => c.zone_id).filter(Boolean);
+                if (zoneIds.length === 0) {
+                    setConcessionWastes([]);
+                    setConcessionInfractions([]);
+                    return;
                 }
-                if (activeZones.length === 0) return;
 
-                // Helper to check bounding box
-                const isPointInZone = (lat: any, lng: any, zone: any) => {
-                    if (!zone.boundaries?.geometry?.coordinates) return true;
-                    const nLat = Number(lat);
-                    const nLng = Number(lng);
-                    if (isNaN(nLat) || isNaN(nLng)) return false;
+                const { data: zonesData } = await supabase.from('zones').select('id, boundaries').in('id', zoneIds);
+                const boxes = (zonesData || []).map(zoneBBox).filter(Boolean) as { minLat: number; maxLat: number; minLon: number; maxLon: number }[];
 
-                    const coords = zone.boundaries.geometry.type === "MultiPolygon"
-                        ? zone.boundaries.geometry.coordinates.flatMap((poly: any) => poly[0])
-                        : zone.boundaries.geometry.coordinates[0];
-
-                    const lons = coords.map((c: any) => c[0]);
-                    const lats = coords.map((c: any) => c[1]);
-                    const minLon = Math.min(...lons);
-                    const maxLon = Math.max(...lons);
-                    const minLat = Math.min(...lats);
-                    const maxLat = Math.max(...lats);
-                    return nLat >= minLat && nLat <= maxLat && nLng >= minLon && nLng <= maxLon;
+                const inBoxes = (lat: any, lng: any) => {
+                    if (boxes.length === 0) return true;
+                    const nLat = Number(lat), nLng = Number(lng);
+                    if (Number.isNaN(nLat) || Number.isNaN(nLng)) return false;
+                    return boxes.some(b => nLat >= b.minLat && nLat <= b.maxLat && nLng >= b.minLon && nLng <= b.maxLon);
                 };
 
-                // 2. Fetch wastes
-                const { data: wastesData } = await supabase
+                // Filtrage géographique CÔTÉ BASE (rectangle global) au lieu de charger toute la plateforme
+                let wastesQuery = supabase
                     .from('wastes')
-                    .select('*, waste_types(*)')
+                    .select('id, status, location, latitude, longitude, created_at, collector_id, assigned_agent_id, mission_type, waste_types(name, emoji)')
                     .in('status', ['published', 'reserved'])
                     .not('latitude', 'is', null)
-                    .not('longitude', 'is', null);
+                    .not('longitude', 'is', null)
+                    .limit(300);
+                if (boxes.length > 0) {
+                    wastesQuery = wastesQuery
+                        .gte('latitude', Math.min(...boxes.map(b => b.minLat)))
+                        .lte('latitude', Math.max(...boxes.map(b => b.maxLat)))
+                        .gte('longitude', Math.min(...boxes.map(b => b.minLon)))
+                        .lte('longitude', Math.max(...boxes.map(b => b.maxLon)));
+                }
 
-                const zoneIds = activeZones.map((z: any) => z.id);
+                const [{ data: wastesData }, { data: infractionsData }] = await Promise.all([
+                    wastesQuery,
+                    supabase
+                        .from('environmental_infractions')
+                        .select('id, type, description, status, severity, latitude, longitude, created_at, zone_id')
+                        .in('zone_id', zoneIds)
+                        .in('status', ['open', 'investigating'])
+                        .limit(300),
+                ]);
 
-                // 3. Fetch infractions
-                const { data: infractionsData } = await supabase
-                    .from('environmental_infractions')
-                    .select('*')
-                    .in('zone_id', zoneIds)
-                    .not('latitude', 'is', null)
-                    .not('longitude', 'is', null);
-
-                // Filter wastes
-                const filteredWastes = (wastesData || []).filter((w: any) => 
-                    activeZones.some((z: any) => isPointInZone(w.latitude, w.longitude, z))
-                );
-
-                // Filter infractions
-                const filteredInfractions = (infractionsData || []).filter((i: any) => 
-                    activeZones.some((z: any) => isPointInZone(i.latitude, i.longitude, z))
-                );
-
-                setConcessionWastes(filteredWastes);
-                setConcessionInfractions(filteredInfractions);
+                setConcessionWastes((wastesData || []).filter((w: any) => inBoxes(w.latitude, w.longitude)));
+                setConcessionInfractions(infractionsData || []);
             } catch (err) {
                 console.error("Error fetching concession alerts:", err);
             }
         };
 
         fetchConcessionAlerts();
-    }, [profile?.id]);
+    }, [profile?.id, alertsVersion]);
+
+    const refreshAfterAction = () => {
+        fetchData();
+        setAlertsVersion(v => v + 1);
+    };
 
     const handleTakeCharge = async (wasteId: string) => {
         if (!profile?.id) return;
-        try {
-            const { error } = await supabase
-                .from('wastes')
-                .update({ status: 'reserved', collector_id: profile.id })
-                .eq('id', wasteId);
-            
-            if (error) {
-                showToast("Erreur lors de la prise en charge : " + error.message, "error");
-            } else {
-                showToast("Dépôt pris en charge avec succès !", "success");
-                fetchData();
-                              // Refresh local concession alerts
-                 const { data: concessionsRaw } = await supabase
-                     .from('concessions')
-                     .select('*')
-                     .eq('organization_id', profile.id)
-                     .eq('status', 'active');
-                 
-                 let activeZones: any[] = [];
-                 if (concessionsRaw && concessionsRaw.length > 0) {
-                     const zoneIds = concessionsRaw.map((c: any) => c.zone_id).filter(Boolean);
-                     if (zoneIds.length > 0) {
-                         const { data: zonesData } = await supabase
-                             .from('zones')
-                             .select('*')
-                             .in('id', zoneIds);
-                         activeZones = zonesData || [];
-                     }
-                 }
-                 if (activeZones.length > 0) {
-                    const { data: wastesData } = await supabase
-                        .from('wastes')
-                        .select('*, waste_types(*)')
-                        .in('status', ['published', 'reserved'])
-                        .not('latitude', 'is', null)
-                        .not('longitude', 'is', null);
-                    
-                    const isPointInZone = (lat: any, lng: any, zone: any) => {
-                        if (!zone.boundaries?.geometry?.coordinates) return true;
-                        const nLat = Number(lat);
-                        const nLng = Number(lng);
-                        if (isNaN(nLat) || isNaN(nLng)) return false;
-                        const coords = zone.boundaries.geometry.type === "MultiPolygon"
-                            ? zone.boundaries.geometry.coordinates.flatMap((poly: any) => poly[0])
-                            : zone.boundaries.geometry.coordinates[0];
-                        const lons = coords.map((c: any) => c[0]);
-                        const lats = coords.map((c: any) => c[1]);
-                        return nLat >= Math.min(...lats) && nLat <= Math.max(...lats) && nLng >= Math.min(...lons) && nLng <= Math.max(...lons);
-                    };
-
-                    setConcessionWastes((wastesData || []).filter((w: any) => activeZones.some((z: any) => isPointInZone(w.latitude, w.longitude, z))));
-                }
-            }
-        } catch (e: any) {
-            showToast("Erreur: " + e.message, "error");
+        const res = await takeChargeOfWaste(wasteId);
+        if (!res.success) {
+            showToast("Prise en charge impossible : " + res.error, "error");
+            return;
         }
+        showToast("Lot pris en charge. Affectez maintenant un agent.", "success");
+        refreshAfterAction();
     };
-    
+
+    const handleAssignAgent = async (wasteId: string, agentId: string) => {
+        if (!agentId) return;
+        const res = await assignAgentToWaste(wasteId, agentId);
+        if (!res.success) {
+            showToast("Affectation impossible : " + res.error, "error");
+            return;
+        }
+        showToast("Mission envoyée à l'agent.", "success");
+        refreshAfterAction();
+    };
+
+    const handleDispatchToInfraction = async (infractionId: string, agentId: string) => {
+        if (!agentId) return;
+        const res = await dispatchAgentToInfraction(infractionId, agentId);
+        if (!res.success) {
+            showToast("Envoi impossible : " + res.error, "error");
+            return;
+        }
+        showToast("Agent envoyé sur le dépôt sauvage.", "success");
+        refreshAfterAction();
+    };
+
     const [isBidModalOpen, setIsBidModalOpen] = useState(false);
     const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
     const [isAddAgentMenuOpen, setIsAddAgentMenuOpen] = useState(false); // NEW
@@ -255,7 +230,8 @@ export default function OrganizationDashboard() {
                     .select('*, profiles!wastes_seller_id_fkey(*)')
                     .in('assigned_agent_id', agentIds)
                     .in('status', ['reserved', 'in_progress', 'collected'])
-                    .order('updated_at', { ascending: false });
+                    .order('created_at', { ascending: false })
+                    .limit(100);
                 setActiveMissions(missionsData || []);
             }
         }
@@ -269,7 +245,7 @@ export default function OrganizationDashboard() {
             setIsWalletModalOpen(false);
             fetchData();
         } else {
-            showToast("Erreur lors du rechargement", "error");
+            showToast(res.error || "Erreur lors du rechargement", "error");
         }
     };
 
@@ -520,6 +496,22 @@ export default function OrganizationDashboard() {
                                                             >
                                                                 📍
                                                             </a>
+                                                        )}
+
+                                                        {isWaste && item.status === 'reserved' && item.collector_id === profile?.id && !item.assigned_agent_id && (
+                                                            <AgentPicker
+                                                                agents={agents}
+                                                                label="Affecter"
+                                                                onPick={(agentId) => handleAssignAgent(item.id, agentId)}
+                                                            />
+                                                        )}
+
+                                                        {!isWaste && item.status === 'open' && (
+                                                            <AgentPicker
+                                                                agents={agents}
+                                                                label="Envoyer un agent"
+                                                                onPick={(agentId) => handleDispatchToInfraction(item.id, agentId)}
+                                                            />
                                                         )}
 
                                                         {isWaste && (
@@ -990,5 +982,26 @@ function PlanSummary({ name, count, price, color }: any) {
                 <p className="text-[9px] font-bold text-emerald-500 uppercase tracking-widest">{price} CFA</p>
             </div>
         </div>
+    );
+}
+
+/** Sélecteur compact d'agent (missions / dépôts sauvages). */
+function AgentPicker({ agents, label, onPick }: { agents: any[]; label: string; onPick: (agentId: string) => void }) {
+    const fieldAgents = (agents || []).filter((a: any) => a.role === 'agent_collecteur' && a.status !== 'Suspendu');
+    if (fieldAgents.length === 0) {
+        return <span className="text-[9px] font-black uppercase tracking-widest text-zinc-500">Aucun agent</span>;
+    }
+    return (
+        <select
+            defaultValue=""
+            onChange={(e) => { const v = e.target.value; e.target.value = ""; onPick(v); }}
+            className="px-3 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest bg-indigo-600 text-white border-0 outline-none cursor-pointer max-w-[160px]"
+            aria-label={label}
+        >
+            <option value="" disabled>{label}</option>
+            {fieldAgents.map((a: any) => (
+                <option key={a.id} value={a.id}>{a.full_name || a.phone || 'Agent'}</option>
+            ))}
+        </select>
     );
 }

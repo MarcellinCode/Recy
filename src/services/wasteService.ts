@@ -21,26 +21,9 @@ export const wasteService = {
    */
   async reserveWaste(id: string, collectorId: string) {
     const supabase = createClient();
-    
-    // 1. Vérifier le profil du collecteur et son quota
-    const { data: profile, error: profileError } = await supabase
-      .from('profiles')
-      .select('subscription_tier')
-      .eq('id', collectorId)
-      .single();
 
-    if (profileError) throw profileError;
-
-    // Si l'utilisateur est en plan gratuit "free", on vérifie son quota mensuel (3 max)
-    if (!profile.subscription_tier || profile.subscription_tier === 'free') {
-      const count = await this.getMonthlyReservationCount(collectorId);
-      if (count >= 3) {
-        throw new Error("Quota atteint : Le plan gratuit limite à 3 réservations par mois. Passez au plan Premium pour des réservations illimitées !");
-      }
-    }
-    
-    // 2. Mettre à jour le statut du lot — filtre sur status='published'
-    //    pour éviter la race condition (deux collecteurs simultanés)
+    // Réservation atomique : rôle, suspension et quota du plan gratuit
+    // (3/mois) sont vérifiés côté base par la RPC reserve_waste.
     const { data, error: reserveError } = await supabase
       .rpc('reserve_waste', { p_waste_id: id, p_collecteur_id: collectorId })
       .single();
@@ -51,6 +34,10 @@ export const wasteService = {
         throw new Error("Ce lot vient d'être réservé par quelqu'un d'autre");
       } else if (msg.includes('WASTE_UNAVAILABLE')) {
         throw new Error("Ce lot n'est plus disponible");
+      } else if (msg.includes('QUOTA_REACHED')) {
+        throw new Error("Quota atteint : le plan gratuit limite à 3 réservations par mois. Passez au plan Premium pour des réservations illimitées !");
+      } else if (msg.includes('suspendu')) {
+        throw new Error("Votre compte est suspendu : réservation impossible.");
       } else if (msg.includes('ROLE_NOT_ALLOWED')) {
         console.error("Rôle non autorisé pour la réservation :", reserveError);
         throw new Error("Action non autorisée : votre rôle ne vous permet pas de réserver un lot.");
@@ -63,22 +50,14 @@ export const wasteService = {
       }
     }
 
-    // 3. Créer les notifications
+    // Le vendeur est notifié par la RPC ; on confirme à l'acheteur
     if (data) {
-        await supabase.from('notifications').insert([
-            {
-                profile_id: data.seller_id,
-                title: "Lot Réservé !",
-                content: `Votre lot a été réservé par un collecteur.`,
-                type: 'offer'
-            },
-            {
-                profile_id: collectorId,
-                title: "Réservation confirmée",
-                content: `Vous avez réservé avec succès ce lot.`,
-                type: 'collection'
-            }
-        ]);
+        await supabase.from('notifications').insert({
+            profile_id: collectorId,
+            title: "Réservation confirmée",
+            content: `Vous avez réservé avec succès ce lot.`,
+            type: 'collection'
+        });
     }
 
     return data;
@@ -97,7 +76,7 @@ export const wasteService = {
       .from('wastes')
       .select('*', { count: 'exact', head: true })
       .eq('collector_id', collectorId)
-      .gte('created_at', startOfMonth.toISOString()); // Utilise created_at qui existe à 100% dans la structure de base
+      .gte('reserved_at', startOfMonth.toISOString()); // même règle que la RPC reserve_waste
 
     if (error) {
       console.error("Error fetching reservation count:", error);

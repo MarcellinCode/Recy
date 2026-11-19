@@ -1,49 +1,31 @@
 "use server";
 
-import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
+import { requireRole, errorMessage } from "@/lib/auth-guards";
 
 /**
- * Recharge simulée du Wallet (Top-up)
+ * Recharge du portefeuille (mode simulation tant qu'aucune API Mobile Money
+ * n'est branchée ; plafonnée côté base via platform_settings).
  */
 export async function topUpWallet(amount: number) {
-  const supabase = await createClient();
-  
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: "Non authentifié" };
+    const guard = await requireRole();
+    if (!guard.ok) return { success: false, error: guard.error };
 
-  if (!Number.isFinite(amount) || amount <= 0) {
-    return { success: false, error: "Montant invalide" };
-  }
+    if (!Number.isFinite(amount) || amount <= 0) {
+        return { success: false, error: "Montant invalide" };
+    }
 
-  // 1. Récupérer le solde actuel
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('wallet_balance')
-    .eq('id', user.id)
-    .single();
+    const { data, error } = await guard.supabase.rpc("fn_adjust_wallet_balance", {
+        p_user_id: guard.user.id,
+        p_amount: amount,
+        p_operation_type: "credit",
+    });
 
-  const newBalance = (profile?.wallet_balance || 0) + amount;
+    if (error) return { success: false, error: errorMessage(error) };
 
-  // 2. Mettre à jour le solde
-  const { error: updateError } = await supabase
-    .from('profiles')
-    .update({ wallet_balance: newBalance })
-    .eq('id', user.id);
+    revalidatePath("/wallet");
+    revalidatePath("/dashboard");
+    revalidatePath("/organisation");
 
-  if (updateError) return { success: false, error: updateError.message };
-
-  // 3. Enregistrer la transaction
-  await supabase.from('transactions').insert({
-    user_id: user.id,
-    amount: amount,
-    type: 'credit',
-    status: 'completed',
-    description: `Recharge simulation (+${amount} CFA)`
-  });
-
-  revalidatePath('/wallet');
-  revalidatePath('/dashboard');
-  
-  return { success: true, balance: newBalance };
+    return { success: true, balance: Number(data) };
 }

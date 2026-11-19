@@ -95,7 +95,7 @@ export default function BulkMarketplacePage() {
         );
     }
 
-    const isCompany = profile?.role === 'entreprise';
+    const isCompany = profile?.role === 'organisation_admin' || profile?.role === 'collecteur';
 
     return (
         <div className="max-w-7xl mx-auto px-4 py-12">

@@ -1,144 +1,54 @@
 "use server";
 
-import { createClient } from "@/lib/supabase-server";
+import { revalidatePath } from "next/cache";
+import { requireRole, errorMessage } from "@/lib/auth-guards";
 
+/** Super Admin : valider une demande de retrait (statut Pending -> Succeeded). */
 export async function approveWithdrawal(transactionId: string) {
-    try {
-        const supabase = await createClient();
-        
-        // 1. Vérifier que c'est le super admin
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Non authentifié");
+    const guard = await requireRole(["super_admin"]);
+    if (!guard.ok) return { success: false, error: guard.error };
 
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-        if (profile?.role !== 'super_admin') throw new Error("Accès refusé");
+    const { error } = await guard.supabase.rpc("fn_process_withdrawal", {
+        p_transaction_id: String(transactionId),
+        p_approve: true,
+        p_reason: null,
+    });
+    if (error) return { success: false, error: errorMessage(error) };
 
-        // 2. Mettre à jour le statut de la transaction
-        const { data: tx, error: fetchError } = await supabase
-            .from('transactions')
-            .select('status, amount, user_id, type')
-            .eq('id', transactionId)
-            .single();
-
-        if (fetchError || !tx) throw new Error("Transaction introuvable");
-        if (tx.status !== 'Pending') throw new Error("La transaction n'est pas en attente");
-
-
-        const { error: updateError } = await supabase
-            .from('transactions')
-            .update({ status: 'Succeeded' })
-            .eq('id', transactionId);
-
-        if (updateError) throw updateError;
-
-        return { success: true };
-    } catch (error: any) {
-        return { success: false, error: error.message };
-    }
+    revalidatePath("/admin/finance");
+    return { success: true };
 }
 
+/** Super Admin : refuser un retrait -> les fonds sont recrédités atomiquement. */
 export async function rejectWithdrawal(transactionId: string, reason: string) {
-    try {
-        const supabase = await createClient();
-        
-        // 1. Vérifier que c'est le super admin
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Non authentifié");
+    const guard = await requireRole(["super_admin"]);
+    if (!guard.ok) return { success: false, error: guard.error };
 
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-        if (profile?.role !== 'super_admin') throw new Error("Accès refusé");
+    const { error } = await guard.supabase.rpc("fn_process_withdrawal", {
+        p_transaction_id: String(transactionId),
+        p_approve: false,
+        p_reason: reason || null,
+    });
+    if (error) return { success: false, error: errorMessage(error) };
 
-        // 2. Récupérer la transaction
-        const { data: tx, error: fetchError } = await supabase
-            .from('transactions')
-            .select('status, amount, user_id, type')
-            .eq('id', transactionId)
-            .single();
-
-        if (fetchError || !tx) throw new Error("Transaction introuvable");
-        if (tx.status !== 'Pending') throw new Error("La transaction n'est pas en attente");
-
-        // 3. Re-créditer le compte (car l'argent est déduit lors de la demande)
-        // Utilisation d'un appel direct pour simplifier ou rpc si disponible
-        const { data: userProfile, error: profileError } = await supabase
-            .from('profiles')
-            .select('wallet_balance')
-            .eq('id', tx.user_id)
-            .single();
-
-        if (profileError) throw new Error("Impossible de trouver le compte utilisateur");
-
-        const newBalance = (userProfile.wallet_balance || 0) + Number(tx.amount);
-        
-        const { error: refundError } = await supabase
-            .from('profiles')
-            .update({ wallet_balance: newBalance })
-            .eq('id', tx.user_id);
-
-        if (refundError) throw refundError;
-
-        // 4. Mettre à jour le statut de la transaction
-        const { error: updateError } = await supabase
-            .from('transactions')
-            .update({ 
-                status: 'Failed',
-                metadata: { rejection_reason: reason }
-            })
-            .eq('id', transactionId);
-
-        if (updateError) throw updateError;
-
-        return { success: true };
-    } catch (error: any) {
-        return { success: false, error: error.message };
-    }
+    revalidatePath("/admin/finance");
+    return { success: true };
 }
 
+/** Super Admin : ajustement de solde avec motif (journalisé). */
 export async function adjustWalletBalance(userId: string, amount: number, reason: string) {
-    try {
-        const supabase = await createClient();
-        
-        // 1. Check Super Admin
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) throw new Error("Non authentifié");
+    const guard = await requireRole(["super_admin"]);
+    if (!guard.ok) return { success: false, error: guard.error };
+    if (!Number.isFinite(amount) || amount === 0) return { success: false, error: "Montant invalide" };
 
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-        if (profile?.role !== 'super_admin') throw new Error("Accès refusé");
+    const { data, error } = await guard.supabase.rpc("fn_admin_adjust_wallet", {
+        p_user_id: userId,
+        p_amount: amount,
+        p_reason: reason,
+    });
+    if (error) return { success: false, error: errorMessage(error) };
 
-        // 2. Ajuster la balance
-        const { data: userProfile, error: profileError } = await supabase
-            .from('profiles')
-            .select('wallet_balance')
-            .eq('id', userId)
-            .single();
-
-        if (profileError) throw new Error("Compte utilisateur introuvable");
-
-        const newBalance = (userProfile.wallet_balance || 0) + amount;
-
-        const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ wallet_balance: newBalance })
-            .eq('id', userId);
-
-        if (updateError) throw updateError;
-
-        // 3. Créer une transaction d'ajustement
-        const { error: txError } = await supabase
-            .from('transactions')
-            .insert({
-                user_id: userId,
-                type: amount > 0 ? 'income' : 'expense',
-                amount: Math.abs(amount),
-                status: 'Succeeded',
-                payment_method: 'system_adjustment',
-                metadata: { reason: reason, adjusted_by: user.id }
-            });
-
-        if (txError) throw txError;
-
-        return { success: true, newBalance };
-    } catch (error: any) {
-        return { success: false, error: error.message };
-    }
+    revalidatePath("/admin/finance");
+    revalidatePath("/admin/users");
+    return { success: true, newBalance: Number(data) };
 }

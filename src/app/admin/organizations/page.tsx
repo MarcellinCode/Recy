@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
 import { showToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/Modal";
+import { setUserStatus, updateUserProfile, createUserAccount, deleteUserAccount } from "@/app/actions/admin";
 import Link from "next/link";
 
 type Organization = {
@@ -41,7 +42,8 @@ export default function OrganizationsPage() {
     const [loading, setLoading] = useState(true);
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [editingOrg, setEditingOrg] = useState<Organization | null>(null);
-    const [newOrg, setNewOrg] = useState({ full_name: "", role: "mairie", city: "" });
+    const [newOrg, setNewOrg] = useState({ full_name: "", email: "", role: "organisation_admin", city: "" });
+    const [createdCredentials, setCreatedCredentials] = useState<{ email: string; password: string } | null>(null);
     const supabase = createClient();
 
     useEffect(() => {
@@ -53,7 +55,7 @@ export default function OrganizationsPage() {
         const { data, error } = await supabase
             .from('profiles')
             .select('*')
-            .in('role', ['mairie', 'entreprise', 'organisation_admin'])
+            .in('role', ['mairie', 'organisation_admin'])
             .order('created_at', { ascending: false });
         
         if (error) {
@@ -66,28 +68,24 @@ export default function OrganizationsPage() {
 
     async function handleAddOrg(e: React.FormEvent) {
         e.preventDefault();
-        const { error } = await supabase.from('profiles').insert([
-            { ...newOrg, status: 'Actif' }
-        ]);
+        const res = await createUserAccount(newOrg);
 
-        if (error) {
-            showToast("Erreur lors de l'ajout : " + error.message, "error");
+        if (!res.success) {
+            showToast("Erreur lors de l'ajout : " + res.error, "error");
         } else {
             showToast("Organisation ajoutée avec succès", "success");
+            if (res.password) setCreatedCredentials({ email: newOrg.email, password: res.password });
             setIsAddModalOpen(false);
-            setNewOrg({ full_name: "", role: "mairie", city: "" });
+            setNewOrg({ full_name: "", email: "", role: "organisation_admin", city: "" });
             fetchOrgs();
         }
     }
 
     async function handleStatusChange(org: Organization, newStatus: string) {
-        const { error } = await supabase
-            .from('profiles')
-            .update({ status: newStatus })
-            .eq('id', org.id);
+        const res = await setUserStatus(org.id, newStatus as "Actif" | "Suspendu" | "En attente");
 
-        if (error) {
-            showToast("Erreur lors de la mise à jour", "error");
+        if (!res.success) {
+            showToast("Erreur lors de la mise à jour : " + res.error, "error");
         } else {
             showToast(`Organisation ${newStatus.toLowerCase()} avec succès`);
             fetchOrgs();
@@ -96,8 +94,8 @@ export default function OrganizationsPage() {
 
     async function deleteOrg(id: string) {
         if (!confirm("Êtes-vous sûr de vouloir supprimer cette organisation ? Cette action est irréversible.")) return;
-        const { error } = await supabase.from('profiles').delete().eq('id', id);
-        if (error) showToast("Erreur lors de la suppression", "error");
+        const res = await deleteUserAccount(id);
+        if (!res.success) showToast("Erreur lors de la suppression : " + res.error, "error");
         else {
             showToast("Organisation supprimée avec succès", "success");
             fetchOrgs();
@@ -108,18 +106,15 @@ export default function OrganizationsPage() {
         e.preventDefault();
         if (!editingOrg) return;
 
-        const { error } = await supabase
-            .from('profiles')
-            .update({
-                full_name: editingOrg.full_name,
-                role: editingOrg.role,
-                city: editingOrg.city,
-                status: editingOrg.status
-            })
-            .eq('id', editingOrg.id);
+        const res = await updateUserProfile(editingOrg.id, {
+            full_name: editingOrg.full_name,
+            role: editingOrg.role,
+            city: editingOrg.city,
+            status: editingOrg.status
+        });
 
-        if (error) {
-            showToast("Erreur lors de la mise à jour", "error");
+        if (!res.success) {
+            showToast("Erreur lors de la mise à jour : " + res.error, "error");
         } else {
             showToast("Organisation mise à jour", "success");
             setEditingOrg(null);
@@ -131,6 +126,25 @@ export default function OrganizationsPage() {
 
     return (
         <div className="space-y-10">
+            {createdCredentials && (
+                <div className="p-6 rounded-3xl bg-emerald-50 border border-emerald-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <p className="text-xs font-black uppercase tracking-widest text-emerald-800">Compte créé — identifiants à transmettre (affichés une seule fois)</p>
+                        <p className="font-mono text-sm mt-2 select-all">{createdCredentials.email}</p>
+                        <p className="font-mono text-sm select-all">{createdCredentials.password}</p>
+                    </div>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => { navigator.clipboard?.writeText(`Identifiant : ${createdCredentials.email}\nMot de passe : ${createdCredentials.password}`).catch(() => {}); showToast("Identifiants copiés", "success"); }}
+                            className="px-4 py-2 rounded-xl bg-white border border-emerald-200 text-[10px] font-black uppercase tracking-widest"
+                        >Copier</button>
+                        <button
+                            onClick={() => setCreatedCredentials(null)}
+                            className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest"
+                        >Fermer</button>
+                    </div>
+                </div>
+            )}
             {/* Header Area */}
             <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
@@ -141,7 +155,7 @@ export default function OrganizationsPage() {
                 </div>
                 <div className="flex flex-wrap gap-4 items-center">
                     <a 
-                        href="https://cleanzone.com/login"
+                        href="/connexion"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-zinc-900 border border-gray-100 dark:border-zinc-800 text-gray-900 dark:text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:border-primary hover:text-primary transition-all shadow-sm"
@@ -347,7 +361,20 @@ export default function OrganizationsPage() {
                             onChange={(e) => setNewOrg({...newOrg, full_name: e.target.value})}
                         />
                     </div>
-                    
+
+                    <div className="space-y-2">
+                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Email de connexion</label>
+                        <input
+                            required
+                            type="email"
+                            className="w-full px-6 py-4 bg-gray-50 dark:bg-zinc-800/50 border border-gray-100 dark:border-zinc-800 rounded-2xl text-sm outline-none focus:border-primary transition-all"
+                            placeholder="contact@organisation.ci"
+                            value={newOrg.email}
+                            onChange={(e) => setNewOrg({...newOrg, email: e.target.value})}
+                        />
+                        <p className="text-[9px] text-zinc-400 ml-4">Pour une Mairie avec son territoire cartographié, préférez « Ajouter une Mairie ».</p>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-4">Type</label>
@@ -356,9 +383,8 @@ export default function OrganizationsPage() {
                                 value={newOrg.role}
                                 onChange={(e) => setNewOrg({...newOrg, role: e.target.value})}
                             >
-                                <option value="mairie">Mairie</option>
-                                <option value="entreprise">Entreprise / Organisation</option>
                                 <option value="organisation_admin">Organisation (SME)</option>
+                                <option value="mairie">Mairie</option>
                             </select>
                         </div>
                         <div className="space-y-2">
@@ -409,8 +435,7 @@ export default function OrganizationsPage() {
                                     onChange={(e) => setEditingOrg({...editingOrg, role: e.target.value})}
                                 >
                                     <option value="mairie">Mairie</option>
-                                    <option value="entreprise">Entreprise / Organisation</option>
-                                    <option value="organisation_admin">Organisation (SME)</option>
+                                                                        <option value="organisation_admin">Organisation (SME)</option>
                                 </select>
                             </div>
                             <div className="space-y-2">

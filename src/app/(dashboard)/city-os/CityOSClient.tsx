@@ -146,7 +146,7 @@ async function fetchRawMairieData(
         safeQuery(bidsQuery, "tender_bids"),
         safeQuery(supabase.from('transactions').select('*').eq('user_id', mairieId).order('created_at', { ascending: false }), "transactions"),
         safeQuery(supabase.from('sanctions').select('*, profiles(full_name)').order('created_at', { ascending: false }), "sanctions"),
-        safeQuery(supabase.from('profiles').select('id, full_name, agent_count, role').in('role', ['entreprise', 'organisation_admin', 'collecteur']), "profiles for concessions"),
+        safeQuery(supabase.from('profiles').select('id, full_name, agent_count, role').in('role', ['organisation_admin', 'collecteur']), "profiles for concessions"),
         safeQuery(supabase.from('vehicles').select('*'), "vehicles"),
     ]);
 
@@ -427,7 +427,7 @@ function CityOSClient({ initialData, profile }: { initialData: any; profile: any
                     const { data, error } = await supabase
                         .from('profiles')
                         .select('id, full_name, agent_count, role')
-                        .in('role', ['entreprise', 'organisation_admin', 'collecteur']);
+                        .in('role', ['organisation_admin', 'collecteur']);
                     
                     if (error) {
                         console.error("Direct fetch of organizations error:", error.message);
@@ -663,7 +663,7 @@ function CityOSClient({ initialData, profile }: { initialData: any; profile: any
             showToast("Sanction appliquée avec succès", "success");
             setIsInfractionDetailModalOpen(false);
             fetchMairieData();
-        } else showToast(res.error, "error");
+        } else showToast(res.error || "Action impossible", "error");
         setLoading(false);
     };
 
@@ -675,7 +675,7 @@ function CityOSClient({ initialData, profile }: { initialData: any; profile: any
             showToast("Incident résolu", "success");
             setIsInfractionDetailModalOpen(false);
             fetchMairieData();
-        } else showToast(res.error, "error");
+        } else showToast(res.error || "Action impossible", "error");
         setLoading(false);
     };
 
@@ -1590,7 +1590,7 @@ function CityOSClient({ initialData, profile }: { initialData: any; profile: any
                                     <option value="">{partnerType === 'entreprise' ? "Choisir une entreprise privée..." : "Choisir une organisation / ONG..."}</option>
                                     {organizations
                                         .filter(org => partnerType === 'entreprise' 
-                                            ? (org.role === 'entreprise' || org.role === 'collecteur') 
+                                            ? org.role === 'collecteur' 
                                             : org.role === 'organisation_admin'
                                         )
                                         .map(org => (<option key={org.id} value={org.id}>{org.full_name} ({org.performanceScore || '5.0'}/5)</option>))
@@ -1855,7 +1855,7 @@ function CityOSClient({ initialData, profile }: { initialData: any; profile: any
                         </div>
                         <div className="space-y-2">
                             <label htmlFor="agentZone" className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-4">Zone d'Affectation</label>
-                            <select id="agentZone" className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900 focus:border-emerald-500/50 transition-all appearance-none" value={newAgent.zoneId} onChange={(e) => setNewAgent({...newAgent, zoneId: e.target.value})}>
+                            <select id="agentZone" required className="w-full px-6 py-4 bg-zinc-50 border border-zinc-100 rounded-2xl text-[10px] font-black uppercase outline-none text-zinc-900 focus:border-emerald-500/50 transition-all appearance-none" value={newAgent.zoneId} onChange={(e) => setNewAgent({...newAgent, zoneId: e.target.value})}>
                                 <option value="">Choisir une zone...</option>
                                 {zones.map(z => (<option key={z.id} value={z.id} className="text-zinc-900">{z.name}</option>))}
                             </select>

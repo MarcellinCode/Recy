@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, Menu, X, LogOut, User as UserIcon, School, Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase";
-import { User } from "@supabase/supabase-js";
+import { useSession } from "@/components/providers/SessionProvider";
 import { useUnreadBadges } from "@/hooks/useUnreadBadges";
 
 function getRoleLinks(unreadMessages: number): Record<string, { href: string; label: string; badge?: number }[]> {
@@ -98,49 +98,13 @@ export function Header() {
     const { unreadMessages, unreadNotifications } = useUnreadBadges();
 
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-    const [user, setUser] = useState<User | null>(null);
-    const [role, setRole] = useState<string | null>(() => safeGetRole());
-
-    useEffect(() => {
-        const fetchProfile = async (userId: string) => {
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', userId)
-                .single();
-            
-            const newRole = profile?.role ?? null;
-            setRole(newRole);
-            safeSetRole(newRole);
-        };
-
-        const getSession = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                setUser(session.user);
-                await fetchProfile(session.user.id);
-            } else {
-                setUser(null);
-                setRole(null);
-                safeSetRole(null);
-            }
-        };
-
-        getSession();
-
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: any, session: any) => {
-            if (session?.user) {
-                setUser(session.user);
-                await fetchProfile(session.user.id);
-            } else {
-                setUser(null);
-                setRole(null);
-                safeSetRole(null);
-            }
-        });
-
-        return () => subscription.unsubscribe();
-    }, []);
+    // Session, rôle et nom viennent du SessionProvider (aucune requête ici)
+    const session = useSession();
+    const role = session.role;
+    const displayName = session.profile?.full_name || "";
+    const user = session.userId
+        ? { email: session.email, user_metadata: { full_name: displayName } }
+        : null;
 
     const handleLogout = async () => {
         // 1. Close mobile menu instantly
@@ -165,8 +129,6 @@ export function Header() {
                 }
             });
         }
-        setUser(null);
-        setRole(null);
         
         // 4. Redirect instantly to login page
         router.push("/connexion");

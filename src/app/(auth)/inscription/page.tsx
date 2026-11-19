@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { User, Truck, ArrowRight, Loader2, Building2, ShieldCheck } from "lucide-react";
 import { createClient } from "@/lib/supabase";
-import { validateInvitation, consumeInvitation } from "@/app/actions/invitations";
+import { validateInvitation } from "@/app/actions/invitations";
 import { GEOGRAPHY_HIERARCHY } from "@/constants/geography";
 
 
@@ -81,7 +81,8 @@ function SignupForm() {
     const [selectedCommune, setSelectedCommune] = useState("");
     const [selectedQuartier, setSelectedQuartier] = useState("");
     const [selectedSousQuartier, setSelectedSousQuartier] = useState("");
-    const handleSignup = async (e: React.FormEvent) => {
+
+    const handleSignup = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!role) return;
 
@@ -114,7 +115,7 @@ function SignupForm() {
                 }
             }
 
-            const { data, error: authError } = await supabase.auth.signUp({
+            const { error: authError } = await supabase.auth.signUp({
                 email: formData.email,
                 password: formData.password,
                 options: {
@@ -132,23 +133,22 @@ function SignupForm() {
                         rccm: formData.rccm,
                         contact_person: formData.contactPerson,
                         agent_count: formData.agentCount,
-                        official_department: formData.officialDepartment
+                        official_department: formData.officialDepartment,
+                        // Mairie : code vérifié ET consommé côté base par le trigger d'inscription
+                        invitation_code: role === 'mairie' ? searchParams.get("token") : undefined
                     },
                 },
             });
 
             if (authError) throw authError;
             
-            // Consume the invitation token if role is mairie
-            if (role === 'mairie') {
-                const token = searchParams.get("token");
-                if (token && data.user) {
-                    await consumeInvitation(token, data.user.id);
-                }
-            }
-             router.push("/connexion?message=Vérifiez votre email pour confirmer l'inscription");
+
+             router.push("/connexion?message=Vérifiez votre email pour confirmer l'inscription");
         } catch (err: any) {
-            setError(err.message || "Une erreur est survenue lors de l'inscription.");
+            const msg: string = err?.message || "";
+            setError(msg.toLowerCase().includes("database error")
+                ? (role === 'mairie' ? "Invitation Mairie invalide, expirée ou déjà utilisée." : "Inscription impossible. Réessayez ou contactez le support.")
+                : (msg || "Une erreur est survenue lors de l'inscription."));
         } finally {
             setLoading(false);
         }

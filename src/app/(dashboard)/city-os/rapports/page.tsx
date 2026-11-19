@@ -50,7 +50,7 @@ function GlobalRapportContent() {
         try {
             setLoading(true);
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) { router.push('/login'); return; }
+            if (!user) { router.push('/connexion'); return; }
 
             const mairieId = targetMairieId || user.id;
 

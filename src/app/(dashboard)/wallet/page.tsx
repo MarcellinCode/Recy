@@ -91,21 +91,13 @@ export default function WalletPage() {
         
         setProcessing(true);
         setError(null);
-        
-        // Débiter d'abord
-        const debitRes = await walletService.debitWallet(profile.id, num);
-        if (!debitRes.success) {
-            setProcessing(false);
-            setError(debitRes.error || 'Erreur lors du débit');
-            return;
-        }
-        
-        // Puis simuler le retrait
+
+        // Une seule opération atomique : débit + demande « En attente » de validation
         const res = await walletService.withdraw(profile.id, num, phone);
         setProcessing(false);
 
         if (res.success) {
-            setSuccess(`${num.toLocaleString()} CFA envoyés vers ${phone} (Simulation)`);
+            setSuccess(`Demande de retrait de ${num.toLocaleString()} CFA vers ${phone} envoyée (en attente de validation)`);
             setAmount('');
             setPhone('');
             setTimeout(() => { setShowWithdraw(false); setSuccess(null); fetchData(); }, 2500);

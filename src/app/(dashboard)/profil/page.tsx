@@ -54,7 +54,7 @@ export default function ProfilePage() {
         { icon: <Bell className="w-5 h-5 text-amber-500" />, label: "Notifications", route: ROUTES.NOTIFICATIONS },
     ];
 
-    const collectorMenuItems = (profile?.role === 'collecteur' || profile?.role === 'entreprise' || profile?.role === 'organisation_admin') ? [
+    const collectorMenuItems = (profile?.role === 'collecteur' || profile?.role === 'organisation_admin') ? [
         ...(profile?.role === 'organisation_admin' ? [
             { icon: <Truck className="w-5 h-5 text-indigo-500" />, label: "Gestion de la Flotte & Organisation", route: "/organisation" },
         ] : []),

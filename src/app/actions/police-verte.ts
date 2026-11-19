@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase-server";
 import { revalidatePath } from "next/cache";
 import { issueSanction } from "./mairie";
+import { requireRole, errorMessage } from "@/lib/auth-guards";
 
 export async function reportInfraction(data: {
     type: string;
@@ -61,42 +62,39 @@ export async function reportInfraction(data: {
     }
 }
 
+/**
+ * Mise à jour du statut d'une infraction.
+ * Les droits (Mairie, agent de la zone, organisation responsable) sont
+ * vérifiés en base par fn_update_infraction_status.
+ * (Avant : aucune policy UPDATE -> la mise à jour était ignorée en silence.)
+ */
 export async function updateInfractionStatus(id: string, status: string) {
-    const supabase = await createClient();
-    
-    try {
-        const { error } = await supabase
-            .from('environmental_infractions')
-            .update({ 
-                status,
-                resolved_at: status === 'resolved' || status === 'sanctioned' ? new Date().toISOString() : null
-            })
-            .eq('id', id);
+    const guard = await requireRole(["mairie", "super_admin", "agent_police_verte", "organisation_admin"]);
+    if (!guard.ok) return { success: false, error: guard.error };
 
-        if (error) throw error;
+    const { error } = await guard.supabase.rpc("fn_update_infraction_status", { p_id: id, p_status: status });
+    if (error) return { success: false, error: errorMessage(error) };
 
-        revalidatePath('/city-os');
-        return { success: true };
-    } catch (error: any) {
-        return { success: false, error: error.message };
-    }
+    revalidatePath('/city-os');
+    revalidatePath('/organisation');
+    return { success: true };
 }
 
 export async function convertInfractionToSanction(infractionId: string, penaltyAmount: number) {
-    const supabase = await createClient();
-    
+    const guard = await requireRole(["mairie", "super_admin"]);
+    if (!guard.ok) return { success: false, error: guard.error };
+
     try {
-        // 1. Récupérer les détails de l'infraction
-        const { data: infraction, error: fetchError } = await supabase
+        const { data: infraction, error: fetchError } = await guard.supabase
             .from('environmental_infractions')
-            .select('*')
+            .select('id, type, description, severity, responsible_org_id, status')
             .eq('id', infractionId)
             .single();
 
         if (fetchError || !infraction) throw new Error("Infraction introuvable");
+        if (infraction.status === 'sanctioned') throw new Error("Cette infraction a déjà été sanctionnée.");
         if (!infraction.responsible_org_id) throw new Error("Aucune organisation responsable identifiée pour cette infraction.");
 
-        // 2. Émettre la sanction via le module Mairie existant
         const sanctionRes = await issueSanction(
             infraction.responsible_org_id,
             `INFRACTION: ${infraction.type}`,
@@ -104,41 +102,35 @@ export async function convertInfractionToSanction(infractionId: string, penaltyA
             infraction.severity,
             penaltyAmount
         );
-
         if (!sanctionRes.success) throw new Error(sanctionRes.error);
 
-        // 3. Mettre à jour le statut de l'infraction
-        await updateInfractionStatus(infractionId, 'sanctioned');
+        const statusRes = await updateInfractionStatus(infractionId, 'sanctioned');
+        if (!statusRes.success) throw new Error(statusRes.error);
 
         revalidatePath('/city-os');
         return { success: true };
-    } catch (error: any) {
-        return { success: false, error: error.message };
+    } catch (error: unknown) {
+        return { success: false, error: errorMessage(error) };
     }
 }
 
 export async function getInfractionStats() {
-    const supabase = await createClient();
-    
-    try {
-        const { data, error } = await supabase
-            .from('environmental_infractions')
-            .select('status, severity, type');
+    const guard = await requireRole(["mairie", "super_admin", "agent_police_verte"]);
+    if (!guard.ok) return { success: false, error: guard.error };
 
-        if (error) throw error;
+    const { data, error } = await guard.supabase
+        .from('environmental_infractions')
+        .select('status, severity, type');
+    if (error) return { success: false, error: errorMessage(error) };
 
-        const stats = {
-            total: data.length,
-            open: data.filter(i => i.status === 'open').length,
-            critical: data.filter(i => i.severity === 'critical').length,
-            types: data.reduce((acc: any, i) => {
-                acc[i.type] = (acc[i.type] || 0) + 1;
-                return acc;
-            }, {})
-        };
-
-        return { success: true, stats };
-    } catch (error: any) {
-        return { success: false, error: error.message };
-    }
+    const stats = {
+        total: data.length,
+        open: data.filter((i) => i.status === 'open').length,
+        critical: data.filter((i) => i.severity === 'critical').length,
+        types: data.reduce((acc: Record<string, number>, i) => {
+            acc[i.type] = (acc[i.type] || 0) + 1;
+            return acc;
+        }, {})
+    };
+    return { success: true, stats };
 }
